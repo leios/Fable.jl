@@ -1,3 +1,22 @@
+function flame(n::Int, ranges, res; filename="check.png")
+    points = [Point(0, 0) for i = 1:n]
+
+    # initializing the first point
+    #points[1] = Point(0.1, 0.1)
+    points[1] = Point(-0.5*(ranges[1]) + rand()*ranges[1],
+                      -0.5*(ranges[2]) + rand()*ranges[2])
+    
+
+    f_set = [swirl, heart]
+    for i = 2:n
+        f = rand(f_set)
+        points[i] = f(points[i-1])
+    end
+
+     write_image(points, ranges, res, filename)
+
+end
+
 function chaos_game(n::Int, ranges)
     points = [Point(0, 0) for i = 1:n]
 

@@ -27,3 +27,5 @@ Manifest.toml
 *.dat
 *.png
 *.jpg
+notes
+*.pdf
