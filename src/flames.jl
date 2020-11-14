@@ -2,9 +2,27 @@ function linear(p::Point)
     return p
 end
 
+function polar(p::Point)
+    r = sqrt(p.x*p.x + p.y*p.y)
+    theta = atan(p.x, p.y)
+
+    polar_color = RGB(0,0,1)
+    return Point(theta/pi,r-1)
+end
+
+function horseshoe(p::Point)
+    r = sqrt(p.x*p.x + p.y*p.y)
+    if r < 0.001
+        r = 0.001
+    end
+    horseshoe_color = RGB(0,1,1)
+
+    return Point((p.x-p.y)*(p.x+p.y)/r, 2*p.x*p.y/r, horseshoe_color)
+end
+
 function heart(p::Point)
     r = sqrt(p.x*p.x + p.y*p.y)
-    theta = atan(p.y, p.x)
+    theta = atan(p.x, p.y)
     heart_color = RGB(1,0,1)
     return Point(r*sin(theta*r),
                  -r*cos(theta*r),
