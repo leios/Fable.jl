@@ -1,3 +1,7 @@
+function mix_color(a::RGB, b::RGB)
+    return RGB(0.5*(a.r+b.r), 0.5*(a.g+b.g), 0.5*(a.b + b.b))
+end
+
 function mix_color!(pix::Pixel, p::Point)
     pix.c = (pix.c*pix.val + p.c)/(pix.val + 1)
     pix.val += 1
@@ -10,7 +14,7 @@ function to_rgb(pix::Pixel, max_val; gamma = 2.2)
     # TODO: What's meant by "vibrant colors?"
     if pix.val != 0
         alpha = log10((9*pix.val/max_val)+1)
-        #alpha = log10(1) - log10(pix.val/max_val)
+        #alpha = 1 + log10(pix.val/max_val)
     end
     final_color = RGB(pix.c.r*alpha, pix.c.g*alpha, pix.c.b*alpha)
 
