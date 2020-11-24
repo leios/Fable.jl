@@ -1,5 +1,13 @@
-# TODO: - set affine tranform for every flame (2 vectors 1 for fx, 2 for affine)
-#       - Create function to do affine tranform and flame at the same time
+#TODO: 1. Super sampling must be implemented by increasing the number of bins 
+#         before sampling down. Gamma correction at that stage
+#      2. Density estimation with dynamic kernel related to the number of points
+#         in the bins. Lower points = broader kernel (more blurring)
+#TODO: Parallelize with large number of initial points
+#TODO: Allow Affine transforms to have a time variable and allow for 
+#      supersampling across time with different timesteps all falling into the
+#      same bin -- might require 2 buffers: one for log of each step, another
+#      for all logs
+#TODO: think about directional motion blur
 function flame(n::Int, ranges, res; filename="check.png", gamma = 2.2,
                do_affine = false)
     points = [Point(0, 0) for i = 1:n]

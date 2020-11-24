@@ -1,3 +1,9 @@
+#TODO: implement symmetry function that does the following:
+#      1. allows for rotational symmetries
+#      2. allows for inverting along axes
+function apply_symmetry(;rotational_number = 0, flip_axis = 0)
+end
+
 function affine_rand()
     return [rand() rand() 0; rand() rand() 0; 0 0 1]
 end

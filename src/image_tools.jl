@@ -1,3 +1,106 @@
+using LinearAlgebra
+
+export create_gaussian_kernel
+
+#TODO: figure out how to select the best deviation factor
+function create_gaussian_kernel(kernel_size; deviation_factor = 1)
+    if !isodd(kernel_size)
+        println("Even kernel sizes are not allowed. New kernel size is: ",
+                kernel_size-1)
+        kernel_size -= 1
+    end
+
+    kernel = zeros(kernel_size, kernel_size)
+    center = floor(Int, kernel_size / 2) + 1
+
+    for i = 1:kernel_size
+        for j = 1:kernel_size
+            kernel[i,j] = exp(-((i-center)^2 + (j-center)^2)/
+                              (kernel_size/deviation_factor))
+        end
+    end
+
+    return normalize(kernel)
+    
+end
+
+#TODO: maybe normalize channels altogether, not separate?
+function normalize!(img::Array{C,2}) where {C <: Union{RGB, RGBA}}
+
+    # finding the max of each color channel
+    max_red = 0
+    max_green = 0
+    max_blue = 0
+
+    for i = 1:length(img)
+        if img[i].r > max_red
+            max_red = img[i].r
+        end
+
+        if img[i].g > max_green
+            max_green = img[i].g
+        end
+
+        if img[i].b > max_blue
+            max_blue = img[i].b
+        end
+    end
+
+    for i = 1:length(img)
+        color = RGB(img[i].r / max_red,
+                    img[i].g / max_green,
+                    img[i].b / max_blue)
+        img[i] = color
+    end
+    
+end
+
+function bounds_check(signal, index, filter_width, dir)
+    if index < 1
+        filter_width - (1-index)
+    elseif index > size(signal)[dir]
+        return filter_width - (index - size(signal)[dir])
+    else
+        return filter_width
+    end
+end
+
+#TODO: figure out what how to make a variable sized filter
+#      We need to read in the point data to figure out filter size
+function fractal_conv(signal::Array{C,2}) where {C <: Union{RGB, RGBA}}
+
+    filter = create_gaussian_kernel(10)
+    n = size(signal)
+    out = Array{C,2}(undef,n)
+
+    filter_width = floor(Int, size(filter)[1]/2)
+    center = filter_width + 1
+
+    # time domain
+    for j = 1:n[1]
+        for i = 1:n[2]
+            # This can create a signal view that is not the size of the filter
+            left_bound = bounds_check(signal, i-filter_width, filter_width, 2)
+            right_bound = bounds_check(signal, i+filter_width, filter_width, 2)
+            top_bound = bounds_check(signal, j+filter_width, filter_width, 1)
+            bottom_bound = bounds_check(signal, j-filter_width, filter_width, 1)
+
+            #println(i, '\t', j, '\t', left_bound, '\t', right_bound, '\t',
+            #        top_bound, '\t', bottom_bound)
+
+            # TODO: zero-pad view or slize filter
+            rsum = sum(filter[center - bottom_bound : center + top_bound,
+                              center - left_bound : center + right_bound].*
+                       signal[j - bottom_bound : j + top_bound,
+                              i - left_bound : i + right_bound])
+            out[i, j] = rsum
+            rsum = RGB(0)
+        end
+    end
+
+    return out
+end
+
 function mix_color(a::RGB, b::RGB)
     return RGB(0.5*(a.r+b.r), 0.5*(a.g+b.g), 0.5*(a.b + b.b))
 end
@@ -58,6 +161,10 @@ function write_image(points::Vector{Point}, ranges, res, filename;
 
     img = [to_rgb(pixels[i,j], max_val; gamma=gamma)
            for i = 1:res[1], j = 1:res[2]]
+
+    img = fractal_conv(img)
+
+    normalize!(img)
 
     save(filename, img)
 
