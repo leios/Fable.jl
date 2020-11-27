@@ -1,6 +1,5 @@
+# TODO: Does this rotate the image?
 using LinearAlgebra
-
-export create_gaussian_kernel
 
 #TODO: figure out how to select the best deviation factor
 function create_gaussian_kernel(kernel_size; deviation_factor = 1)
@@ -65,13 +64,27 @@ function bounds_check(signal, index, filter_width, dir)
     end
 end
 
+function filter_color(filter, signal)
+    if (size(signal) != size(filter))
+        error("filter and image views are not consistent!")
+    end
+
+    rsum = RGB(0)
+    for i = 1:length(signal)
+        rsum += filter[i]*signal[i].c
+    end
+
+    return rsum
+    
+end
+
 #TODO: figure out what how to make a variable sized filter
 #      We need to read in the point data to figure out filter size
-function fractal_conv(signal::Array{C,2}) where {C <: Union{RGB, RGBA}}
+function fractal_conv(signal::Array{Pixel,2})
 
     filter = create_gaussian_kernel(10)
     n = size(signal)
-    out = Array{C,2}(undef,n)
+    out = Array{Pixel,2}(undef,n)
 
     filter_width = floor(Int, size(filter)[1]/2)
     center = filter_width + 1
@@ -89,11 +102,13 @@ function fractal_conv(signal::Array{C,2}) where {C <: Union{RGB, RGBA}}
             #        top_bound, '\t', bottom_bound)
 
             # TODO: zero-pad view or slize filter
-            rsum = sum(filter[center - bottom_bound : center + top_bound,
-                              center - left_bound : center + right_bound].*
-                       signal[j - bottom_bound : j + top_bound,
-                              i - left_bound : i + right_bound])
-            out[i, j] = rsum
+            rsum = Pixel(signal[i,j].val,
+                         filter_color(
+                             filter[center-bottom_bound : center+top_bound,
+                                    center-left_bound : center+right_bound],
+                             signal[j-bottom_bound : j+top_bound,
+                                    i-left_bound : i+right_bound]))
+            out[j, i] = rsum
             rsum = RGB(0)
         end
     end
@@ -110,7 +125,12 @@ function mix_color!(pix::Pixel, p::Point)
     pix.val += 1
 end
 
-function to_rgb(pix::Pixel, max_val; gamma = 2.2)
+function to_rgb(pix::Pixel)
+    return pix.c
+end
+
+
+function to_logscale(pix::Pixel, max_val; gamma = 2.2)
     alpha = 1
 
     # TODO: check to see if this is an appropriate log implementation
@@ -127,7 +147,7 @@ function to_rgb(pix::Pixel, max_val; gamma = 2.2)
                       final_color.g^(1/gamma),
                       final_color.b^(1/gamma))
 
-    return final_color
+    return Pixel(pix.val, final_color)
 end
 
 function write_image(points::Vector{Point}, ranges, res, filename;
@@ -159,10 +179,13 @@ function write_image(points::Vector{Point}, ranges, res, filename;
 
     println(max_val)
 
-    img = [to_rgb(pixels[i,j], max_val; gamma=gamma)
-           for i = 1:res[1], j = 1:res[2]]
+    pixels = [to_logscale(pixels[i,j], max_val; gamma=gamma)
+              for i = 1:res[1], j = 1:res[2]]
 
-    img = fractal_conv(img)
+    blurred_pixels = fractal_conv(pixels)
+
+    img = [to_rgb(blurred_pixels[i,j])
+           for i = 1:res[1], j = 1:res[2]]
 
     normalize!(img)
 
