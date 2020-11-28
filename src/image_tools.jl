@@ -1,4 +1,4 @@
-# TODO: Does this rotate the image?
+# TODO: Probably shouldn't print anything anymore...
 using LinearAlgebra
 
 #TODO: figure out how to select the best deviation factor
@@ -64,6 +64,16 @@ function bounds_check(signal, index, filter_width, dir)
     end
 end
 
+function pixel_sum(signal::Array{Pixel,2})
+    rsum = 0
+    for i = 1:length(signal)
+        rsum += signal[i].val
+    end
+
+    return rsum
+end
+
+# TODO: the normalization of the colors seems off, creating a spotty output
 function filter_color(filter, signal)
     if (size(signal) != size(filter))
         error("filter and image views are not consistent!")
@@ -74,40 +84,97 @@ function filter_color(filter, signal)
         rsum += filter[i]*signal[i].c
     end
 
-    return rsum
+    return rsum / sum(filter)
     
 end
 
-#TODO: figure out what how to make a variable sized filter
-#      We need to read in the point data to figure out filter size
-function fractal_conv(signal::Array{Pixel,2})
+# TODO: this is computationally complex. Kinda sucks for that reason.
+function find_filter_width(signal, threshold, index::CartesianIndex;
+                           max_width = 15)
 
-    filter = create_gaussian_kernel(10)
-    n = size(signal)
-    out = Array{Pixel,2}(undef,n)
+    num_points = signal[index].val
+
+    filter_width = 1
+
+    while (num_points < threshold) && (filter_width < max_width)
+        filter_width += 1
+
+        num_points = pixel_sum(signal, filter_width, index)
+
+    end
+
+    if filter_width != 15
+        print(filter_width, " ")
+    end
+
+    return filter_width
+end
+
+
+# TODO: too many pixel sum functions
+function pixel_sum(signal::Array{Pixel,2}, filter_width::Int,
+                   index::CartesianIndex)
+
+    center = filter_width + 1
+
+    j,i = index[1], index[2]
+
+    # This can create a signal view that is not the size of the filter
+    left_bound = bounds_check(signal, i-filter_width, filter_width, 2)
+    right_bound = bounds_check(signal, i+filter_width, filter_width, 2)
+    top_bound = bounds_check(signal, j+filter_width, filter_width, 1)
+    bottom_bound = bounds_check(signal, j-filter_width, filter_width, 1)
+
+    # TODO: zero-pad view or slize filter
+    #println(filter[1])
+    rsum = pixel_sum(signal[j-bottom_bound:j+top_bound,
+                            i-left_bound:i+right_bound])
+
+    return rsum
+
+end
+
+
+function pixel_sum(signal::Array{Pixel,2}, filter::Array{Float64,2},
+                   index::CartesianIndex)
 
     filter_width = floor(Int, size(filter)[1]/2)
     center = filter_width + 1
 
+    j,i = index[1], index[2]
+
+    # This can create a signal view that is not the size of the filter
+    left_bound = bounds_check(signal, i-filter_width, filter_width, 2)
+    right_bound = bounds_check(signal, i+filter_width, filter_width, 2)
+    top_bound = bounds_check(signal, j+filter_width, filter_width, 1)
+    bottom_bound = bounds_check(signal, j-filter_width, filter_width, 1)
+
+    # TODO: zero-pad view or slize filter
+    #println(filter[1])
+    rsum = Pixel(signal[i,j].val,
+                 filter_color(filter[center-bottom_bound:center+top_bound,
+                                     center-left_bound:center+right_bound],
+                              signal[j-bottom_bound:j+top_bound,
+                                     i-left_bound:i+right_bound]))
+
+    return rsum
+
+end
+
+#TODO: figure out what how to make a variable sized filter
+#      We need to read in the point data to figure out filter size
+function fractal_conv(signal::Array{Pixel,2}; threshold = 1)
+
+    n = size(signal)
+    out = Array{Pixel,2}(undef,n)
+
     # time domain
     for j = 1:n[1]
         for i = 1:n[2]
-            # This can create a signal view that is not the size of the filter
-            left_bound = bounds_check(signal, i-filter_width, filter_width, 2)
-            right_bound = bounds_check(signal, i+filter_width, filter_width, 2)
-            top_bound = bounds_check(signal, j+filter_width, filter_width, 1)
-            bottom_bound = bounds_check(signal, j-filter_width, filter_width, 1)
-
-            #println(i, '\t', j, '\t', left_bound, '\t', right_bound, '\t',
-            #        top_bound, '\t', bottom_bound)
-
-            # TODO: zero-pad view or slize filter
-            rsum = Pixel(signal[i,j].val,
-                         filter_color(
-                             filter[center-bottom_bound : center+top_bound,
-                                    center-left_bound : center+right_bound],
-                             signal[j-bottom_bound : j+top_bound,
-                                    i-left_bound : i+right_bound]))
+            filter_width = find_filter_width(signal, threshold,
+                                             CartesianIndex(j,i))
+            filter = create_gaussian_kernel(filter_width)
+            rsum = pixel_sum(signal, filter, CartesianIndex(j,i))
             out[j, i] = rsum
             rsum = RGB(0)
         end
@@ -177,12 +244,12 @@ function write_image(points::Vector{Point}, ranges, res, filename;
         end 
     end
 
-    println(max_val)
+    #println(max_val)
 
     pixels = [to_logscale(pixels[i,j], max_val; gamma=gamma)
               for i = 1:res[1], j = 1:res[2]]
 
-    blurred_pixels = fractal_conv(pixels)
+    blurred_pixels = fractal_conv(pixels; threshold = max_val/10)
 
     img = [to_rgb(blurred_pixels[i,j])
            for i = 1:res[1], j = 1:res[2]]
