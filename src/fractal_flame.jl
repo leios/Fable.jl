@@ -56,8 +56,7 @@ function flame(n::Int, ranges, res; filename="check.png", gamma = 2.2,
         points[i] = Point(points[i].x, points[i].y, transformed_color)
     end
 
-    println("Time for write_image()")
-    @time write_image(points, ranges, res, filename, gamma = gamma)
+    write_image(points, ranges, res, filename, gamma = gamma)
 
 end
 

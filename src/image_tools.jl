@@ -224,9 +224,8 @@ function write_image(points::Vector{Point}, ranges, res, filename;
 
     max_val = 0
 
-    println("time for binning")
     # bin the pixels
-    @time for i = point_offset:length(points)
+    for i = point_offset:length(points)
 
         # Notes: - Points are in (x, y), while visualization is in (y, x)
         #        - y value needs to be flipped because drawing should be from
@@ -244,18 +243,15 @@ function write_image(points::Vector{Point}, ranges, res, filename;
 
     #println(max_val)
 
-    println("time for logscale")
-    @time pixels = [to_logscale(pixels[i,j], max_val; gamma=gamma)
+    pixels = [to_logscale(pixels[i,j], max_val; gamma=gamma)
               for i = 1:res[1], j = 1:res[2]]
 
-    println("time for blurring")
-    @time blurred_pixels = fractal_conv(pixels; threshold = max_val)
+    blurred_pixels = fractal_conv(pixels; threshold = max_val)
 
     img = [to_rgb(blurred_pixels[i,j])
            for i = 1:res[1], j = 1:res[2]]
 
-    println("normal time")
-    @time normalize!(img)
+    normalize!(img)
 
     save(filename, img)
 
