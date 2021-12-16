@@ -97,14 +97,10 @@ function find_filter_width(signal, threshold, index::CartesianIndex;
     filter_width = 1
 
     while (num_points < threshold) && (filter_width < max_width)
-        filter_width += 1
+        filter_width += 2
 
         num_points = pixel_sum(signal, filter_width, index)
 
-    end
-
-    if filter_width != 15
-        print(filter_width, " ")
     end
 
     return filter_width
@@ -163,6 +159,7 @@ end
 
 #TODO: figure out what how to make a variable sized filter
 #      We need to read in the point data to figure out filter size
+#TODO: I believe this is actually a correlation, not convolution ^^
 function fractal_conv(signal::Array{Pixel,2}; threshold = 1)
 
     n = size(signal)
@@ -227,8 +224,9 @@ function write_image(points::Vector{Point}, ranges, res, filename;
 
     max_val = 0
 
+    println("time for binning")
     # bin the pixels
-    for i = point_offset:length(points)
+    @time for i = point_offset:length(points)
 
         # Notes: - Points are in (x, y), while visualization is in (y, x)
         #        - y value needs to be flipped because drawing should be from
@@ -246,15 +244,18 @@ function write_image(points::Vector{Point}, ranges, res, filename;
 
     #println(max_val)
 
-    pixels = [to_logscale(pixels[i,j], max_val; gamma=gamma)
+    println("time for logscale")
+    @time pixels = [to_logscale(pixels[i,j], max_val; gamma=gamma)
               for i = 1:res[1], j = 1:res[2]]
 
-    blurred_pixels = fractal_conv(pixels; threshold = max_val/10)
+    println("time for blurring")
+    @time blurred_pixels = fractal_conv(pixels; threshold = max_val)
 
     img = [to_rgb(blurred_pixels[i,j])
            for i = 1:res[1], j = 1:res[2]]
 
-    normalize!(img)
+    println("normal time")
+    @time normalize!(img)
 
     save(filename, img)
 
