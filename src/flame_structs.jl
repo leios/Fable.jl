@@ -1,3 +1,9 @@
+struct Hutchinson
+    f_set::Vector{Any}
+    clr_set::Vector{RGB}
+    prob_set::Vector{Float64}
+end
+
 struct Point
     x::Float64
     y::Float64

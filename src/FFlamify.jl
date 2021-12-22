@@ -3,6 +3,7 @@ module FFlamify
 using Images
 
 include("flame_structs.jl")
+include("hutchinson.jl")
 
 include("transformations.jl")
 include("flames.jl")
