@@ -40,7 +40,7 @@ function flame(H::Hutchinson, n::Int, ranges, res;
         if i > 1
             chosen = choose_fid(H)
             f = H.f_set[chosen]
-            println(chosen)
+            #println(chosen)
 
             if do_affine
                 points[i] = affine(affine_set[chosen], points[i])
@@ -60,7 +60,7 @@ function flame(H::Hutchinson, n::Int, ranges, res;
         points[i] = Point(points[i].x, points[i].y, transformed_color)
     end
 
-    write_image(points, ranges, res, filename, gamma = gamma)
+    @time write_image(points, ranges, res, filename, gamma = gamma)
 
 end
 
