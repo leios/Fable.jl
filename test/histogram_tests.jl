@@ -1,15 +1,19 @@
 # Function to use as a baseline for CPU metrics
-function create_histogram(input)
-    histogram_output = zeros(Int, maximum(input))
+function create_histogram(input;
+                          bounds = [0, ceil(Int, maximum(input))],
+                          bin_width = 1)
+    histogram_output = zeros(Int, ceil(Int, maximum(input)))
     for i = 1:length(input)
-        histogram_output[input[i]] += 1
+        bin = ceil(Int, (input[i] - bounds[1]) / bin_width) *
+              bin_width + bounds[1]
+        histogram_output[bin] += 1
     end
     return histogram_output
 end
 
 @testset "histogram tests" begin
 
-    rand_input = [rand(1:128) for i = 1:1000]
+    rand_input = [rand()*128 for i = 1:1000]
     linear_input = [i for i = 1:1024]
     all_2 = [2 for i = 1:512]
 
