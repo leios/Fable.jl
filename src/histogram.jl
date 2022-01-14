@@ -1,10 +1,22 @@
+function find_bin(histogram_output, input, tid, dims, bounds, bin_widths)
+
+    bin = ceil(Int, input[tid, 1] - bounds[1, 1] / bin_widths[1])
+    slab = 1
+
+    for i = 2:dims
+        slab *= size(histogram_output)[i-1]
+        bin += Int(ceil((input[tid, i]-1) - bounds[i, 1] / bin_widths[1])*slab)
+    end
+
+    return bin
+
+end
+
 # This a 1D histogram kernel where the histogramming happens on shmem
 @kernel function histogram_kernel!(histogram_output, input,
-                                   bounds, bin_width)
+                                   bounds, bin_widths, dims)
     tid = @index(Global, Linear)
     lid = @index(Local, Linear)
-
-    @uniform element_type = eltype(input)
 
     @uniform warpsize = Int(32)
 
@@ -25,10 +37,12 @@
         @inbounds shared_histogram[lid] = 0
         @synchronize()
 
-        bin = input[tid]
-        if element_type <: AbstractFloat
-            bin = Int(ceil((input[tid] - bounds[1]) / bin_width) *
-                  bin_width + bounds[1])
+        bin = Int(ceil((input[tid, 1] - bounds[1, 1]) / bin_widths[1]) *
+              bin_widths[1] + bounds[1, 1])
+
+        for i = 2:dims
+            bin = Int(ceil((input[tid, i] - bounds[i, 1]) / bin_widths[i]) *
+                  bin_widths[i] + bounds[i, 1])
         end
 
         max_element = min_element + gs
@@ -53,17 +67,20 @@
 
 end
 
-function histogram!(histogram_output, input;
-                    bounds = [0,length(histogram_output)],
-                    bin_width = 1,
+
+function histogram!(histogram_output, input; dims = ndims(histogram_output),
+                    bounds = zeros(dims,2),
+                    bin_widths = [1 for i = 1:dims],
                     numcores = 4, numthreads = 256)
 
-    AT = typeof(input)
+    AT = Array
     if isa(input, Array)
         kernel! = histogram_kernel!(CPU(), numcores)
     else
         kernel! = histogram_kernel!(CUDADevice(), numthreads)
+        AT = CuArray
     end
 
-    kernel!(histogram_output, input, AT(bounds), bin_width, ndrange=size(input))
+    kernel!(histogram_output, input, AT(bounds), AT(bin_widths), dims,
+            ndrange=size(input))
 end
