@@ -7,27 +7,25 @@ function find_dims(a)
 end
 
 # Function to use as a baseline for CPU metrics
-function create_histogram(input; dims = find_dims(input),
+function create_histogram!(histogram_output, input;
+                          dims = find_dims(input),
                           bounds = zeros(dims, 2),
-                          bin_width = ones(dims))
+                          bin_widths = ones(dims))
     maxes = ceil.(Int, maximum(input; dims = 1))
     h_dims = Tuple(Int(x) for x in maxes)
-    histogram_output = zeros(Int, h_dims)
-
-    for i = 1:length(input)
-        bin = ceil(Int, (input[i,1] - bounds[1,1]) / bin_width[1])
-        for j = 2:dims
-            bin = ceil(Int, (input[i,j] - bounds[j,1]) / bin_width[j]) +
-                  size(histogram_output)[j]*(bin-1)
-        end
-        println(bin)
+ 
+    for i = 1:size(input)[1]
+        bin = FFlamify.find_bin(histogram_output,
+                                input, i, dims,
+                                bounds, bin_widths)
         histogram_output[bin] += 1
     end
-    return histogram_output
+
 end
 
 @testset "find bin test" begin
 
+    # Integer test
     # defining a to be 1's everywhere
     a = zeros(100,2)
     for i = 1:10
@@ -41,13 +39,8 @@ end
 
     histogram_output = zeros(10,10)
 
-    for i = 1:10
-        for j = 1:10
-            index = j + (i-1)*10
-            bin = FFlamify.find_bin(histogram_output, a, index, dims, bounds, bin_widths)
-            histogram_output[bin] += 1
-        end
-    end
+    create_histogram!(histogram_output, a;
+                      dims = dims, bounds = bounds, bin_widths = bin_widths)
 
     flag = true
 
@@ -58,6 +51,26 @@ end
     end
     
     @test flag
+
+    # Floating point test
+    # Subtracting 0.5 from A so it rounds up to the correct bins
+    a[:] .-= 0.5
+
+    histogram_output[:] .= 0
+
+    create_histogram!(histogram_output, a;
+                      dims = dims, bounds = bounds, bin_widths = bin_widths)
+
+    flag = true
+
+    for i = 1:100
+        if histogram_output[i] != 1
+            flag = false
+        end
+    end
+    
+    @test flag
+
 
 end
 
