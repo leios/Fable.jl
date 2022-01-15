@@ -11,8 +11,6 @@ function create_histogram!(histogram_output, input;
                           dims = find_dims(input),
                           bounds = zeros(dims, 2),
                           bin_widths = ones(dims))
-    maxes = ceil.(Int, maximum(input; dims = 1))
-    h_dims = Tuple(Int(x) for x in maxes)
  
     for i = 1:size(input)[1]
         bin = FFlamify.find_bin(histogram_output,
@@ -42,15 +40,7 @@ end
     create_histogram!(histogram_output, a;
                       dims = dims, bounds = bounds, bin_widths = bin_widths)
 
-    flag = true
-
-    for i = 1:100
-        if histogram_output[i] != 1
-            flag = false
-        end
-    end
-    
-    @test flag
+    @test histogram_output == ones(10,10)
 
     # Floating point test
     # Subtracting 0.5 from A so it rounds up to the correct bins
@@ -61,71 +51,96 @@ end
     create_histogram!(histogram_output, a;
                       dims = dims, bounds = bounds, bin_widths = bin_widths)
 
-    flag = true
-
-    for i = 1:100
-        if histogram_output[i] != 1
-            flag = false
-        end
-    end
-    
-    @test flag
-
+    @test histogram_output == ones(10,10)
 
 end
 
-#=
 @testset "histogram kernel tests" begin
 
-    rand_input = rand(128)*128
-    rand_input_3d = rand(128, 3)*128
+    rand_input = rand(Float32, 128)*128
     linear_input = [i for i = 1:1024]
-    #linear_input_2d = a = [i+(j-1)*10 for i = 1:10, j=1:10]
+    linear_input_2d = zeros(100,2)
+    for i = 1:10
+        linear_input_2d[(i-1)*10+1:i*10,1] .= i
+        linear_input_2d[(i-1)*10+1:i*10,2] = 1:10
+    end
     all_2 = [2 for i = 1:512]
+    rand_input_2d = rand(Float32, 128, 2)*128
+    rand_input_3d = rand(Float32, 128, 3)*128
 
-    histogram_rand_baseline = create_histogram(rand_input)
-    histogram_rand_baseline_3d = create_histogram(rand_input_3d)
-    histogram_linear_baseline = create_histogram(linear_input)
-    histogram_2_baseline = create_histogram(all_2)
+    histogram_rand_baseline = zeros(Int, 128)
+    histogram_linear_baseline = zeros(Int, 1024)
+    histogram_linear_2d_baseline = zeros(Int, 10, 10)
+    histogram_2_baseline = zeros(Int, 2)
+    histogram_rand_baseline_2d = zeros(Int, 128, 128)
+    histogram_rand_baseline_3d = zeros(Int, 128, 128, 128)
+
+    create_histogram!(histogram_rand_baseline, rand_input)
+    create_histogram!(histogram_linear_baseline, linear_input)
+    create_histogram!(histogram_linear_2d_baseline, linear_input_2d)
+    create_histogram!(histogram_2_baseline, all_2)
+    create_histogram!(histogram_rand_baseline_2d, rand_input_2d)
+    create_histogram!(histogram_rand_baseline_3d, rand_input_3d)
 
     CPU_rand_histogram = zeros(Int, 128)
-    CPU_rand_histogram_3d = zeros(Int, 128, 128, 128)
     CPU_linear_histogram = zeros(Int, 1024)
+    CPU_linear_2d_histogram = zeros(Int, 10, 10)
     CPU_2_histogram = zeros(Int, 2)
+    CPU_rand_histogram_2d = zeros(Int, 128, 128)
+    CPU_rand_histogram_3d = zeros(Int, 128, 128, 128)
 
     wait(FFlamify.histogram!(CPU_rand_histogram, rand_input))
-    wait(FFlamify.histogram!(CPU_rand_histogram_3d, rand_input_3d))
     wait(FFlamify.histogram!(CPU_linear_histogram, linear_input))
+    wait(FFlamify.histogram!(CPU_linear_2d_histogram, linear_input_2d))
     wait(FFlamify.histogram!(CPU_2_histogram, all_2))
+    wait(FFlamify.histogram!(CPU_rand_histogram_2d, rand_input_2d))
+    wait(FFlamify.histogram!(CPU_rand_histogram_3d, rand_input_3d))
 
     @test isapprox(CPU_rand_histogram, histogram_rand_baseline)
-    @test isapprox(CPU_rand_histogram_3d, histogram_rand_baseline_3d)
     @test isapprox(CPU_linear_histogram, histogram_linear_baseline)
+    @test isapprox(CPU_linear_2d_histogram, histogram_linear_2d_baseline)
     @test isapprox(CPU_2_histogram, histogram_2_baseline)
+    @test isapprox(CPU_rand_histogram_2d, histogram_rand_baseline_2d)
+    @test isapprox(CPU_rand_histogram_3d, histogram_rand_baseline_3d)
 
     if has_cuda_gpu()
         CUDA.allowscalar(false)
 
         GPU_rand_input = CuArray(rand_input)
-        GPU_rand_input_3d = CuArray(rand_input_3d)
         GPU_linear_input = CuArray(linear_input)
+        GPU_linear_2d_input = CuArray(linear_input_2d)
         GPU_2_input = CuArray(all_2)
+        GPU_rand_input_2d = CuArray(rand_input_2d)
+        GPU_rand_input_3d = CuArray(rand_input_3d)
 
         GPU_rand_histogram = CuArray(zeros(Int, 128))
-        GPU_rand_histogram_3d = CuArray(zeros(Int, 128, 128, 128))
         GPU_linear_histogram = CuArray(zeros(Int, 1024))
+        GPU_linear_2d_histogram = CuArray(zeros(Int, 10, 10))
         GPU_2_histogram = CuArray(zeros(Int, 2))
+        GPU_rand_histogram_2d = CuArray(zeros(Int, 128, 128))
+        GPU_rand_histogram_3d = CuArray(zeros(Int, 128, 128, 128))
 
         wait(FFlamify.histogram!(GPU_rand_histogram, GPU_rand_input))
-        wait(FFlamify.histogram!(GPU_rand_histogram_3d, GPU_rand_input_3d))
         wait(FFlamify.histogram!(GPU_linear_histogram, GPU_linear_input))
+        wait(FFlamify.histogram!(GPU_linear_2d_histogram, GPU_linear_2d_input))
         wait(FFlamify.histogram!(GPU_2_histogram, GPU_2_input))
+        wait(FFlamify.histogram!(GPU_rand_histogram_2d, GPU_rand_input_2d))
+        wait(FFlamify.histogram!(GPU_rand_histogram_3d, GPU_rand_input_3d))
+
+        println(sum(Array(GPU_rand_histogram_2d)))
+        println(sum(CPU_rand_histogram_2d))
+        println(sum(histogram_rand_baseline_2d))
+        println(sum(Array(GPU_rand_histogram_3d)))
+        println(sum(CPU_rand_histogram_3d))
+        println(sum(histogram_rand_baseline_3d))
 
         @test isapprox(Array(GPU_rand_histogram), histogram_rand_baseline)
-        @test isapprox(Array(GPU_rand_histogram_3d), histogram_rand_baseline_3d)
         @test isapprox(Array(GPU_linear_histogram), histogram_linear_baseline)
+        @test isapprox(Array(GPU_linear_2d_histogram),
+                       histogram_linear_2d_baseline)
         @test isapprox(Array(GPU_2_histogram), histogram_2_baseline)
+        @test isapprox(Array(GPU_rand_histogram_2d), histogram_rand_baseline_2d)
+        @test isapprox(Array(GPU_rand_histogram_3d), histogram_rand_baseline_3d)
     end
 
 end
-=#

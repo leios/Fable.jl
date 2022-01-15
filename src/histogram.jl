@@ -1,4 +1,5 @@
-function find_bin(histogram_output, input, tid, dims, bounds, bin_widths)
+@inline function find_bin(histogram_output, input,
+                          tid, dims, bounds, bin_widths)
 
     bin = ceil(Int, input[tid, 1] - bounds[1, 1] / bin_widths[1])
     slab = 1
@@ -37,13 +38,7 @@ end
         @inbounds shared_histogram[lid] = 0
         @synchronize()
 
-        bin = Int(ceil((input[tid, 1] - bounds[1, 1]) / bin_widths[1]) *
-              bin_widths[1] + bounds[1, 1])
-
-        for i = 2:dims
-            bin = Int(ceil((input[tid, i] - bounds[i, 1]) / bin_widths[i]) *
-                  bin_widths[i] + bounds[i, 1])
-        end
+        bin = find_bin(histogram_output, input, tid, dims, bounds, bin_widths)
 
         max_element = min_element + gs
         if max_element > N
@@ -82,5 +77,5 @@ function histogram!(histogram_output, input; dims = ndims(histogram_output),
     end
 
     kernel!(histogram_output, input, AT(bounds), AT(bin_widths), dims,
-            ndrange=size(input))
+            ndrange=size(input)[1])
 end
