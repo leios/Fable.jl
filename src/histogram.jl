@@ -38,10 +38,11 @@ end
         @inbounds shared_histogram[lid] = 0
         @synchronize()
 
+        # I want to turn this in to an @uniform, but that fails on CPU (#274)
         bin = find_bin(histogram_output, input, tid, dims, bounds, bin_widths)
 
         max_element = min_element + gs
-        if max_element > N
+        if max_element > N + 1
             max_element = N+1
         end
 
