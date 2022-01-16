@@ -13,6 +13,17 @@
 
 end
 
+# This is a naive histogramming method that is preferred for CPU calculations
+@kernel function naive_histogram_kernel!(histogram_output, input,
+                                         bounds, bin_widths, dims)
+    tid = @index(Global, Linear)
+
+    # I want to turn this in to an @uniform, but that fails on CPU (#274)
+    bin = find_bin(histogram_output, input, tid, dims, bounds, bin_widths)
+    atomic_add!(pointer(histogram_output, bin), Int(1))
+
+end
+
 # This a 1D histogram kernel where the histogramming happens on shmem
 @kernel function histogram_kernel!(histogram_output, input,
                                    bounds, bin_widths, dims)
@@ -71,9 +82,9 @@ function histogram!(histogram_output, input; dims = ndims(histogram_output),
 
     AT = Array
     if isa(input, Array)
-        kernel! = histogram_kernel!(CPU(), numcores)
+        kernel! = naive_histogram_kernel!(CPU(), numcores)
     else
-        kernel! = histogram_kernel!(CUDADevice(), numthreads)
+        kernel! = naive_histogram_kernel!(CUDADevice(), numthreads)
         AT = CuArray
     end
 

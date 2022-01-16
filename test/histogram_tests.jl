@@ -134,8 +134,8 @@ end
         wait(FFlamify.histogram!(GPU_linear_2d_histogram, GPU_linear_2d_input))
         wait(FFlamify.histogram!(GPU_offset_2d_histogram, GPU_offset_2d_input))
         wait(FFlamify.histogram!(GPU_2_histogram, GPU_2_input))
-        wait(FFlamify.histogram!(GPU_rand_histogram_2d, GPU_rand_input_2d))
-        wait(FFlamify.histogram!(GPU_rand_histogram_3d, GPU_rand_input_3d))
+        wait(FFlamify.histogram!(GPU_rand_histogram_2d, GPU_rand_input_2d;numthreads = 32))
+        wait(FFlamify.histogram!(GPU_rand_histogram_3d, GPU_rand_input_3d;numthreads = 64))
 
 #=
         return (Array(GPU_linear_2d_histogram), histogram_linear_2d_baseline)
