@@ -18,7 +18,6 @@ end
                                          bounds, bin_widths, dims)
     tid = @index(Global, Linear)
 
-    # I want to turn this in to an @uniform, but that fails on CPU (#274)
     bin = find_bin(histogram_output, input, tid, dims, bounds, bin_widths)
     atomic_add!(pointer(histogram_output, bin), Int(1))
 
@@ -37,6 +36,9 @@ end
 
     shared_histogram = @localmem Int (gs)
 
+    # This line fails on the CPU due to it's dependence on tid (277)
+    bin = find_bin(histogram_output, input, tid, dims, bounds, bin_widths)
+
     # This will go through all input elements and assign them to a location in
     # shmem. Note that if there is not enough shem, we create different shmem
     # blocks to write to. For example, if shmem is of size 256, but it's
@@ -49,25 +51,42 @@ end
         @inbounds shared_histogram[lid] = 0
         @synchronize()
 
-        # I want to turn this in to an @uniform, but that fails on CPU (#274)
-        bin = find_bin(histogram_output, input, tid, dims, bounds, bin_widths)
-
         max_element = min_element + gs
         if max_element > N + 1
             max_element = N+1
         end
 
+
         # Defining bin on shared memory and writing to it if possible
         if bin >= min_element && bin < max_element
-            bin -= min_element-1
-            atomic_add!(pointer(shared_histogram, bin), Int(1))
+            sbin = bin - min_element + 1
+            if bin >= 9985 && bin <= 10001
+                @print("yo",'\t', lid, '\t', sbin, '\n')
+            end
+            atomic_add!(pointer(shared_histogram, sbin), Int(1))
         end
 
         @synchronize()
 
         if ((lid+min_element-1) <= N)
-            atomic_add!(pointer(histogram_output, lid+min_element-1),
-                        shared_histogram[lid])
+#=
+            if bin >= 9985 && bin <= 10001 && (bin >= min_element && bin < max_element)
+                @print(shared_histogram[lid],'\n')
+            end
+=#
+            if min_element == 9985 && shared_histogram[lid] != 0
+                @print(shared_histogram[lid], '\t', lid,
+                       '\t', lid+min_element-1,'\n')
+            end
+            if (shared_histogram[lid] != 0)
+                val = shared_histogram[lid]
+                atomic_add!(pointer(histogram_output, lid+min_element-1),
+                            val)
+                if min_element == 9985
+                    @print(shared_histogram[lid], '\t', lid,
+                           '\t', lid+min_element-1,'\n')
+                end
+            end
         end
 
     end
@@ -84,7 +103,7 @@ function histogram!(histogram_output, input; dims = ndims(histogram_output),
     if isa(input, Array)
         kernel! = naive_histogram_kernel!(CPU(), numcores)
     else
-        kernel! = naive_histogram_kernel!(CUDADevice(), numthreads)
+        kernel! = histogram_kernel!(CUDADevice(), numthreads)
         AT = CuArray
     end
 
