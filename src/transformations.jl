@@ -4,11 +4,13 @@
 function apply_symmetry(;rotational_number = 0, flip_axis = 0)
 end
 
-function affine_rand()
-    return [rand() rand() 0; rand() rand() 0; 0 0 1]
+function affine_rand(;dims = 2, scale = 1)
+    rand_set = zeros(dims+1, dims+1)
+    rand_set[end, end] = 1
+    rand_set[1:dims,1:dims] = rand(dims, dims)*scale .- scale*0.5
+    return rand_set
 end
 
-function affine(A, p::Point)
-    loc = A*[p.x, p.y, 1]
-    return Point(loc[1], loc[2], p.c)
+function affine!(p::Array{Float64}, A)
+    p = (A*[p..., 1])[1:end-1]
 end
