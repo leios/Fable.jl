@@ -137,8 +137,8 @@ end
         CUDA.@time wait(FFlamify.histogram!(GPU_rand_histogram_2d, GPU_rand_input_2d))
         CUDA.@time wait(FFlamify.histogram!(GPU_rand_histogram_3d, GPU_rand_input_3d))
 
-        return (Array(GPU_linear_2d_histogram), histogram_linear_2d_baseline)
 #=
+        return (Array(GPU_linear_2d_histogram), histogram_linear_2d_baseline)
         #return (Array(GPU_rand_histogram_2d), histogram_rand_baseline_2d)
         println(sum(Array(GPU_rand_histogram_2d)))
         println(sum(CPU_rand_histogram_2d))
@@ -148,15 +148,15 @@ end
         println(sum(histogram_rand_baseline_3d))
 =#
 
-        #@test isapprox(Array(GPU_rand_histogram), histogram_rand_baseline)
-        #@test isapprox(Array(GPU_linear_histogram), histogram_linear_baseline)
+        @test isapprox(Array(GPU_rand_histogram), histogram_rand_baseline)
+        @test isapprox(Array(GPU_linear_histogram), histogram_linear_baseline)
         @test isapprox(Array(GPU_linear_2d_histogram),
                        histogram_linear_2d_baseline)
-        #@test isapprox(Array(GPU_offset_2d_histogram),
-                       #histogram_offset_2d_baseline)
-        #@test isapprox(Array(GPU_2_histogram), histogram_2_baseline)
-        #@test isapprox(Array(GPU_rand_histogram_2d), histogram_rand_baseline_2d)
-        #@test isapprox(Array(GPU_rand_histogram_3d), histogram_rand_baseline_3d)
+        @test isapprox(Array(GPU_offset_2d_histogram),
+                       histogram_offset_2d_baseline)
+        @test isapprox(Array(GPU_2_histogram), histogram_2_baseline)
+        @test isapprox(Array(GPU_rand_histogram_2d), histogram_rand_baseline_2d)
+        @test isapprox(Array(GPU_rand_histogram_3d), histogram_rand_baseline_3d)
     end
 
 end
