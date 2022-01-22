@@ -15,8 +15,8 @@ include("hutchinson.jl")
 
 # Operations
 include("transformations.jl")
-include("flames.jl")
-include("fractal_flame.jl")
-include("image_tools.jl")
+#include("flames.jl")
+#include("fractal_flame.jl")
+#include("image_tools.jl")
 
 end # module

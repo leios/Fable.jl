@@ -1,16 +1,15 @@
-struct Hutchinson
+mutable struct Hutchinson
     f_set::Vector{Any}
-    clr_set::Vector{RGB}
+    color_set::Array{Float64, 4}
     prob_set::Vector{Float64}
 end
 
-struct Point
-    x::Float64
-    y::Float64
-    c::Union{RGB, RGBA}
+mutable struct Points
+    positions::Array{Float64}
+    colors::Array{Float64, 4}
 end
 
-Point(x, y) = Point(x, y, RGB(0))
+Points(n;dims=2) = Points(zeros(n,dims),zeros(n,4))
 
 mutable struct Pixel
     val::Float64

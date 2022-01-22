@@ -1,7 +1,21 @@
+@kernel function affine_kernel!(input, A)
+end
+
+function affine!(input, A; numcores = 4, numthreads = 256)
+     if (size(input)[2] + 1 != size(A)[1])
+         error("Augmented matrix should be 1 dimension higher than points!")
+     end
+
+     if isa(input, Array)
+         kernel! = affine_kernel(CPU(), numcores)
+     else
+         kernel! = affine_kernel(CUDADevice(), numthreads)
+     end
+
+     kernel!(input, A, ndrange=size(input)[1])
+end
 #TODO: 1. Super sampling must be implemented by increasing the number of bins 
 #         before sampling down. Gamma correction at that stage
-#      2. Density estimation with dynamic kernel related to the number of points
-#         in the bins. Lower points = broader kernel (more blurring)
 #TODO: Parallelize with large number of initial points
 #TODO: Allow Affine transforms to have a time variable and allow for 
 #      supersampling across time with different timesteps all falling into the
@@ -13,8 +27,8 @@
 #   [FFlamify.swirl, FFlamify.heart, FFlamify.polar, FFlamify.horseshoe],
 #   [RGB(0,1,0), RGB(0,0,1), RGB(1,0,1), RGB(1,0,0)],
 #   [0.25, 0.25, 0.25, 0.25])
-function flame(H::Hutchinson, n::Int, ranges, res;
-               filename="check.png", gamma = 2.2, do_affine = false)
+function fractal_flame(H::Hutchinson, n::Int, ranges, res;
+                       filename="check.png", gamma = 2.2, do_affine = false)
     points = [Point(0, 0) for i = 1:n]
 
     # initializing the first point

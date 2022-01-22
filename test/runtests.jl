@@ -6,3 +6,4 @@ using KernelAbstractions
 using FFlamify
 
 include("histogram_tests.jl")
+include("affine_tests.jl")
