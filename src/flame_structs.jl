@@ -8,7 +8,7 @@ mutable struct Points
     positions::Union{Array{Float64}, CuArray{Float64}}
 end
 
-Points(n::Int;dims=2) = Points(zeros(n,dims))
+Points(n::Int;AT=Array,dims=2) = Points(AT(zeros(n,dims)))
 
 mutable struct Pixels
     values::Union{Vector{Int}, CuArray{Int}}
@@ -16,5 +16,8 @@ mutable struct Pixels
     greens::Union{Array{Float64}, CuArray{Float64}}
     blues::Union{Array{Float64}, CuArray{Float64}}
 end
+
+Pixels(s; AT=Array) = Pixels(AT(zeros(s)), AT(zeros(s)),
+                             AT(zeros(s)), AT(zeros(s)))
 
 Pixel(x) = Pixel(x, RGB(0))
