@@ -1,54 +1,48 @@
-#=
-function linear(p::Point)
+function identity(p::T) where T <: Union{Array{Float64}, CuArray{Float64}}
     return p
 end
 
-function sinusoidal(p::Point)
-    return Point(sin(p.x), sin(p.y))
+function sinusoidal(p::T) where T <: Union{Array{Float64}, CuArray{Float64}}
+    return sin.(p)
 end
 
-function polar(p::Point)
-    r = sqrt(p.x*p.x + p.y*p.y)
+function polar(p::T) where T <: Union{Array{Float64}, CuArray{Float64}}
+    r = sqrt(sum(p[1]*p[1] + p[2]*p[2]))
     theta = atan(p.x, p.y)
 
     return Point(theta/pi,r-1)
 end
 
-function horseshoe(p::Point)
-    r = sqrt(p.x*p.x + p.y*p.y)
+function horseshoe(p::T) where T <: Union{Array{Float64}, CuArray{Float64}}
+    r = sqrt(p[1]*p[1] + p[2]*p[2])
     if r < 0.001
         r = 0.001
     end
 
-    return Point((p.x-p.y)*(p.x+p.y)/r, 2*p.x*p.y/r)
+    return Point((p[1]-p[2])*(p[1]+p[2])/r, 2*p[1]*p[2]/r)
 end
 
-function heart(p::Point)
-    r = sqrt(p.x*p.x + p.y*p.y)
-    theta = atan(p.x, p.y)
+function heart(p::T) where T <: Union{Array{Float64}, CuArray{Float64}}
+    r = sqrt(p[1]*p[1] + p[2]*p[2])
+    theta = atan(p[1], p[2])
     return Point(r*sin(theta*r),
                  -r*cos(theta*r))
 end
 
-function rotate(p::Point; theta = 0.5)
-    return Point(p.x*sin(theta) - p.y*cos(theta),
-                 p.x*cos(theta) + p.y*sin(theta))
+function rotate(p::T;
+                theta = 0.5) where T <: Union{Array{Float64}, CuArray{Float64}}
+
+    return Point(p[1]*sin(theta) - p[2]*cos(theta),
+                 p[1]*cos(theta) + p[2]*sin(theta))
 end
 
-function swirl(p::Point)
-    r = sqrt(p.x*p.x + p.y*p.y)
-    return Point(p.x*sin(r*r) - p.y*cos(r*r),
-                 p.x*cos(r*r) + p.y*sin(r*r))
+function swirl(p::T) where T <: Union{Array{Float64}, CuArray{Float64}}
+    r = sqrt(p[1]*p[1] + p[2]*p[2])
+    return Point(p[1]*sin(r*r) - p[2]*cos(r*r),
+                 p[1]*cos(r*r) + p[2]*sin(r*r))
 end
 
-function sierpinski(point::Point, shape_vertices::Vector{Point})
-    shape_vertex = shape_vertices[rand(1:length(shape_vertices))]
-    return Point(0.5*(point.x + shape_vertex.x),
-                 0.5*(point.y + shape_vertex.y))
-end
-=#
-
-function sierpinski(point::Array{Float64}, shape_vertices::Array{Float64})
-    shape_vertex = shape_vertices[rand(1:length(shape_vertices))]
+function sierpinski(point::T, shape_vertex::T) where
+                    T <: Union{Array{Float64}, CuArray{Float64}}
     return 0.5*(point .+ shape_vertex)
 end
