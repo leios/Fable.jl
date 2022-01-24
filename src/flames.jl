@@ -1,3 +1,4 @@
+#=
 function linear(p::Point)
     return p
 end
@@ -45,6 +46,7 @@ function sierpinski(point::Point, shape_vertices::Vector{Point})
     return Point(0.5*(point.x + shape_vertex.x),
                  0.5*(point.y + shape_vertex.y))
 end
+=#
 
 function sierpinski(point::Array{Float64}, shape_vertices::Array{Float64})
     shape_vertex = shape_vertices[rand(1:length(shape_vertices))]

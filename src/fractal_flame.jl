@@ -1,19 +1,3 @@
-@kernel function affine_kernel!(input, A)
-end
-
-function affine!(input, A; numcores = 4, numthreads = 256)
-     if (size(input)[2] + 1 != size(A)[1])
-         error("Augmented matrix should be 1 dimension higher than points!")
-     end
-
-     if isa(input, Array)
-         kernel! = affine_kernel(CPU(), numcores)
-     else
-         kernel! = affine_kernel(CUDADevice(), numthreads)
-     end
-
-     kernel!(input, A, ndrange=size(input)[1])
-end
 #TODO: 1. Super sampling must be implemented by increasing the number of bins 
 #         before sampling down. Gamma correction at that stage
 #TODO: Parallelize with large number of initial points
@@ -27,27 +11,15 @@ end
 #   [FFlamify.swirl, FFlamify.heart, FFlamify.polar, FFlamify.horseshoe],
 #   [RGB(0,1,0), RGB(0,0,1), RGB(1,0,1), RGB(1,0,0)],
 #   [0.25, 0.25, 0.25, 0.25])
-function fractal_flame(H::Hutchinson, n::Int, ranges, res;
-                       filename="check.png", gamma = 2.2, do_affine = false)
-    points = [Point(0, 0) for i = 1:n]
-
-    # initializing the first point
-    #points[1] = Point(0.1, 0.1)
-    points[1] = Point(-0.5*(ranges[1]) + rand()*ranges[1],
-                      -0.5*(ranges[2]) + rand()*ranges[2])
-    
-
-    # TODO: allow for each function in function set to have a different
-    #       probability
-    if do_affine
-        affine_set = [affine_rand(), affine_rand(),
-                      affine_rand(), affine_rand()]
-    end
+function fractal_flame(H::Hutchinson, n::Int, ranges, res; dims=2,
+                       filename="check.png", gamma = 2.2, A_set = [],
+                       numthreads = 256, numcores = 4)
+    pts = Points(n; dims = dims)
 
     final_f = polar
     final_color = RGB(1,0,0)
 
-    if do_affine
+    if length(A_set) > 0
         final_affine = affine_rand()
     end
     for i = 1:n
