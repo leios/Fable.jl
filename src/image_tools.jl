@@ -72,11 +72,11 @@ function write_image(pix::Pixels, filename; gamma = 2.2)
 
     max_val = maximum(pix.values)
     for i = 1:length(img)
-        img[i] = to_logscale(pix.reds[i], pix.greens[i], pix,blues[i],
+        img[i] = to_logscale(pix.reds[i], pix.greens[i], pix.blues[i],
                              pix.values[i], max_val; gamma = gamma)
     end
 
-    save(filname, img)
+    save(filename, img)
 
 end
 

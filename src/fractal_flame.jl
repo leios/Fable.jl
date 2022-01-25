@@ -1,30 +1,41 @@
+function find_fid(prob_set, fnum)
+    rnd = rand()
+    p = 0
+    for i = 1:fnum
+        p += prob_set[i]
+        if rnd < p
+            return i
+        end
+    end
+end
 function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n, gamma,
                   bounds, bin_widths, final_fxs, final_clrs;
                   numcores = 4, numthreads=256, num_ignore = 20)
     AT = Array
-    if isa(input, Array)
+    if isa(ps.positions, Array)
         kernel! = naive_chaos_kernel!(CPU(), numcores)
     else
         AT = CuArray
         kernel! = naive_chaos_kernel!(CUDADevice(), numthreads)
     end
-    kernel!(ps.positions, n, H.f_set, H.clr_set, H.prob_set,
-            final_fxs, pxs.values, pxs.reds, pxs.greens, pxs.blues,
+    kernel!(ps.positions, n, H.f_set, H.color_set, H.prob_set,
+            final_fxs, final_clrs, pxs.values, pxs.reds, pxs.greens, pxs.blues,
             gamma, AT(bounds), AT(bin_widths), num_ignore,
-            ndrange=size(input)[1])
+            ndrange=size(ps.positions)[1])
 end
 
-@kernel function naive_chaos_kernel!(points, n, H_fxs::NTuple, H_clrs, H_probs,
+@kernel function naive_chaos_kernel!(points, n, H_fxs, H_clrs, H_probs,
                                      final_fxs, final_clrs, pixel_values,
                                      pixel_reds, pixel_greens, pixel_blues,
                                      gamma, bounds, bin_widths, num_ignore)
 
     tid = @index(Global,Linear)
-    lid = @index(Global,Linear)
+    lid = @index(Local,Linear)
 
-    dims = size(points)[2]
+    @uniform dims = size(points)[2]
+    @uniform fnum = size(H_clrs)[2]
 
-    FT = eltype(pixel_reds)
+    @uniform FT = eltype(pixel_reds)
 
     @uniform gs = @groupsize()[1]
     shared_tile = @localmem FT (gs,3)
@@ -34,8 +45,9 @@ end
     end
 
     for i = 1:n
-        fid = rand(1:length(H_fxs))
-        shared_tile[lid] = H_fxs[fid](shared_tile[lid])
+        #fid = rand(1:length(H_fxs))
+        fid = find_fid(H_probs, fnum)
+        shared_tile[lid,:] = H_fxs[fid](shared_tile[lid,:])
         if i > num_ignore
             bin = find_bin(pixel_values, points, tid, dims,
                            bounds, bin_widths)
@@ -43,13 +55,13 @@ end
             for i = 1:3
                 atomic_add!(pointer(pixel_reds, bin),
                             FT(H_clrs[fid,1]*H_clrs[fid,4]))
-                atomic_add!(pointer(pixel_greenss, bin),
+                atomic_add!(pointer(pixel_greens, bin),
                             FT(H_clrs[fid,2]*H_clrs[fid,4]))
                 atomic_add!(pointer(pixel_blues, bin),
                             FT(H_clrs[fid,3]*H_clrs[fid,4]))
             end
         end
-        for j = 1:size(final_fxs)[1]
+        for j = 1:size(final_clrs)[1]
             shared_tile[lid] = final_fxs[j](shared_tile[lid])
             if i > num_ignore
                 bin = find_bin(pixel_values, points, tid, dims,
@@ -58,7 +70,7 @@ end
                 for i = 1:3
                     atomic_add!(pointer(pixel_reds, bin),
                                 FT(final_clrs[i,1]*final_clrs[i,4]))
-                    atomic_add!(pointer(pixel_greenss, bin),
+                    atomic_add!(pointer(pixel_greens, bin),
                                 FT(final_clrs[i,2]*final_clrs[i,4]))
                     atomic_add!(pointer(pixel_blues, bin),
                                 FT(final_clrs[i,3]*final_clrs[i,4]))
@@ -81,20 +93,25 @@ end
 #      for all logs
 #TODO: think about directional motion blur
 # Example H:
-# H = FFlamify.Hutchinson(
-#   (FFlamify.swirl, FFlamify.heart, FFlamify.polar, FFlamify.horseshoe),
+# H = Fae.Hutchinson(
+#   (Fae.swirl, Fae.heart, Fae.polar, Fae.horseshoe),
 #   [RGB(0,1,0), RGB(0,0,1), RGB(1,0,1), RGB(1,0,0)],
 #   [0.25, 0.25, 0.25, 0.25])
 function fractal_flame(H::Hutchinson, num_particles::Int, num_iterations::Int,
                        bounds, res; dims=2, filename="check.png", AT = Array,
-                       gamma = 2.2, A_set = [], final_fxs = (), num_ignore = 20,
-                       numthreads = 256, numcores = 4)
+                       gamma = 2.2, A_set = [], final_fxs = (), final_clrs=[],
+                       num_ignore = 20, numthreads = 256, numcores = 4)
     pts = Points(num_particles; dims = dims, AT = AT)
 
     pix = Pixels(res; AT = AT)
 
+    bin_widths = zeros(size(bounds)[1])
+    for i = 1:length(bin_widths)
+        bin_widths[i] = (bounds[i,2]-bounds[i,1])/res[i]
+    end
+
     wait(iterate!(pts, pix, H, num_iterations, gamma,
-                  bounds, bin_widths, final_fxs, final_clrs;
+                  bounds, bin_widths, final_fxs, AT(final_clrs);
                   numcores=numcores, numthreads=numthreads,
                   num_ignore=num_ignore))
 
