@@ -13,7 +13,7 @@ function create_histogram!(histogram_output, input;
                           bin_widths = ones(dims))
  
     for i = 1:size(input)[1]
-        bin = FFlamify.find_bin(histogram_output,
+        bin = Fae.find_bin(histogram_output,
                                 input, i, dims,
                                 bounds, bin_widths)
         histogram_output[bin] += 1
@@ -94,13 +94,13 @@ end
     CPU_rand_histogram_2d = zeros(Int, 128, 128)
     CPU_rand_histogram_3d = zeros(Int, 32, 32, 32)
 
-    @time wait(FFlamify.histogram!(CPU_rand_histogram, rand_input))
-    @time wait(FFlamify.histogram!(CPU_linear_histogram, linear_input))
-    @time wait(FFlamify.histogram!(CPU_linear_2d_histogram, linear_input_2d))
-    @time wait(FFlamify.histogram!(CPU_offset_2d_histogram, linear_input_2d))
-    @time wait(FFlamify.histogram!(CPU_2_histogram, all_2))
-    @time wait(FFlamify.histogram!(CPU_rand_histogram_2d, rand_input_2d))
-    @time wait(FFlamify.histogram!(CPU_rand_histogram_3d, rand_input_3d))
+    @time wait(Fae.histogram!(CPU_rand_histogram, rand_input))
+    @time wait(Fae.histogram!(CPU_linear_histogram, linear_input))
+    @time wait(Fae.histogram!(CPU_linear_2d_histogram, linear_input_2d))
+    @time wait(Fae.histogram!(CPU_offset_2d_histogram, linear_input_2d))
+    @time wait(Fae.histogram!(CPU_2_histogram, all_2))
+    @time wait(Fae.histogram!(CPU_rand_histogram_2d, rand_input_2d))
+    @time wait(Fae.histogram!(CPU_rand_histogram_3d, rand_input_3d))
 
     @test isapprox(CPU_rand_histogram, histogram_rand_baseline)
     @test isapprox(CPU_linear_histogram, histogram_linear_baseline)
@@ -129,13 +129,13 @@ end
         GPU_rand_histogram_2d = CuArray(zeros(Int, 128, 128))
         GPU_rand_histogram_3d = CuArray(zeros(Int, 32, 32, 32))
 
-        CUDA.@time wait(FFlamify.histogram!(GPU_rand_histogram, GPU_rand_input))
-        CUDA.@time wait(FFlamify.histogram!(GPU_linear_histogram, GPU_linear_input))
-        CUDA.@time wait(FFlamify.histogram!(GPU_linear_2d_histogram, GPU_linear_2d_input))
-        CUDA.@time wait(FFlamify.histogram!(GPU_offset_2d_histogram, GPU_offset_2d_input))
-        CUDA.@time wait(FFlamify.histogram!(GPU_2_histogram, GPU_2_input))
-        CUDA.@time wait(FFlamify.histogram!(GPU_rand_histogram_2d, GPU_rand_input_2d))
-        CUDA.@time wait(FFlamify.histogram!(GPU_rand_histogram_3d, GPU_rand_input_3d))
+        CUDA.@time wait(Fae.histogram!(GPU_rand_histogram, GPU_rand_input))
+        CUDA.@time wait(Fae.histogram!(GPU_linear_histogram, GPU_linear_input))
+        CUDA.@time wait(Fae.histogram!(GPU_linear_2d_histogram, GPU_linear_2d_input))
+        CUDA.@time wait(Fae.histogram!(GPU_offset_2d_histogram, GPU_offset_2d_input))
+        CUDA.@time wait(Fae.histogram!(GPU_2_histogram, GPU_2_input))
+        CUDA.@time wait(Fae.histogram!(GPU_rand_histogram_2d, GPU_rand_input_2d))
+        CUDA.@time wait(Fae.histogram!(GPU_rand_histogram_3d, GPU_rand_input_3d))
 
 #=
         return (Array(GPU_linear_2d_histogram), histogram_linear_2d_baseline)

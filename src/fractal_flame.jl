@@ -15,7 +15,7 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n, gamma,
 end
 
 @kernel function naive_chaos_kernel!(points, n, H_fxs::NTuple, H_clrs, H_probs,
-                                     final_fxs, final_clrs, pixel_values
+                                     final_fxs, final_clrs, pixel_values,
                                      pixel_reds, pixel_greens, pixel_blues,
                                      gamma, bounds, bin_widths, num_ignore)
 

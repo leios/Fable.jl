@@ -1,4 +1,4 @@
-module FFlamify
+module Fae
 
 using KernelAbstractions
 using CUDA

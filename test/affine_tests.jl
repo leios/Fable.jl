@@ -22,7 +22,7 @@ end
     affine_test = copy(one_input)
 
     cpu_affine!(affine_baseline_2d, halfs)
-    wait(FFlamify.affine!(affine_test, halfs))
+    wait(Fae.affine!(affine_test, halfs))
 
     @test isapprox(affine_test, affine_baseline_2d)
 
@@ -43,7 +43,7 @@ end
     A_3d[1:3,:] = rand(3,4)*2 .- 1
 
     cpu_affine!(affine_baseline_3d, A_3d)
-    wait(FFlamify.affine!(affine_test, A_3d))
+    wait(Fae.affine!(affine_test, A_3d))
 
     @test isapprox(affine_test, affine_baseline_3d)
 
@@ -56,7 +56,7 @@ end
     A_4d[1:4,:] = rand(4,5)*2 .- 1
 
     cpu_affine!(affine_baseline_4d, A_4d)
-    wait(FFlamify.affine!(affine_test, A_4d))
+    wait(Fae.affine!(affine_test, A_4d))
 
     @test isapprox(affine_test, affine_baseline_4d)
 
@@ -68,7 +68,7 @@ end
 
         GPU_ones = CuArray(ones(100,2))
 
-        wait(FFlamify.affine!(GPU_ones, GPU_halfs))
+        wait(Fae.affine!(GPU_ones, GPU_halfs))
 
         GPU_output = Array(GPU_ones)
         @test GPU_output == affine_baseline_2d
@@ -84,14 +84,14 @@ end
         # 3D tests
         GPU_rand_3d = CuArray(rand_input_3d)
 
-        wait(FFlamify.affine!(GPU_rand_3d, GPU_3d))
+        wait(Fae.affine!(GPU_rand_3d, GPU_3d))
 
         @test isapprox(Array(GPU_rand_3d), affine_baseline_3d)
 
         # 4D
         GPU_rand_4d = CuArray(rand_input_4d)
 
-        wait(FFlamify.affine!(GPU_rand_4d, GPU_4d))
+        wait(Fae.affine!(GPU_rand_4d, GPU_4d))
 
         @test isapprox(Array(GPU_rand_4d), affine_baseline_4d)
 
