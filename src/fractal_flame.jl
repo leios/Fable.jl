@@ -46,8 +46,12 @@ end
 
     for i = 1:n
         #fid = rand(1:length(H_fxs))
-        fid = find_fid(H_probs, fnum)
-        shared_tile[lid,:] = H_fxs[fid](shared_tile[lid,:])
+        #fid = find_fid(H_probs, fnum)
+        fid = 1
+        #shared_tile[lid,:] = H_fxs[fid](shared_tile[lid,:])
+        H_fxs[fid](shared_tile[lid,:])
+        #shared_tile[lid,:] .= 0
+#=
         if i > num_ignore
             bin = find_bin(pixel_values, points, tid, dims,
                            bounds, bin_widths)
@@ -77,6 +81,7 @@ end
                 end
             end
         end
+=#
     end
 
     for i = 1:dims
@@ -99,7 +104,8 @@ end
 #   [0.25, 0.25, 0.25, 0.25])
 function fractal_flame(H::Hutchinson, num_particles::Int, num_iterations::Int,
                        bounds, res; dims=2, filename="check.png", AT = Array,
-                       gamma = 2.2, A_set = [], final_fxs = (), final_clrs=[],
+                       gamma = 2.2, A_set = [],
+                       final_fxs = (Fae.identity), final_clrs=[0,0,0,0],
                        num_ignore = 20, numthreads = 256, numcores = 4)
     pts = Points(num_particles; dims = dims, AT = AT)
 

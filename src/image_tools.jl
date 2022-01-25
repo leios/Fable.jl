@@ -70,6 +70,11 @@ function write_image(pix::Pixels, filename; gamma = 2.2)
 
     img = Array{RGB,2}(undef, size(pix.values))
 
+    if !isa(pix.values, Array)
+        pix = Pixels(Array(pix.values), Array(pix.reds),
+                     Array(pix.greens), Array(pix.blues))
+    end
+
     max_val = maximum(pix.values)
     for i = 1:length(img)
         img[i] = to_logscale(pix.reds[i], pix.greens[i], pix.blues[i],
