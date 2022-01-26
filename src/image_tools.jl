@@ -73,15 +73,6 @@ function to_logscale(r,g,b,val, max_val; gamma = 2.2)
                       final_color.g^(1/gamma),
                       final_color.b^(1/gamma))
 
-    if final_color.r >= 1
-        println(final_color.r)
-    end
-    if final_color.g >= 1
-        println(final_color.g)
-    end
-    if final_color.b >= 1
-        println(final_color.b)
-    end
     return final_color
 end
 
@@ -106,15 +97,15 @@ function write_image(pixels::Pixels, filename; gamma = 2.2)
 
     for i = 1:length(pix.reds)
         if pix.reds[i] > 1
-            println("red: ", pix.reds[i], '\t', i)
+            #println("red: ", pix.reds[i], '\t', i)
             pix.reds[i] = 1
         end
         if pix.greens[i] > 1
-            println("green: ", pix.greens[i], '\t', i)
+            #println("green: ", pix.greens[i], '\t', i)
             pix.greens[i] = 1
         end
         if pix.blues[i] > 1
-            println("blue: ", pix.blues[i], '\t', i)
+            #println("blue: ", pix.blues[i], '\t', i)
             pix.blues[i] = 1
         end
     end
@@ -123,13 +114,13 @@ function write_image(pixels::Pixels, filename; gamma = 2.2)
         img[i] = to_logscale(pix.reds[i], pix.greens[i], pix.blues[i],
                              pix.values[i], max_val; gamma = gamma)
         if img[i].r >= 1
-            println(img[i].r)
+            #println(img[i].r)
         end
         if img[i].g >= 1
-            println(img[i].g)
+            #println(img[i].g)
         end
         if img[i].b >= 1
-            println(img[i].b)
+            #println(img[i].b)
         end
 
     end

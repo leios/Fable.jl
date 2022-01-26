@@ -1,4 +1,15 @@
-function find_fid(prob_set, fnum)
+@inline function on_image(p, bounds, dims)
+    flag = true
+    for i = 1:dims
+        if p[i] < bounds[i,1] || p[i] > bounds[i,2] ||
+           p[i] == NaN || p[i] == Inf
+            flag = false
+        end
+    end
+    return flag
+end
+
+@inline function find_fid(prob_set, fnum)
     rnd = rand()
     p = 0
     for i = 1:fnum
@@ -8,10 +19,12 @@ function find_fid(prob_set, fnum)
         end
     end
 end
+
 function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n, gamma,
-                  bounds, bin_widths, final_fxs, final_clrs;
+                  bounds, bin_widths, final_fx, final_clr;
                   numcores = 4, numthreads=256, num_ignore = 20)
     AT = Array
+    max_range = maximum(bounds)*10
     if isa(ps.positions, Array)
         kernel! = naive_chaos_kernel!(CPU(), numcores)
     else
@@ -19,21 +32,22 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n, gamma,
         kernel! = naive_chaos_kernel!(CUDADevice(), numthreads)
     end
     kernel!(ps.positions, n, H.f_set, H.color_set, H.prob_set,
-            final_fxs, final_clrs, pxs.values, pxs.reds, pxs.greens, pxs.blues,
-            gamma, AT(bounds), AT(bin_widths), num_ignore,
+            final_fx, final_clr, pxs.values, pxs.reds, pxs.greens, pxs.blues,
+            gamma, AT(bounds), AT(bin_widths), num_ignore, max_range,
             ndrange=size(ps.positions)[1])
 end
 
 @kernel function naive_chaos_kernel!(points, n, H_fxs, H_clrs, H_probs,
-                                     final_fxs, final_clrs, pixel_values,
+                                     final_fx, final_clr, pixel_values,
                                      pixel_reds, pixel_greens, pixel_blues,
-                                     gamma, bounds, bin_widths, num_ignore)
+                                     gamma, bounds, bin_widths, num_ignore,
+                                     max_range)
 
     tid = @index(Global,Linear)
     lid = @index(Local,Linear)
 
     @uniform dims = size(points)[2]
-    @uniform fnum = size(H_clrs)[2]
+    @uniform fnum = size(H_clrs)[1]
 
     @uniform FT = eltype(pixel_reds)
 
@@ -46,51 +60,47 @@ end
 
     for i = 1:n
         #fid = rand(1:length(H_fxs))
-        fid = find_fid(H_probs, fnum)
+        #fid = rand(1:3)
         #fid = 1
-        #shared_tile[lid,:] = H_fxs[fid](shared_tile[lid,:])
+        fid = find_fid(H_probs, fnum)
+
+        if sum(abs.(shared_tile[lid,:])) < max_range
         H_fxs[fid](shared_tile, lid)
+
+        if final_fx != Fae.null
+            final_fx(shared_tile, lid)
+        end
         #shared_tile[lid,:] .= 0
-        if i > num_ignore
+        if i > num_ignore && on_image(shared_tile[lid,:], bounds, dims)
             bin = find_bin(pixel_values, shared_tile, lid, dims,
                            bounds, bin_widths)
-            atomic_add!(pointer(pixel_values, bin), Int(1))
-            for i = 1:3
+            if bin > 0 && bin < length(pixel_values)
+                atomic_add!(pointer(pixel_values, bin), Int(1))
                 atomic_add!(pointer(pixel_reds, bin),
                             FT(H_clrs[fid,1]*H_clrs[fid,4]))
                 atomic_add!(pointer(pixel_greens, bin),
                             FT(H_clrs[fid,2]*H_clrs[fid,4]))
                 atomic_add!(pointer(pixel_blues, bin),
                             FT(H_clrs[fid,3]*H_clrs[fid,4]))
-            end
-        end
-#=
-        if !(size(final_clrs)[1] == 1 && final_clrs[4] == 0)
-            for j = 1:size(final_clrs)[1]
-                shared_tile[lid] = final_fxs[j](shared_tile,lid)
-                if i > num_ignore
-                    bin = find_bin(pixel_values, shared_tile, lid, dims,
-                                   bounds, bin_widths)
+                if final_fx != Fae.null
                     atomic_add!(pointer(pixel_values, bin), Int(1))
-                    for i = 1:3
-                        atomic_add!(pointer(pixel_reds, bin),
-                                    FT(final_clrs[i,1]*final_clrs[i,4]))
-                        atomic_add!(pointer(pixel_greens, bin),
-                                    FT(final_clrs[i,2]*final_clrs[i,4]))
-                        atomic_add!(pointer(pixel_blues, bin),
-                                    FT(final_clrs[i,3]*final_clrs[i,4]))
-                    end
+                    atomic_add!(pointer(pixel_reds, bin),
+                                FT(final_clr[1]*final_clr[4]))
+                    atomic_add!(pointer(pixel_greens, bin),
+                                FT(final_clr[2]*final_clr[4]))
+                    atomic_add!(pointer(pixel_blues, bin),
+                                FT(final_clr[3]*final_clr[4]))
                 end
             end
-        else
-            @print("yo\n")
         end
-=#
+        end
     end
 
+#=
     for i = 1:dims
         points[tid,i] = shared_tile[lid,i]
     end
+=#
 end
 
 #TODO: 1. Super sampling must be implemented by increasing the number of bins 
@@ -109,11 +119,11 @@ end
 function fractal_flame(H::Hutchinson, num_particles::Int, num_iterations::Int,
                        bounds, res; dims=2, filename="check.png", AT = Array,
                        gamma = 2.2, A_set = [],
-                       final_fxs = (), final_clrs=[0,0,0,0],
+                       final_fx = Fae.null, final_clr=(0,0,0,0),
                        num_ignore = 20, numthreads = 256, numcores = 4)
 
     #println(typeof(final_fxs))
-    pts = Points(num_particles; dims = dims, AT = AT)
+    pts = Points(num_particles; dims = dims, AT = AT, bounds = bounds)
 
     pix = Pixels(res; AT = AT)
 
@@ -122,8 +132,11 @@ function fractal_flame(H::Hutchinson, num_particles::Int, num_iterations::Int,
         bin_widths[i] = (bounds[i,2]-bounds[i,1])/res[i]
     end
 
+    println(bin_widths)
+    println(maximum(pts.positions), '\t', minimum(pts.positions))
+
     wait(iterate!(pts, pix, H, num_iterations, gamma,
-                  bounds, bin_widths, final_fxs, AT(final_clrs);
+                  bounds, bin_widths, final_fx, final_clr;
                   numcores=numcores, numthreads=numthreads,
                   num_ignore=num_ignore))
 

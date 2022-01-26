@@ -1,4 +1,4 @@
-function identity(p::T, tid) where T
+function null(p::T, tid) where T
 end
 
 function sinusoidal(p::T, tid) where T

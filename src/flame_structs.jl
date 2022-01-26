@@ -9,11 +9,17 @@ end
 function Hutchinson(f_set, color_set::Array{A}, prob_set;
                     AT = Array, FT = Float64) where A <: Array
 
-    temp_colors = zeros(FT,4,length(color_set))
+    fnum = length(color_set)
+    temp_colors = zeros(FT,fnum,4)
+
+    if !isapprox(sum(prob_set),1)
+        println("probability set != 1, resetting to be equal probability...")
+        prob_set = Tuple(1/fnum for i = 1:fnum)
+    end
 
     for i = 1:4
         for j = 1:length(color_set)
-            temp_colors[i,j] = color_set[j][i]
+            temp_colors[j,i] = color_set[j][i]
         end
     end
 
@@ -26,7 +32,14 @@ mutable struct Points
 
 end
 
-Points(n::Int;AT=Array,dims=2) = Points(AT(zeros(n,dims)))
+function Points(n::Int;AT=Array,dims=2,bounds=[-i/i + (j-1)*2 for i=1:3, j=1:2])
+    rnd_array = AT(rand(n,dims))
+    for i = 1:dims
+        rnd_array[:,i] .= rnd_array[:,i] .* (bounds[i,2] - bounds[i,1]) .+
+                          bounds[i,1]
+    end
+    Points(rnd_array)
+end
 
 # Note: the rgb components needed to be spread into separate arrays for indexing
 #       reasons in the KA kernels
