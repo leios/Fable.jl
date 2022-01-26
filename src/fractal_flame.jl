@@ -46,14 +46,13 @@ end
 
     for i = 1:n
         #fid = rand(1:length(H_fxs))
-        #fid = find_fid(H_probs, fnum)
-        fid = 1
+        fid = find_fid(H_probs, fnum)
+        #fid = 1
         #shared_tile[lid,:] = H_fxs[fid](shared_tile[lid,:])
-        H_fxs[fid](shared_tile[lid,:])
+        H_fxs[fid](shared_tile, lid)
         #shared_tile[lid,:] .= 0
-#=
         if i > num_ignore
-            bin = find_bin(pixel_values, points, tid, dims,
+            bin = find_bin(pixel_values, shared_tile, lid, dims,
                            bounds, bin_widths)
             atomic_add!(pointer(pixel_values, bin), Int(1))
             for i = 1:3
@@ -65,21 +64,26 @@ end
                             FT(H_clrs[fid,3]*H_clrs[fid,4]))
             end
         end
-        for j = 1:size(final_clrs)[1]
-            shared_tile[lid] = final_fxs[j](shared_tile[lid])
-            if i > num_ignore
-                bin = find_bin(pixel_values, points, tid, dims,
-                               bounds, bin_widths)
-                atomic_add!(pointer(pixel_values, bin), Int(1))
-                for i = 1:3
-                    atomic_add!(pointer(pixel_reds, bin),
-                                FT(final_clrs[i,1]*final_clrs[i,4]))
-                    atomic_add!(pointer(pixel_greens, bin),
-                                FT(final_clrs[i,2]*final_clrs[i,4]))
-                    atomic_add!(pointer(pixel_blues, bin),
-                                FT(final_clrs[i,3]*final_clrs[i,4]))
+#=
+        if !(size(final_clrs)[1] == 1 && final_clrs[4] == 0)
+            for j = 1:size(final_clrs)[1]
+                shared_tile[lid] = final_fxs[j](shared_tile,lid)
+                if i > num_ignore
+                    bin = find_bin(pixel_values, shared_tile, lid, dims,
+                                   bounds, bin_widths)
+                    atomic_add!(pointer(pixel_values, bin), Int(1))
+                    for i = 1:3
+                        atomic_add!(pointer(pixel_reds, bin),
+                                    FT(final_clrs[i,1]*final_clrs[i,4]))
+                        atomic_add!(pointer(pixel_greens, bin),
+                                    FT(final_clrs[i,2]*final_clrs[i,4]))
+                        atomic_add!(pointer(pixel_blues, bin),
+                                    FT(final_clrs[i,3]*final_clrs[i,4]))
+                    end
                 end
             end
+        else
+            @print("yo\n")
         end
 =#
     end
@@ -105,8 +109,10 @@ end
 function fractal_flame(H::Hutchinson, num_particles::Int, num_iterations::Int,
                        bounds, res; dims=2, filename="check.png", AT = Array,
                        gamma = 2.2, A_set = [],
-                       final_fxs = (Fae.identity), final_clrs=[0,0,0,0],
+                       final_fxs = (), final_clrs=[0,0,0,0],
                        num_ignore = 20, numthreads = 256, numcores = 4)
+
+    #println(typeof(final_fxs))
     pts = Points(num_particles; dims = dims, AT = AT)
 
     pix = Pixels(res; AT = AT)
@@ -120,6 +126,8 @@ function fractal_flame(H::Hutchinson, num_particles::Int, num_iterations::Int,
                   bounds, bin_widths, final_fxs, AT(final_clrs);
                   numcores=numcores, numthreads=numthreads,
                   num_ignore=num_ignore))
+
+    println(sum(pix.values))
 
     @time write_image(pix, filename; gamma = gamma)
 

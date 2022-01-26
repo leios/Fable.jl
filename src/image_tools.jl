@@ -57,30 +57,84 @@ function to_logscale(r,g,b,val, max_val; gamma = 2.2)
     end
     final_color = RGB(r*alpha, g*alpha, b*alpha)
 
+    if final_color.r > 1
+        println(final_color.r)
+    end
+    if final_color.g > 1
+        println(final_color.g)
+    end
+    if final_color.b > 1
+        println(final_color.b)
+    end
+
     # Applying Gamma
     # TODO: We should be able to broadcast a power operation to clean this up
     final_color = RGB(final_color.r^(1/gamma),
                       final_color.g^(1/gamma),
                       final_color.b^(1/gamma))
 
+    if final_color.r >= 1
+        println(final_color.r)
+    end
+    if final_color.g >= 1
+        println(final_color.g)
+    end
+    if final_color.b >= 1
+        println(final_color.b)
+    end
     return final_color
 end
 
-function write_image(pix::Pixels, filename; gamma = 2.2)
+function write_image(pixels::Pixels, filename; gamma = 2.2)
 
-    img = Array{RGB,2}(undef, size(pix.values))
+    img = Array{RGB,2}(undef, size(pixels.values))
 
-    if !isa(pix.values, Array)
-        pix = Pixels(Array(pix.values), Array(pix.reds),
-                     Array(pix.greens), Array(pix.blues))
+    pix = pixels
+
+    if !isa(pixels.values, Array)
+        pix = Pixels(Array(pixels.values), Array(pixels.reds),
+                     Array(pixels.greens), Array(pixels.blues))
     end
 
     max_val = maximum(pix.values)
+    println("max is: ", maximum(pixels.reds))
+    println(sum(pix.values))
+
+    pix.reds[:] .= pix.reds[:] ./ max.(1, pix.values[:])
+    pix.greens[:] .= pix.greens[:] ./ max.(1, pix.values[:])
+    pix.blues[:] .= pix.blues[:] ./ max.(1, pix.values[:])
+
+    for i = 1:length(pix.reds)
+        if pix.reds[i] > 1
+            println("red: ", pix.reds[i], '\t', i)
+            pix.reds[i] = 1
+        end
+        if pix.greens[i] > 1
+            println("green: ", pix.greens[i], '\t', i)
+            pix.greens[i] = 1
+        end
+        if pix.blues[i] > 1
+            println("blue: ", pix.blues[i], '\t', i)
+            pix.blues[i] = 1
+        end
+    end
+
     for i = 1:length(img)
         img[i] = to_logscale(pix.reds[i], pix.greens[i], pix.blues[i],
                              pix.values[i], max_val; gamma = gamma)
+        if img[i].r >= 1
+            println(img[i].r)
+        end
+        if img[i].g >= 1
+            println(img[i].g)
+        end
+        if img[i].b >= 1
+            println(img[i].b)
+        end
+
     end
 
+    #save(filename, map(clamp01nan, img))
     save(filename, img)
 
 end

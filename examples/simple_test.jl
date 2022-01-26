@@ -5,7 +5,7 @@ if has_cuda_gpu()
     CUDA.allowscalar(false)
 end
 
-AT = CuArray
+AT = Array
 
 f_set = (Fae.swirl, Fae.heart, Fae.polar, Fae.horseshoe)
 color_set = [[0,1,0,1], [0,0,1,1], [1,0,1,1], [1,0,0,1]]
