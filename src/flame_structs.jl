@@ -32,8 +32,9 @@ mutable struct Points
 
 end
 
-function Points(n::Int;AT=Array,dims=2,bounds=[-i/i + (j-1)*2 for i=1:3, j=1:2])
-    rnd_array = AT(rand(n,dims))
+function Points(n::Int;AT=Array,dims=2,FT=Float64,
+                bounds=[-i/i + (j-1)*2 for i=1:3, j=1:2])
+    rnd_array = AT(rand(FT,n,dims))
     for i = 1:dims
         rnd_array[:,i] .= rnd_array[:,i] .* (bounds[i,2] - bounds[i,1]) .+
                           bounds[i,1]
@@ -50,7 +51,7 @@ mutable struct Pixels
     blues::Union{Array{T}, CuArray{T}} where T <: AbstractFloat
 end
 
-Pixels(s; AT=Array) = Pixels(AT(zeros(Int,s)), AT(zeros(s)),
-                             AT(zeros(s)), AT(zeros(s)))
+Pixels(s; AT=Array, FT = Float64) = Pixels(AT(zeros(Int,s)), AT(zeros(FT, s)),
+                                           AT(zeros(FT, s)), AT(zeros(FT, s)))
 
 Pixel(x) = Pixel(x, RGB(0))

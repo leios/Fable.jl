@@ -1,10 +1,14 @@
-@inline function on_image(p, bounds, dims)
+# couldn't figure out how to get an n-dim version working for GPU
+@inline function on_image(p_x, p_y, bounds, dims)
     flag = true
-    for i = 1:dims
-        if p[i] < bounds[i,1] || p[i] > bounds[i,2] ||
-           p[i] == NaN || p[i] == Inf
-            flag = false
-        end
+    if p_x < bounds[1,1] || p_x > bounds[1,2] ||
+       p_x == NaN || p_x == Inf
+        flag = false
+    end
+
+    if p_y < bounds[2,1] || p_y > bounds[2,2] ||
+       p_y == NaN || p_y == Inf
+        flag = false
     end
     return flag
 end
@@ -59,48 +63,53 @@ end
     end
 
     for i = 1:n
+        #rnd = CUDA.rand()
         #fid = rand(1:length(H_fxs))
         #fid = rand(1:3)
         #fid = 1
         fid = find_fid(H_probs, fnum)
 
-        if sum(abs.(shared_tile[lid,:])) < max_range
-        H_fxs[fid](shared_tile, lid)
-
-        if final_fx != Fae.null
-            final_fx(shared_tile, lid)
+        sketchy_sum = 0
+        for i = 1:dims
+            sketchy_sum += abs(shared_tile[lid,i])
         end
-        #shared_tile[lid,:] .= 0
-        if i > num_ignore && on_image(shared_tile[lid,:], bounds, dims)
-            bin = find_bin(pixel_values, shared_tile, lid, dims,
-                           bounds, bin_widths)
-            if bin > 0 && bin < length(pixel_values)
-                atomic_add!(pointer(pixel_values, bin), Int(1))
-                atomic_add!(pointer(pixel_reds, bin),
-                            FT(H_clrs[fid,1]*H_clrs[fid,4]))
-                atomic_add!(pointer(pixel_greens, bin),
-                            FT(H_clrs[fid,2]*H_clrs[fid,4]))
-                atomic_add!(pointer(pixel_blues, bin),
-                            FT(H_clrs[fid,3]*H_clrs[fid,4]))
-                if final_fx != Fae.null
+        if sketchy_sum < max_range
+            H_fxs[fid](shared_tile, lid)
+
+            if final_fx != Fae.null
+                final_fx(shared_tile, lid)
+            end
+
+            on_img_flag = on_image(shared_tile[lid,1], shared_tile[lid,2],
+                                   bounds, dims)
+            if i > num_ignore && on_img_flag
+                bin = find_bin(pixel_values, shared_tile, lid, dims,
+                               bounds, bin_widths)
+                if bin > 0 && bin < length(pixel_values)
                     atomic_add!(pointer(pixel_values, bin), Int(1))
                     atomic_add!(pointer(pixel_reds, bin),
-                                FT(final_clr[1]*final_clr[4]))
+                                FT(H_clrs[fid,1]*H_clrs[fid,4]))
                     atomic_add!(pointer(pixel_greens, bin),
-                                FT(final_clr[2]*final_clr[4]))
+                                FT(H_clrs[fid,2]*H_clrs[fid,4]))
                     atomic_add!(pointer(pixel_blues, bin),
-                                FT(final_clr[3]*final_clr[4]))
+                                FT(H_clrs[fid,3]*H_clrs[fid,4]))
+                    if final_fx != Fae.null
+                        atomic_add!(pointer(pixel_values, bin), Int(1))
+                        atomic_add!(pointer(pixel_reds, bin),
+                                    FT(final_clr[1]*final_clr[4]))
+                        atomic_add!(pointer(pixel_greens, bin),
+                                    FT(final_clr[2]*final_clr[4]))
+                        atomic_add!(pointer(pixel_blues, bin),
+                                    FT(final_clr[3]*final_clr[4]))
+                    end
                 end
             end
         end
-        end
     end
 
-#=
     for i = 1:dims
         points[tid,i] = shared_tile[lid,i]
     end
-=#
 end
 
 #TODO: 1. Super sampling must be implemented by increasing the number of bins 
@@ -118,14 +127,14 @@ end
 #   [0.25, 0.25, 0.25, 0.25])
 function fractal_flame(H::Hutchinson, num_particles::Int, num_iterations::Int,
                        bounds, res; dims=2, filename="check.png", AT = Array,
-                       gamma = 2.2, A_set = [],
+                       FT = Float64, gamma = 2.2, A_set = [], 
                        final_fx = Fae.null, final_clr=(0,0,0,0),
                        num_ignore = 20, numthreads = 256, numcores = 4)
 
     #println(typeof(final_fxs))
-    pts = Points(num_particles; dims = dims, AT = AT, bounds = bounds)
+    pts = Points(num_particles; FT = FT, dims = dims, AT = AT, bounds = bounds)
 
-    pix = Pixels(res; AT = AT)
+    pix = Pixels(res; AT = AT, FT = FT)
 
     bin_widths = zeros(size(bounds)[1])
     for i = 1:length(bin_widths)
