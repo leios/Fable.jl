@@ -14,6 +14,7 @@ include("flame_structs.jl")
 include("hutchinson.jl")
 
 # Operations
+include("simple_rng.jl")
 include("transformations.jl")
 include("flames.jl")
 include("fractal_flame.jl")
