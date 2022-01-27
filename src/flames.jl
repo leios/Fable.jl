@@ -5,9 +5,9 @@ function sinusoidal(p::T, tid) where T
     sin.(p[tid, :])
 end
 
-function polar(p::T, tid) where T
+function polar(p::T, tid; theta = 0) where T
     r = sqrt(sum(p[tid,1]*p[tid,1] + p[tid,2]*p[tid,2]))
-    theta = atan(p[tid,1], p[tid,2])
+    theta = atan(p[tid,1], p[tid,2]) + theta
 
     p[tid,2] = theta/pi
     p[tid,2] = r-1

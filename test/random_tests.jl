@@ -18,26 +18,27 @@ end
 
 @testset "affine transformation tests" begin
 
-    #A = zeros(1024,1024)
-    A = zeros(10,10)
+    a = zeros(1024,1024)
+    #a = zeros(10,10)
 
-    threshold = 0.001
+    threshold = 0.00001
 
-    wait(random_test!(A))
+    wait(random_test!(a))
 
-    println(A)
+    a ./= typemax(UInt)
 
-    avg = sum(A)/length(A)
+    avg = sum(a)/length(a)
 
     @test abs(avg-0.5) < threshold
 
     if has_cuda_gpu()
 
-        d_A = CuArray(zeros(1024, 1024))
+        d_a = CuArray(zeros(1024, 1024))
 
-        wait(random_test!(d_A))
+        wait(random_test!(d_a))
+        d_a ./= typemax(UInt)
 
-        avg = sum(d_A)/length(d_A)
+        avg = sum(d_a)/length(d_a)
 
         @test abs(avg-0.5) < threshold
     end

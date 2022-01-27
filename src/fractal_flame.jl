@@ -13,15 +13,19 @@
     return flag
 end
 
-@inline function find_fid(prob_set, fnum)
-    rnd = rand()
-    p = 0
+@inline function find_fid(prob_set, fnum, seed)
+    rnd = seed/typemax(UInt)
+    p = 0.0
+
     for i = 1:fnum
         p += prob_set[i]
-        if rnd < p
+        if rnd <= p
             return i
         end
     end
+
+    return 0
+
 end
 
 function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n, gamma,
@@ -59,22 +63,27 @@ end
     shared_tile = @localmem FT (gs,3)
 
     for i = 1:dims
-        shared_tile[lid,i] = points[tid,i]
+        @inbounds shared_tile[lid,i] = points[tid,i]
     end
+
+    seed = quick_seed(tid)
 
     for i = 1:n
         #rnd = CUDA.rand()
         #fid = rand(1:length(H_fxs))
         #fid = rand(1:3)
-        #fid = 1
-        fid = find_fid(H_probs, fnum)
+        #fid = 4
+        seed = simple_rand(seed)
+        fid = find_fid(H_probs, fnum, seed)
+        #@print(fnum, '\t', fid, '\n')
+        #fid = tid%fnum
 
         sketchy_sum = 0
         for i = 1:dims
-            sketchy_sum += abs(shared_tile[lid,i])
+            @inbounds sketchy_sum += abs(shared_tile[lid,i])
         end
         if sketchy_sum < max_range
-            H_fxs[fid](shared_tile, lid)
+            @inbounds H_fxs[fid](shared_tile, lid)
 
             if final_fx != Fae.null
                 final_fx(shared_tile, lid)
@@ -108,7 +117,7 @@ end
     end
 
     for i = 1:dims
-        points[tid,i] = shared_tile[lid,i]
+        @inbounds points[tid,i] = shared_tile[lid,i]
     end
 end
 
