@@ -55,7 +55,7 @@ end
     lid = @index(Local,Linear)
 
     @uniform dims = size(points)[2]
-    @uniform fnum = size(H_clrs)[1]
+    @uniform fnum = length(H_fxs.args)-1
 
     @uniform FT = eltype(pixel_reds)
 
@@ -83,7 +83,7 @@ end
             @inbounds sketchy_sum += abs(shared_tile[lid,i])
         end
         if sketchy_sum < max_range
-            @inbounds H_fxs[fid](shared_tile, lid)
+            @inbounds eval(H_fxs.args[fid])(shared_tile, lid)
 
             if final_fx != Fae.null
                 final_fx(shared_tile, lid)

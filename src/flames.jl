@@ -26,9 +26,9 @@ function horseshoe(p::T, tid) where T
     p[tid,2] = v2
 end
 
-function heart(p::T, tid) where T
+function heart(p::T, tid; theta = 0) where T
     r = sqrt(p[tid,1]*p[tid,1] + p[tid,2]*p[tid,2])
-    theta = atan(p[tid,1], p[tid,2])
+    theta = atan(p[tid,1], p[tid,2]) + theta
 
     p[tid,1] = r*sin(theta*r)
     p[tid,2] = -r*cos(theta*r)

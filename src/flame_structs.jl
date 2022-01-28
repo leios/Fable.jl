@@ -1,6 +1,9 @@
 # Struct for function composition
+function U(args...)
+end
+
 mutable struct Hutchinson
-    f_set::Union{NTuple, Tuple}
+    f_set::Expr
     color_set::Union{Array{T,2}, CuArray{T,2}} where T <: AbstractFloat
     prob_set::Union{NTuple, Tuple}
 end
@@ -9,7 +12,7 @@ end
 function Hutchinson(f_set, color_set::Array{A}, prob_set;
                     AT = Array, FT = Float64) where A <: Array
 
-    fnum = length(color_set)
+    fnum = length(f_set.args)-1
     temp_colors = zeros(FT,fnum,4)
 
     if !isapprox(sum(prob_set),1)
