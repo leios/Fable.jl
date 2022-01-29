@@ -1,3 +1,10 @@
+@generated function stable_call(fns, idx, val, tid)
+    N = length(fns.parameters)
+    quote
+        Base.Cartesian.@nif $N d->d==idx d-> return fns[d](val, tid)
+    end
+end
+
 # couldn't figure out how to get an n-dim version working for GPU
 @inline function on_image(p_x, p_y, bounds, dims)
     flag = true
@@ -69,21 +76,15 @@ end
     seed = quick_seed(tid)
 
     for i = 1:n
-        #rnd = CUDA.rand()
-        #fid = rand(1:length(H_fxs))
-        #fid = rand(1:3)
-        #fid = 4
         seed = simple_rand(seed)
         fid = find_fid(H_probs, fnum, seed)
-        #@print(fnum, '\t', fid, '\n')
-        #fid = tid%fnum
 
         sketchy_sum = 0
         for i = 1:dims
             @inbounds sketchy_sum += abs(shared_tile[lid,i])
         end
         if sketchy_sum < max_range
-            @inbounds H_fxs[fid](shared_tile, lid)
+            @inbounds stable_call(H_fxs, fid, shared_tile, lid)
 
             if final_fx != Fae.null
                 final_fx(shared_tile, lid)
