@@ -147,13 +147,15 @@ function fractal_flame(H::Hutchinson, num_particles::Int, num_iterations::Int,
     println(bin_widths)
     println(maximum(pts.positions), '\t', minimum(pts.positions))
 
-    wait(iterate!(pts, pix, H, num_iterations, gamma,
+    println("kernel time:")
+    CUDA.@time wait(iterate!(pts, pix, H, num_iterations, gamma,
                   bounds, bin_widths, final_fx, final_clr;
                   numcores=numcores, numthreads=numthreads,
                   num_ignore=num_ignore))
 
     println(sum(pix.values))
 
+    println("image time:")
     @time write_image(pix, filename; gamma = gamma)
 
 end
