@@ -39,13 +39,13 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n, gamma,
         AT = CuArray
         kernel! = naive_chaos_kernel!(CUDADevice(), numthreads)
     end
-    kernel!(ps.positions, n, H.f_set, H.color_set, H.prob_set,
+    kernel!(ps.positions, n, H.op, H.color_set, H.prob_set,
             final_fx, final_clr, pxs.values, pxs.reds, pxs.greens, pxs.blues,
             gamma, AT(bounds), AT(bin_widths), num_ignore, max_range,
             ndrange=size(ps.positions)[1])
 end
 
-@kernel function naive_chaos_kernel!(points, n, H_fxs, H_clrs, H_probs,
+@kernel function naive_chaos_kernel!(points, n, H, H_clrs, H_probs,
                                      final_fx, final_clr, pixel_values,
                                      pixel_reds, pixel_greens, pixel_blues,
                                      gamma, bounds, bin_widths, num_ignore,
@@ -55,7 +55,7 @@ end
     lid = @index(Local,Linear)
 
     @uniform dims = size(points)[2]
-    @uniform fnum = length(H_fxs.args)-1
+    @uniform fnum = size(H_clrs)[1]
 
     @uniform FT = eltype(pixel_reds)
 
@@ -69,21 +69,15 @@ end
     seed = quick_seed(tid)
 
     for i = 1:n
-        #rnd = CUDA.rand()
-        #fid = rand(1:length(H_fxs))
-        #fid = rand(1:3)
-        #fid = 4
         seed = simple_rand(seed)
         fid = find_fid(H_probs, fnum, seed)
-        #@print(fnum, '\t', fid, '\n')
-        #fid = tid%fnum
 
         sketchy_sum = 0
         for i = 1:dims
             @inbounds sketchy_sum += abs(shared_tile[lid,i])
         end
         if sketchy_sum < max_range
-            @inbounds eval(H_fxs.args[fid])(shared_tile, lid)
+            @inbounds H(shared_tile, lid, fid)
 
             if final_fx != Fae.null
                 final_fx(shared_tile, lid)
