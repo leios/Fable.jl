@@ -1,32 +1,65 @@
-function choose_fid(H)
-    rnd = rand()
-
-    offset = 0
-
-    for i = 1:length(H.prob_set)
-        if rnd > offset && rnd <= offset + H.prob_set[i]
-            return i
-        end
-        offset += H.prob_set[i]
-    end 
-
-    println("Could not find appropriate function, ",
-            "falling back to random selection...")
-
-    return rand(1:length(H.f_set))
+# Struct for function composition
+function U(args...)
 end
 
-# This is a simple function to create a set of hutchinson operators
-# Note that we are trying to convert all exprs into functions
-# This allows us to write some more flexible macro syntax
-#     (Impero @pde_equation, for example)
-# Partially incomplete...
-function create_hutchinson(f_set, prob_set, clr_set)
-    for i = 1:length(f_set)
-        if typeof(f_set[i]) == Expr
-            f_set[i] = eval(f_set[i])
+# use repr to go from expr -> string
+# think about recursive unions (barnsley + sierpinski)
+function generate_H(expr)
+    fnum = length(expr.args)-1
+    fx_string = "function H(p, tid, fid)\n"
+    for i = 1:fnum
+        temp_string = ""
+        if i == 1
+            f_str = repr(expr.args[i+1])[2:end]
+            #println(f_str)
+            temp_string = "if fid == "*string(i)*" "*f_str*"(p, tid)\n"
+        else
+            f_str = repr(expr.args[i+1])[2:end]
+            #println(f_str)
+            temp_string = "elseif fid == "*string(i)*" "*f_str*"(p, tid)\n"
+        end
+        fx_string *= temp_string
+    end
+
+    fx_string *= "else error('Function not found!')\n"
+    fx_string *= "end\n"
+    fx_string *= "end"
+
+    H = Meta.parse(replace(fx_string, "'" => '"'))
+
+    #println(fx_string)
+    #println(H)
+
+    return eval(H)
+
+end
+
+mutable struct Hutchinson
+    op::Function
+    color_set::Union{Array{T,2}, CuArray{T,2}} where T <: AbstractFloat
+    prob_set::Union{NTuple, Tuple}
+end
+
+# This is a constructor for when people read in an array of arrays for colors
+function Hutchinson(f_set, color_set::Array{A}, prob_set;
+                    AT = Array, FT = Float64) where A <: Array
+
+    fnum = length(f_set.args)-1
+    temp_colors = zeros(FT,fnum,4)
+
+    if !isapprox(sum(prob_set),1)
+        println("probability set != 1, resetting to be equal probability...")
+        prob_set = Tuple(1/fnum for i = 1:fnum)
+    end
+
+    for i = 1:4
+        for j = 1:length(color_set)
+            temp_colors[j,i] = color_set[j][i]
         end
     end
 
-    return Hutchinson(f_set, prob_set, clr_set)
+    H = generate_H(f_set)
+
+    return Hutchinson(H, AT(temp_colors), prob_set)
 end
+
