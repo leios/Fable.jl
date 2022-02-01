@@ -1,13 +1,13 @@
 # couldn't figure out how to get an n-dim version working for GPU
-@inline function on_image(p_x, p_y, bounds, dims)
+@inline function on_image(p_y, p_x, bounds, dims)
     flag = true
-    if p_x < bounds[1,1] || p_x > bounds[1,2] ||
-       p_x == NaN || p_x == Inf
+    if p_y < bounds[1,1] || p_y > bounds[1,2] ||
+       p_y == NaN || p_y == Inf
         flag = false
     end
 
-    if p_y < bounds[2,1] || p_y > bounds[2,2] ||
-       p_y == NaN || p_y == Inf
+    if p_x < bounds[2,1] || p_x > bounds[2,2] ||
+       p_x == NaN || p_x == Inf
         flag = false
     end
     return flag
