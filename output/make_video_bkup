@@ -1,0 +1,2 @@
+ffmpeg -i ../check%05d.png -vf palettegen palette.png
+ffmpeg -i ../check%05d.png -i palette.png -filter_complex "paletteuse" -c:v libx264 -pix_fmt yuv420p output.mp4

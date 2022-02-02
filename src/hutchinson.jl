@@ -6,17 +6,17 @@ end
 # think about recursive unions (barnsley + sierpinski)
 function generate_H(expr)
     fnum = length(expr.args)-1
-    fx_string = "function H(p, tid, fid)\n"
+    fx_string = "function H(p, tid, t, fid)\n"
     for i = 1:fnum
         temp_string = ""
         if i == 1
             f_str = repr(expr.args[i+1])[2:end]
             #println(f_str)
-            temp_string = "if fid == "*string(i)*" "*f_str*"(p, tid)\n"
+            temp_string = "if fid == "*string(i)*" "*f_str*"(p, tid, t)\n"
         else
             f_str = repr(expr.args[i+1])[2:end]
             #println(f_str)
-            temp_string = "elseif fid == "*string(i)*" "*f_str*"(p, tid)\n"
+            temp_string = "elseif fid == "*string(i)*" "*f_str*"(p, tid, t)\n"
         end
         fx_string *= temp_string
     end

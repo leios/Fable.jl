@@ -29,7 +29,7 @@ end
 end
 
 function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n, gamma,
-                  bounds, bin_widths, final_fx, final_clr;
+                  bounds, bin_widths, final_fx, final_clr, t;
                   numcores = 4, numthreads=256, num_ignore = 20)
     AT = Array
     max_range = maximum(bounds)*10
@@ -41,7 +41,7 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n, gamma,
     end
     kernel!(ps.positions, n, H.op, H.color_set, H.prob_set,
             final_fx, final_clr, pxs.values, pxs.reds, pxs.greens, pxs.blues,
-            gamma, AT(bounds), AT(bin_widths), num_ignore, max_range,
+            gamma, AT(bounds), AT(bin_widths), num_ignore, max_range, t,
             ndrange=size(ps.positions)[1])
 end
 
@@ -49,7 +49,7 @@ end
                                      final_fx, final_clr, pixel_values,
                                      pixel_reds, pixel_greens, pixel_blues,
                                      gamma, bounds, bin_widths, num_ignore,
-                                     max_range)
+                                     max_range, t)
 
     tid = @index(Global,Linear)
     lid = @index(Local,Linear)
@@ -77,10 +77,10 @@ end
             @inbounds sketchy_sum += abs(shared_tile[lid,i])
         end
         if sketchy_sum < max_range
-            @inbounds H(shared_tile, lid, fid)
+            @inbounds H(shared_tile, lid, t, fid)
 
             if final_fx != Fae.null
-                final_fx(shared_tile, lid)
+                final_fx(shared_tile, lid, t)
             end
 
             on_img_flag = on_image(shared_tile[lid,1], shared_tile[lid,2],
@@ -131,7 +131,7 @@ end
 function fractal_flame(H::Hutchinson, num_particles::Int, num_iterations::Int,
                        bounds, res; dims=2, filename="check.png", AT = Array,
                        FT = Float64, gamma = 2.2, A_set = [], 
-                       final_fx = Fae.null, final_clr=(0,0,0,0),
+                       final_fx = Fae.null, final_clr=(0,0,0,0), time = 1,
                        num_ignore = 20, numthreads = 256, numcores = 4)
 
     #println(typeof(final_fxs))
@@ -149,7 +149,7 @@ function fractal_flame(H::Hutchinson, num_particles::Int, num_iterations::Int,
 
     println("kernel time:")
     CUDA.@time wait(iterate!(pts, pix, H, num_iterations, gamma,
-                  bounds, bin_widths, final_fx, final_clr;
+                  bounds, bin_widths, final_fx, final_clr, time;
                   numcores=numcores, numthreads=numthreads,
                   num_ignore=num_ignore))
 
