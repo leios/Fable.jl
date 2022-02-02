@@ -27,8 +27,11 @@ res = (1000, 1000)
 #res = (1080, 1920)
 
 pix = Fae.fractal_flame(H, num_particles, num_iterations, bounds, res; AT = AT,
-                  FT = FT, final_clr = final_clr, final_fx = final_fx)
+                        FT = FT, final_clr = final_clr, final_fx = final_fx)
+
+pix2 = Fae.fractal_flame(H, num_particles, num_iterations, bounds, res; AT = AT,
+                         FT = FT)
+
 
 println("image time:")
-@time Fae.write_image(pix, "check.png")
-
+@time Fae.write_image([pix2,pix], "check.png")
