@@ -10,8 +10,8 @@ using Images
 include("histogram.jl")
 
 # Fractal flame structures
-include("flame_structs.jl")
-include("hutchinson.jl")
+include("structs/flame_structs.jl")
+include("structs/hutchinson.jl")
 
 # Operations
 include("simple_rng.jl")

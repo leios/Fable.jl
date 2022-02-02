@@ -28,7 +28,7 @@ end
 
 end
 
-function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n, gamma,
+function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
                   bounds, bin_widths, final_fx, final_clr, t;
                   numcores = 4, numthreads=256, num_ignore = 20)
     AT = Array
@@ -41,14 +41,14 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n, gamma,
     end
     kernel!(ps.positions, n, H.op, H.color_set, H.prob_set,
             final_fx, final_clr, pxs.values, pxs.reds, pxs.greens, pxs.blues,
-            gamma, AT(bounds), AT(bin_widths), num_ignore, max_range, t,
+            AT(bounds), AT(bin_widths), num_ignore, max_range, t,
             ndrange=size(ps.positions)[1])
 end
 
 @kernel function naive_chaos_kernel!(points, n, H, H_clrs, H_probs,
                                      final_fx, final_clr, pixel_values,
                                      pixel_reds, pixel_greens, pixel_blues,
-                                     gamma, bounds, bin_widths, num_ignore,
+                                     bounds, bin_widths, num_ignore,
                                      max_range, t)
 
     tid = @index(Global,Linear)
@@ -129,10 +129,10 @@ end
 #   [RGB(0,1,0), RGB(0,0,1), RGB(1,0,1), RGB(1,0,0)],
 #   [0.25, 0.25, 0.25, 0.25])
 function fractal_flame(H::Hutchinson, num_particles::Int, num_iterations::Int,
-                       bounds, res; dims=2, filename="check.png", AT = Array,
-                       FT = Float64, gamma = 2.2, A_set = [], 
-                       final_fx = Fae.null, final_clr=(0,0,0,0), time = 1,
-                       num_ignore = 20, numthreads = 256, numcores = 4)
+                       bounds, res; dims = 2, AT = Array, FT = Float32,
+                       A_set = [], final_fx = Fae.null, final_clr=(0,0,0,0),
+                       time = 0, num_ignore = 20, numthreads = 256,
+                       numcores = 4)
 
     #println(typeof(final_fxs))
     pts = Points(num_particles; FT = FT, dims = dims, AT = AT, bounds = bounds)
@@ -148,15 +148,14 @@ function fractal_flame(H::Hutchinson, num_particles::Int, num_iterations::Int,
     println(maximum(pts.positions), '\t', minimum(pts.positions))
 
     println("kernel time:")
-    CUDA.@time wait(iterate!(pts, pix, H, num_iterations, gamma,
+    CUDA.@time wait(iterate!(pts, pix, H, num_iterations,
                   bounds, bin_widths, final_fx, final_clr, time;
                   numcores=numcores, numthreads=numthreads,
                   num_ignore=num_ignore))
 
     println(sum(pix.values))
 
-    println("image time:")
-    @time write_image(pix, filename; gamma = gamma)
+    return pix
 
 end
 
