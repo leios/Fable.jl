@@ -1,6 +1,42 @@
 function null(p::T, tid, t) where T
 end
 
+function square_1(p::T, tid, t) where T
+    scale = 0.5
+    theta = 2*pi*t
+    x = scale*cos(theta) - scale*sin(theta)
+    y = scale*sin(theta) + scale*cos(theta)
+    p[tid,1] = 0.5*(p[tid,1] + y)
+    p[tid,2] = 0.5*(p[tid,2] + x)
+end
+
+function square_2(p::T, tid, t) where T
+    scale = 0.5
+    theta = 2*pi*t
+    x = scale*cos(theta) + scale*sin(theta)
+    y = scale*sin(theta) - scale*cos(theta)
+    p[tid,1] = 0.5*(p[tid,1] + y)
+    p[tid,2] = 0.5*(p[tid,2] + x)
+end
+
+function square_3(p::T, tid, t) where T
+    scale = 0.5
+    theta = 2*pi*t
+    x = - scale*cos(theta) + scale*sin(theta)
+    y = - scale*sin(theta) - scale*cos(theta)
+    p[tid,1] = 0.5*(p[tid,1] + y)
+    p[tid,2] = 0.5*(p[tid,2] + x)
+end
+
+function square_4(p::T, tid, t) where T
+    scale = 0.5
+    theta = 2*pi*t
+    x = - scale*cos(theta) - scale*sin(theta)
+    y = - scale*sin(theta) + scale*cos(theta)
+    p[tid,1] = 0.5*(p[tid,1] + y)
+    p[tid,2] = 0.5*(p[tid,2] + x)
+end
+
 function sinusoidal(p::T, tid, t) where T
     p[tid,2] = sin(p[tid, 2])
     p[tid,1] = sin(p[tid, 1])

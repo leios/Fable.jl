@@ -28,7 +28,7 @@ function generate_H(expr)
     H = Meta.parse(replace(fx_string, "'" => '"'))
 
     #println(fx_string)
-    #println(H)
+    println(H)
 
     return eval(H)
 
