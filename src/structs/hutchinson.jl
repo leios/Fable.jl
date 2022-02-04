@@ -33,23 +33,30 @@ function generate_H(expr)
     return eval(H)
 end
 
+function configure_hutchinson(frops::Vector{FractalOperator},
+                              aux_frops::Vector{FractalOperator})
+    return configure_hutchinson(vcat(frops, aux_frops), length(frops))
+end
+
 # TODO:
 # This is a half-step towards where we want to be. I think the union syntax of
 # the previous function is more elegant, but needs some work.
 # Ultimately working towards an @hutchinson macro
-function configure_hutchinson(frops::Vector{FractalOperator})
-    fnum = length(frops)
+function configure_hutchinson(frops::Vector{FractalOperator}, N)
+
     fx_string = "function H(p, tid, t, fid)\n"
-    for i = 1:fnum
+    fx_string *= "x = p[tid, 2] \n y = p[tid, 1] \n t = t \n"
+
+    for i = 1:N
         temp_string = ""
         if i == 1
-            f_str = repr(expr.args[i+1])[2:end]
-            #println(f_str)
-            temp_string = "if fid == "*string(i)*" "*f_str*"(p, tid, t)\n"
+            temp_string = "if fid == "*string(i)*"\n"*
+                          create_frop_header(frops[i], frops)*
+                          string(frops[i].body)*"\n"
         else
-            f_str = repr(expr.args[i+1])[2:end]
-            #println(f_str)
-            temp_string = "elseif fid == "*string(i)*" "*f_str*"(p, tid, t)\n"
+            temp_string = "elseif fid == "*string(i)*"\n"*
+                          create_frop_header(frops[i], frops)*
+                          string(frops[i].body)*"\n"
         end
         fx_string *= temp_string
     end

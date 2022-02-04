@@ -124,12 +124,11 @@ function create_frop_header(frop::FractalOperator,
     end
 
     # Creating string to Meta.parse
-    parse_string = "quote\n"
-    for i = 1:index-1
+    parse_string = ""
+    for i = 4:index-1
         parse_string *= string(arg_list[i]) *" = "* 
                         string(arg_dict[arg_list[i]]) *"\n"
     end
-    parse_string *= "end"
 
     #println(parse_string)
 
