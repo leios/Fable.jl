@@ -3,6 +3,8 @@ module Fae
 using KernelAbstractions
 using CUDA
 using CUDAKernels
+using MacroTools
+using DataStructures
 
 using Images
 
@@ -10,6 +12,7 @@ using Images
 include("histogram.jl")
 
 # Fractal flame structures
+include("structs/fractal_operators.jl")
 include("structs/flame_structs.jl")
 include("structs/hutchinson.jl")
 

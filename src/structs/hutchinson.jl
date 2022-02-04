@@ -31,8 +31,41 @@ function generate_H(expr)
     println(H)
 
     return eval(H)
-
 end
+
+# TODO:
+# This is a half-step towards where we want to be. I think the union syntax of
+# the previous function is more elegant, but needs some work.
+# Ultimately working towards an @hutchinson macro
+function configure_hutchinson(frops::Vector{FractalOperator})
+    fnum = length(frops)
+    fx_string = "function H(p, tid, t, fid)\n"
+    for i = 1:fnum
+        temp_string = ""
+        if i == 1
+            f_str = repr(expr.args[i+1])[2:end]
+            #println(f_str)
+            temp_string = "if fid == "*string(i)*" "*f_str*"(p, tid, t)\n"
+        else
+            f_str = repr(expr.args[i+1])[2:end]
+            #println(f_str)
+            temp_string = "elseif fid == "*string(i)*" "*f_str*"(p, tid, t)\n"
+        end
+        fx_string *= temp_string
+    end
+
+    fx_string *= "else error('Function not found!')\n"
+    fx_string *= "end\n"
+    fx_string *= "end"
+
+    H = Meta.parse(replace(fx_string, "'" => '"'))
+
+    #println(fx_string)
+    println(H)
+
+    return eval(H)
+end
+
 
 mutable struct Hutchinson
     op::Function
