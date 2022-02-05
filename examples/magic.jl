@@ -5,25 +5,30 @@ if has_cuda_gpu()
     CUDA.allowscalar(false)
 end
 
-function check(p, tid, t)
-end
 
 function main()
 
-    AT = Array
+    check = Fae.@frop function check()
+    end
+
+    AT = CuArray
     FT = Float32
 
-    frames = 300
+    frames = 1
 
-    f_set = :(U(Fae.square_1, Fae.square_2, Fae.square_3, Fae.square_4, check))
-    f_set_2 = :(U(Fae.swirl, Fae.heart, Fae.rotate, Fae.horseshoe,check))
-    color_set = [[0,1,0,1], [0,0,1,1], [1,0,1,1], [1,0,0,1], [1,1,1,1]]
-    final_fx = Fae.swirl
+    theta = Fae.@frop theta = 3.14
+
+    f_set = [Fae.square_1, Fae.square_2, Fae.square_3, Fae.square_4, theta]
+    f_set_2 = [Fae.swirl, Fae.heart, Fae.rotate, Fae.horseshoe, theta]
+    color_set = [[0,1,0,1], [0,0,1,1], [1,0,1,1], [1,0,0,1]]
+    final_fx = Fae.configure_frop(Fae.swirl, f_set)
     final_clr = (FT(1.0), FT(0.5), FT(1.0), FT(1.0))
     prob_set = (0.25, 0.25, 0.25, 0.25, 0.0)
 
-    H = Fae.Hutchinson(f_set, color_set, prob_set; AT = AT, FT = FT)
-    H_2 = Fae.Hutchinson(f_set_2, color_set, prob_set; AT = AT, FT = FT)
+    println(typeof(f_set), '\t', typeof(f_set_2))
+
+    H = Fae.Hutchinson(f_set, color_set, prob_set, 4; AT = AT, FT = FT)
+    H_2 = Fae.Hutchinson(f_set_2, color_set, prob_set, 4; AT = AT, FT = FT)
 
     num_particles = 10000
     num_iterations = 10000
@@ -46,8 +51,14 @@ function main()
                                 res; AT = AT, FT = FT,
                                 time = t)
 
+        return pix.values
+
+        println(sum(pix.values), '\t', sum(pix.reds), '\t', sum(pix.blues),
+                '\t', sum(pix.greens), '\n')
+
         Fae.write_image([pix_2, pix], filename)
     end
+
 end
 
 main()

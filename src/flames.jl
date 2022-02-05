@@ -1,103 +1,103 @@
-function null(p::T, tid, t) where T
+function null()
 end
 
-function square_1(p::T, tid, t) where T
+halfway = Fae.@frop function halfway(x, y, p)
+    x = 0.5*(p[1] + x)
+    y = 0.5*(p[1] + y)
+end
+
+square_1 = Fae.@frop function square_1(x, y, t)
     scale = 0.5
     theta = 2*pi*t
-    x = scale*cos(theta) - scale*sin(theta)
-    y = scale*sin(theta) + scale*cos(theta)
-    p[tid,1] = 0.5*(p[tid,1] + y)
-    p[tid,2] = 0.5*(p[tid,2] + x)
+    v1 = scale*cos(theta) - scale*sin(theta)
+    v2 = scale*sin(theta) + scale*cos(theta)
+    x = 0.5*(x+v1)
+    y = 0.5*(y+v2)
 end
 
-function square_2(p::T, tid, t) where T
+square_2 = Fae.@frop function square_2(x, y, t)
     scale = 0.5
     theta = 2*pi*t
-    x = scale*cos(theta) + scale*sin(theta)
-    y = scale*sin(theta) - scale*cos(theta)
-    p[tid,1] = 0.5*(p[tid,1] + y)
-    p[tid,2] = 0.5*(p[tid,2] + x)
+    v1 = scale*cos(theta) + scale*sin(theta)
+    v2 = scale*sin(theta) - scale*cos(theta)
+    x = 0.5*(x+v1)
+    y = 0.5*(y+v2)
 end
 
-function square_3(p::T, tid, t) where T
+square_3 = Fae.@frop function square_3(x, y, t)
     scale = 0.5
     theta = 2*pi*t
-    x = - scale*cos(theta) + scale*sin(theta)
-    y = - scale*sin(theta) - scale*cos(theta)
-    p[tid,1] = 0.5*(p[tid,1] + y)
-    p[tid,2] = 0.5*(p[tid,2] + x)
+    v1 = - scale*cos(theta) + scale*sin(theta)
+    v2 = - scale*sin(theta) - scale*cos(theta)
+    x = 0.5*(x+v1)
+    y = 0.5*(y+v2)
 end
 
-function square_4(p::T, tid, t) where T
+square_4 = Fae.@frop function square_4(x, y, t)
     scale = 0.5
     theta = 2*pi*t
-    x = - scale*cos(theta) - scale*sin(theta)
-    y = - scale*sin(theta) + scale*cos(theta)
-    p[tid,1] = 0.5*(p[tid,1] + y)
-    p[tid,2] = 0.5*(p[tid,2] + x)
+    v1 = - scale*cos(theta) - scale*sin(theta)
+    v2 = - scale*sin(theta) + scale*cos(theta)
+    x = 0.5*(x+v1)
+    y = 0.5*(y+v2)
 end
 
-function sinusoidal(p::T, tid, t) where T
-    p[tid,2] = sin(p[tid, 2])
-    p[tid,1] = sin(p[tid, 1])
+sinusoidal = Fae.@frop function sinusoidal(x, y, t)
+    x = sin(p[tid, 2])
+    y = sin(p[tid, 1])
 end
 
-function polar_play(p::T, tid, t; theta = 2pi) where T
-    r = sqrt(sum(p[tid,2]*p[tid,2] + p[tid,1]*p[tid,1]))
-    theta = atan(p[tid,1], p[tid,2]) + theta*t
+polar_play = Fae.@frop function polar_play(x, y, t, theta)
+    r = sqrt(sum(x*x + y*y))
+    theta = atan(y, x) + theta*t
 
-    p[tid,1] = 1-r
-    p[tid,2] = theta/pi
+    y = 1-r
+    x = theta/pi
 end
 
-function polar(p::T, tid, t; theta = 0) where T
-    r = sqrt(sum(p[tid,2]*p[tid,2] + p[tid,1]*p[tid,1]))
-    theta = atan(p[tid,1], p[tid,2]) + theta
+polar = Fae.@frop function polar(x, y, t, theta)
+    r = sqrt(sum(x*x + y*y))
+    theta = atan(y, x) + theta
 
-    p[tid,1] = r-1
-    p[tid,2] = theta/pi
+    y = r-1
+    x = theta/pi
 end
 
-function horseshoe(p::T, tid, t) where T
-    r = sqrt(p[tid,2]*p[tid,2] + p[tid,1]*p[tid,1])
+horseshoe = Fae.@frop function horseshoe(x, y, t)
+    r = sqrt(x*x + y*y)
     if r < 0.001
         r = 0.001
     end
 
-    x = (p[tid,2]-p[tid,1])*(p[tid,2]+p[tid,1])/r
-    y = 2*p[tid,2]*p[tid,1]/r
-
-    p[tid,1] = y
-    p[tid,2] = x
+    x = (x-y)*(x+y)/r
+    y = 2*x*y/r
 end
 
-function heart(p::T, tid, t; theta = 0) where T
-    r = sqrt(p[tid,2]*p[tid,2] + p[tid,1]*p[tid,1])
-    theta = atan(p[tid,1], p[tid,2]) + theta
+heart = Fae.@frop function heart(x, y, t, theta)
+    r = sqrt(x*x + y*y)
+    theta = atan(y, x) + theta
 
-    p[tid,1] = -r*cos(theta*r)
-    p[tid,2] = r*sin(theta*r)
+    y = -r*cos(theta*r)
+    x = r*sin(theta*r)
 end
 
-function rotate(p::T, tid, t; theta = 0.5) where T
-
-    x = p[tid,2]*cos(theta) - p[tid,1]*sin(theta)
-    y = p[tid,2]*sin(theta) + p[tid,1]*cos(theta)
-
-    p[tid,1] = y
-    p[tid,2] = x
+rotate = Fae.@frop function rotate(x, y, t, theta)
+    x = x*cos(theta) - y*sin(theta)
+    y = x*sin(theta) + y*cos(theta)
 end
 
-function swirl(p::T, tid, t) where T
-    r = sqrt(p[tid,1]*p[tid,1] + p[tid,2]*p[tid,2])
+swirl = Fae.@frop function swirl(x, y, t)
+    r = sqrt(y*y + x*x)
 
-    y = p[tid,2]*cos(r*r) + p[tid,1]*sin(r*r)
-    x = p[tid,2]*sin(r*r) - p[tid,1]*cos(r*r)
+    v1 = x*cos(r*r) + y*sin(r*r)
+    v2 = x*sin(r*r) - y*cos(r*r)
 
-    p[tid,1] = y
-    p[tid,2] = x
+    y = v1
+    x = v2
 end
 
+#=
 function sierpinski(point::T, shape_vertex::T) where T
     return 0.5*(point .+ shape_vertex)
 end
+=#

@@ -41,12 +41,16 @@ end
 function find_args(expr::Union{Expr, Symbol})
     args = []
 
-    for i = 2:length(expr.args)
-        if isa(expr.args[i], Symbol)
-            push!(args, expr.args[i])
-        elseif isa(expr.args[i], Expr)
-            args = vcat(args,find_args(expr.args[i]))
+    if isa(expr, Expr)
+        for i = 2:length(expr.args)
+            if isa(expr.args[i], Symbol)
+                push!(args, expr.args[i])
+            elseif isa(expr.args[i], Expr)
+                args = vcat(args,find_args(expr.args[i]))
+            end
         end
+    else
+        push!(args, expr)
     end
 
     return args
@@ -95,7 +99,7 @@ function create_frop_header(frop::FractalOperator,
 
     # setting up the stack initially
     for i = 1:length(frop.args)
-        if !in(frop.args[i], arg_list)
+        if !in(frop.args[i], arg_list) && isa(frop.args[i],Symbol)
             push!(s, frop.args[i])
             arg_list[index] = frop.args[i]
             index += 1
@@ -135,3 +139,22 @@ function create_frop_header(frop::FractalOperator,
     return parse_string
 
 end
+
+function configure_frop(frop::FractalOperator, frops::Vector{FractalOperator})
+
+    fx_string = "function "*string(frop.name)*"_finale(p, tid, t)\n"
+    fx_string *= "x = p[tid, 2] \n y = p[tid, 1] \n t = t \n"
+
+    fx_string *= create_frop_header(frop, frops)*
+                 string(frop.body)*"\n"
+    fx_string *= "p[tid, 2] = x \n p[tid, 1] = y \n"
+    fx_string *= "end"
+
+    F = Meta.parse(replace(fx_string, "'" => '"'))
+
+    #println(fx_string)
+    println(F)
+
+    return eval(F)
+end
+

@@ -57,16 +57,6 @@ function to_logscale(r,g,b,val, max_val; gamma = 2.2)
     end
     final_color = RGBA(r, g, b, alpha)
 
-    if final_color.r > 1
-        println(final_color.r)
-    end
-    if final_color.g > 1
-        println(final_color.g)
-    end
-    if final_color.b > 1
-        println(final_color.b)
-    end
-
     # Applying Gamma
     # TODO: We should be able to broadcast a power operation to clean this up
     final_color = RGBA(final_color.r^(1/gamma),
@@ -105,15 +95,12 @@ function add_layer!(img, layer::Pixels; gamma = 2.2)
 
     for i = 1:length(pix.reds)
         if pix.reds[i] > 1
-            #println("red: ", pix.reds[i], '\t', i)
             pix.reds[i] = 1
         end
         if pix.greens[i] > 1
-            #println("green: ", pix.greens[i], '\t', i)
             pix.greens[i] = 1
         end
         if pix.blues[i] > 1
-            #println("blue: ", pix.blues[i], '\t', i)
             pix.blues[i] = 1
         end
     end

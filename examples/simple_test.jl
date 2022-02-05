@@ -8,14 +8,13 @@ end
 AT = CuArray
 FT = Float32
 
-f_set = :(U(Fae.swirl, Fae.heart, Fae.rotate, Fae.horseshoe))
-color_set = [[0,1,0,1], [0,0,1,1], [1,0,1,1], [1,0,0,1]]
-final_fx = Fae.polar_play
-final_clr = (FT(1.0), FT(0.5), FT(1.0), FT(1.0))
-prob_set = (0.25, 0.25, 0.25, 0.25)
-#prob_set = (0.33, 0.33, 0.34)
+t = 0.25
 
-H = Fae.Hutchinson(f_set, color_set, prob_set; AT = AT, FT = FT)
+f_set = [Fae.square_1, Fae.square_2, Fae.square_3, Fae.square_4]
+color_set = [[0,1,0,1], [1,0,1,1], [0,0,1,1], [1,0,0,1]]
+prob_set = (0.25, 0.25, 0.25, 0.25)
+
+H = Fae.Hutchinson(f_set, color_set, prob_set, 4; AT = AT, FT = FT)
 
 num_particles = 10000
 num_iterations = 10000
@@ -23,15 +22,10 @@ num_iterations = 10000
 #num_iterations = 10
 bounds = [-1 1; -1 1]
 res = (1000, 1000)
-#bounds = [-1.125 1.125; -2 2]
-#res = (1080, 1920)
 
 pix = Fae.fractal_flame(H, num_particles, num_iterations, bounds, res; AT = AT,
-                        FT = FT, final_clr = final_clr, final_fx = final_fx)
-
-pix2 = Fae.fractal_flame(H, num_particles, num_iterations, bounds, res; AT = AT,
-                         FT = FT)
+                        FT = FT, time = t)
 
 
 println("image time:")
-@time Fae.write_image([pix2,pix], "check.png")
+@time Fae.write_image([pix], "check.png")

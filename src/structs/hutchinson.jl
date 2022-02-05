@@ -63,6 +63,7 @@ function configure_hutchinson(frops::Vector{FractalOperator}, N)
 
     fx_string *= "else error('Function not found!')\n"
     fx_string *= "end\n"
+    fx_string *= "p[tid, 2] = x \n p[tid, 1] = y \n"
     fx_string *= "end"
 
     H = Meta.parse(replace(fx_string, "'" => '"'))
@@ -99,6 +100,28 @@ function Hutchinson(f_set, color_set::Array{A}, prob_set;
     end
 
     H = generate_H(f_set)
+
+    return Hutchinson(H, AT(temp_colors), prob_set)
+end
+
+# This is a constructor for when people read in an array of arrays for colors
+function Hutchinson(f_set::Array{FractalOperator}, color_set::Array{A},
+                    prob_set, N::Int; AT = Array, FT = Float64) where A <: Array
+
+    temp_colors = zeros(FT, N,4)
+
+    if !isapprox(sum(prob_set),1)
+        println("probability set != 1, resetting to be equal probability...")
+        prob_set = Tuple(1/N for i = 1:N)
+    end
+
+    for i = 1:4
+        for j = 1:length(color_set)
+            temp_colors[j,i] = color_set[j][i]
+        end
+    end
+
+    H = configure_hutchinson(f_set, N)
 
     return Hutchinson(H, AT(temp_colors), prob_set)
 end
