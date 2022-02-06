@@ -13,14 +13,22 @@ macro frop(expr)
     if isa(expr, Symbol)
         error("Cannot convert Symbol to Fractal Operator!")
     elseif expr.head == :(=)
+        # inline function definitions
         if isa(expr.args[1], Expr)
             def = MacroTools.splitdef(expr)
             name = def[:name]
             args = def[:args]
             return FractalOperator(name,args,expr.args[2])
+        # inline symbol definitions
         elseif isa(expr.args[1], Symbol)
             name = expr.args[1]
             args = []
+            if isa(expr.args[2], Symbol)
+                return FractalOperator(name, args, expr.args[2])
+            end
+            if expr.args[2].args[1] == :eval
+                return FractalOperator(name, args, eval(expr.args[2].args[2]))
+            end
             if !isa(expr.args[2], Number)
                 args = find_args(expr.args[2])
             end
