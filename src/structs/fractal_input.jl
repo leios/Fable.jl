@@ -4,7 +4,7 @@ struct FractalInput
     index::Union{Int, UnitRange{Int}}
     name::Symbol
     args::Vector{Any}
-    body::Union{Expr, Symbol, Number}
+    body::Union{Expr, Symbol, Number, Array}
 end
 
 # Note: this operator currently works like this:
@@ -24,15 +24,15 @@ macro fi(expr)
             index = 0
             name = expr.args[1]
             args = []
-            kwargs = []
+
             if isa(expr.args[2], Union{Symbol, Number})
                 return FractalInput(index, name, args, expr.args[2])
-            end
-            if expr.args[2].args[1] == :eval
+            elseif isa(expr.args[2].args, Array)
+                return FractalInput(index, name, args, expr.args[2].args)
+            elseif expr.args[2].args[1] == :eval
                 return FractalInput(index, name, args,
                                     eval(expr.args[2].args[2]))
-            end
-            if !isa(expr.args[2], Number)
+            elseif !isa(expr.args[2], Number)
                 args = find_args(expr.args[2])
             end
             body = expr.args[2]
@@ -73,4 +73,28 @@ function find_fi(arg::Symbol, fis::Vector{FractalInput})
     end
 
     error("Symbol ", arg, " not defined!")
+end
+
+@inline function configure_fis!(fis::Vector{FractalInput};
+                                max_symbols = 2*length(fis))
+    temp_fi_vector = zeros(max_symbols)
+    idx = 1
+    for i = 1:length(fis)
+        println(typeof(fis[i].body))
+        if isa(fis[i].body, Vector)
+            temp_fi_vector[idx:idx+length(fis[i].body)-1] .= fis[i].body[:]
+            fis[i] = FractalInput(idx:idx+length(fis[i].body)-1,
+                                  fis[i].name,
+                                  fis[i].args,
+                                  fis[i].body)
+            idx += length(fis[i].body)
+        elseif isa(fis[i].body, Number)
+            println("number: ", i)
+            fis[i] = FractalInput(idx, fis[i].name, fis[i].args, fis[i].body)
+            temp_fi_vector[idx] = fis[i].body
+            idx += 1
+        end
+    end
+
+    symbols = Tuple(temp_fi_vector[1:idx-1])
 end

@@ -1,7 +1,7 @@
 struct FractalOperator
     name::Symbol
     args::Vector{Any}
-    kargs::Vector{Any}
+    kwargs::Vector{Any}
     body::Union{Expr, Number, Symbol}
 end
 
@@ -71,6 +71,7 @@ function create_header(fo::FractalOperator, fis::Vector{FractalInput};
 
     # If you change this value, don't forget to also change the index below!
     index = 3
+    ignore = index
 
     # we will DFS through the arg lists
     s = Stack{Symbol}()
@@ -88,9 +89,9 @@ function create_header(fo::FractalOperator, fis::Vector{FractalInput};
     while length(s) > 0
         current_arg = pop!(s)
         current_fi = find_fi(current_arg, fis)
-        if (current_fi.body, Symbol)
+        if isa(current_fi.body, Union{Number, Array})
             arg_dict[current_arg] = "symbols["* string(current_fi.index)*"]"
-        elseif (current_fi.body, Expr)
+        elseif isa(current_fi.body, Expr)
             arg_dict[current_arg] = string(current_fi.body)
         else
             arg_dict[current_arg] = string(current_fi.body)
@@ -112,8 +113,13 @@ function create_header(fo::FractalOperator, fis::Vector{FractalInput};
 
     # Creating string to Meta.parse
     parse_string = ""
-    for i = 3:index-1
+    for i = index-1:-1:ignore
         parse_string *= string(arg_list[i]) *" = "* arg_dict[arg_list[i]] *"\n"
+    end
+
+    for i = 1:length(fo.kwargs)
+        parse_string *= string(fo.kwargs[i].args[end-1]) *" = "* 
+                        string(fo.kwargs[i].args[end]) *"\n"
     end
 
     return parse_string
@@ -125,7 +131,7 @@ function configure_fo(fo::FractalOperator, fis::Vector{FractalInput})
     fx_string = "function "*string(fo.name)*"_finale(p, tid, symbols)\n"
     fx_string *= "x = p[tid, 2] \n y = p[tid, 1]"
 
-    fx_string *= create_fo_header(fo, fis)*
+    fx_string *= create_header(fo, fis)*
                  string(fo.body)*"\n"
     fx_string *= "p[tid, 2] = x \n p[tid, 1] = y \n"
     fx_string *= "end"
@@ -136,5 +142,19 @@ function configure_fo(fo::FractalOperator, fis::Vector{FractalInput})
     println(F)
 
     return eval(F)
+end
+
+function (a::Fae.FractalOperator)(args...; kwargs...)
+    new_kwargs = deepcopy(a.kwargs)
+    for kwarg in kwargs
+        for i = 1:length(a.kwargs)
+            if string(kwarg[1]) == string(a.kwargs[i].args[end-1])
+                new_kwargs[i] = Meta.parse(string(kwarg[1]) *"="*
+                                                   string(kwarg[2]))
+            end
+        end
+    end
+
+    return FractalOperator(a.name, a.args, new_kwargs, a.body)
 end
 

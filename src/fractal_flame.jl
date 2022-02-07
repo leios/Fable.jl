@@ -39,9 +39,10 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
         AT = CuArray
         kernel! = naive_chaos_kernel!(CUDADevice(), numthreads)
     end
+    println(H.symbols)
     kernel!(ps.positions, n, H.op, H.color_set, H.prob_set, H.symbols,
             final_fx, final_clr, pxs.values, pxs.reds, pxs.greens, pxs.blues,
-            AT(bounds), AT(bin_widths), num_ignore, max_range, t,
+            AT(bounds), AT(bin_widths), num_ignore, max_range,
             ndrange=size(ps.positions)[1])
 end
 
@@ -49,7 +50,7 @@ end
                                      final_fx, final_clr, pixel_values,
                                      pixel_reds, pixel_greens, pixel_blues,
                                      bounds, bin_widths, num_ignore,
-                                     max_range, t)
+                                     max_range)
 
     tid = @index(Global,Linear)
     lid = @index(Local,Linear)

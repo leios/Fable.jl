@@ -40,29 +40,25 @@ function generate_H(expr)
     return eval(H)
 end
 
-function configure_hutchinson(fos::Vector{FractalOperator},
-                              aux_fos::Vector{FractalOperator})
-    return configure_hutchinson(vcat(fos, aux_fos), length(fos))
-end
-
 # TODO:
 # This is a half-step towards where we want to be. I think the union syntax of
 # the previous function is more elegant, but needs some work.
 # Ultimately working towards an @hutchinson macro
-function configure_hutchinson(fos::Vector{FractalOperator}, N)
+function configure_hutchinson(fos::Vector{FractalOperator},
+                              fis::Vector{FractalInput})
 
     fx_string = "function H(p, tid, symbols, fid)\n"
     fx_string *= "x = p[tid, 2] \n y = p[tid, 1] \n"
 
-    for i = 1:N
+    for i = 1:length(fos)
         temp_string = ""
         if i == 1
             temp_string = "if fid == "*string(i)*"\n"*
-                          create_fo_header(fos[i], fos)*
+                          create_header(fos[i], fis)*
                           string(fos[i].body)*"\n"
         else
             temp_string = "elseif fid == "*string(i)*"\n"*
-                          create_fo_header(fos[i], fos)*
+                          create_header(fos[i], fis)*
                           string(fos[i].body)*"\n"
         end
         fx_string *= temp_string
@@ -106,10 +102,11 @@ function Hutchinson(f_set, color_set::Array{A}, prob_set;
 end
 
 # This is a constructor for when people read in an array of arrays for colors
-function Hutchinson(f_set::Array{FractalOperator}, color_set::Array{A},
-                    prob_set, N::Int; AT = Array, FT = Float64) where A <: Array
+function Hutchinson(fos::Array{FractalOperator}, fis::Vector{FractalInput},
+                    color_set::Array{A}, prob_set;
+                    AT = Array, FT = Float64) where A <: Array
 
-    temp_colors = zeros(FT, N,4)
+    temp_colors = zeros(FT, length(fos), 4)
 
     if !isapprox(sum(prob_set),1)
         println("probability set != 1, resetting to be equal probability...")
@@ -122,8 +119,9 @@ function Hutchinson(f_set::Array{FractalOperator}, color_set::Array{A},
         end
     end
 
-    H = configure_hutchinson(f_set, N)
+    symbols = configure_fis!(fis)
+    H = configure_hutchinson(fos, fis)
 
-    return Hutchinson(H, AT(temp_colors), prob_set)
+    return Hutchinson(H, AT(temp_colors), prob_set, symbols)
 end
 
