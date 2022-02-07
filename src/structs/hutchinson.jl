@@ -45,7 +45,7 @@ end
 # the previous function is more elegant, but needs some work.
 # Ultimately working towards an @hutchinson macro
 function configure_hutchinson(fos::Vector{FractalOperator},
-                              fis::Vector{FractalInput})
+                              fis::Vector)
 
     fx_string = "function H(p, tid, symbols, fid)\n"
     fx_string *= "x = p[tid, 2] \n y = p[tid, 1] \n"
@@ -102,7 +102,8 @@ function Hutchinson(f_set, color_set::Array{A}, prob_set;
 end
 
 # This is a constructor for when people read in an array of arrays for colors
-function Hutchinson(fos::Array{FractalOperator}, fis::Vector{FractalInput},
+function Hutchinson(fos::Array{FractalOperator},
+                    fis::Vector,
                     color_set::Array{A}, prob_set;
                     AT = Array, FT = Float64) where A <: Array
 
@@ -119,7 +120,10 @@ function Hutchinson(fos::Array{FractalOperator}, fis::Vector{FractalInput},
         end
     end
 
-    symbols = configure_fis!(fis)
+    symbols = ()
+    if length(fis) > 0
+        symbols = configure_fis!(fis)
+    end
     H = configure_hutchinson(fos, fis)
 
     return Hutchinson(H, AT(temp_colors), prob_set, symbols)

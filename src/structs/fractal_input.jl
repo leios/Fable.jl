@@ -45,6 +45,10 @@ macro fi(expr)
     end
 end
 
+macro fractal_input(expr)
+    :(@fi($(esc(expr))))
+end
+
 #This function goes through an expression and returns back any symbols
 function find_args(expr::Union{Expr, Symbol})
     args = []
@@ -63,6 +67,27 @@ function find_args(expr::Union{Expr, Symbol})
 
     return args
     
+end
+
+function is_fi(arg::Symbol, fis::Vector{FractalInput})
+    flag = false
+    for i = 1:length(fis)
+        if arg == fis[i].name
+            flag = true
+        end
+    end
+
+    return flag
+end
+
+function find_fi(arg::Symbol, fis::Vector{FractalInput})
+    for i = 1:length(fis)
+        if arg == fis[i].name
+            return i
+        end
+    end
+
+    error("Symbol ", arg, " not defined!")
 end
 
 function find_fi(arg::Symbol, fis::Vector{FractalInput})

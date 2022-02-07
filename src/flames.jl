@@ -1,9 +1,9 @@
 function null()
 end
 
-halfway = Fae.@fo function halfway(x, y, p)
-    x = 0.5*(p[1] + x)
-    y = 0.5*(p[1] + y)
+halfway = Fae.@fo function halfway(x, y; loc=(0,0))
+    x = 0.5*(loc[1] + x)
+    y = 0.5*(loc[2] + y)
 end
 
 square_1 = Fae.@fo function square_1(x, y, t)

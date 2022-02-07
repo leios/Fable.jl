@@ -37,6 +37,10 @@ macro fo(expr)
     end
 end
 
+macro fractal_operator(expr)
+    :(@fo($(esc(expr))))
+end
+
 function find_fo(arg::Symbol, fos::Vector{FractalOperator})
     for i = 1:length(fos)
         if arg == fos[i].name
@@ -56,7 +60,7 @@ end
 #        will also be placed in the header; however, complex dependencies
 #        might be redundant (if 2 fos need a, a might be defined 2x)
 #        This redundancy could be removed by erasing the lower definitions...
-function create_header(fo::FractalOperator, fis::Vector{FractalInput};
+function create_header(fo::FractalOperator, fis::Vector;
                        max_symbols = 50)
 
     # Start with the known items
@@ -85,29 +89,33 @@ function create_header(fo::FractalOperator, fis::Vector{FractalInput};
         end
     end
 
-    iteration = 0
-    while length(s) > 0
-        current_arg = pop!(s)
-        current_fi = find_fi(current_arg, fis)
-        if isa(current_fi.body, Union{Number, Array})
-            arg_dict[current_arg] = "symbols["* string(current_fi.index)*"]"
-        elseif isa(current_fi.body, Expr)
-            arg_dict[current_arg] = string(current_fi.body)
-        else
-            arg_dict[current_arg] = string(current_fi.body)
-        end
-        for i = 1:length(current_fi.args)
-            if current_fi.args[i] != :(x) &&
-               current_fi.args[i] != :(y)
-                push!(s, current_fi.args[i])
-                arg_list[index]  = current_fi.args[i]
-                index += 1
+    if length(fis) > 0
+        iteration = 0
+        while length(s) > 0
+            current_arg = pop!(s)
+            fi_index = find_fi(current_arg, fis)
+            if isa(fis[fi_index].body, Union{Number, Array})
+                arg_dict[current_arg] = "symbols["* 
+                                         string(fis[fi_index].index)*"]"
+            elseif isa(current_fi.body, Expr)
+                arg_dict[current_arg] = string(fis[fi_index].body)
+            else
+                arg_dict[current_arg] = string(fis[fi_index].body)
             end
-        end
+            for i = 1:length(current_fi.args)
+                if current_fi.args[i] != :(x) &&
+                   current_fi.args[i] != :(y)
+                    push!(s, current_fi.args[i])
+                    arg_list[index]  = fis[fi_index].args[i]
+                    index += 1
+                end
+            end
 
-        iteration += 1
-        if iteration > 100
-            error("Cyclical dependency found in fractal operator definitions!")
+            iteration += 1
+            if iteration > 100
+                error("Cyclical dependency found in "*
+                      "fractal operator definitions!")
+            end
         end
     end
 
@@ -118,8 +126,13 @@ function create_header(fo::FractalOperator, fis::Vector{FractalInput};
     end
 
     for i = 1:length(fo.kwargs)
+        val = fo.kwargs[i].args[end]
+        if isa(val, Symbol) && is_fi(val, fis)
+            fi_index = find_fi(val, fis)
+            val = "symbols["*string(fis[fi_index].index)*"]"
+        end
         parse_string *= string(fo.kwargs[i].args[end-1]) *" = "* 
-                        string(fo.kwargs[i].args[end]) *"\n"
+                        string(val) *"\n"
     end
 
     return parse_string
@@ -149,8 +162,16 @@ function (a::Fae.FractalOperator)(args...; kwargs...)
     for kwarg in kwargs
         for i = 1:length(a.kwargs)
             if string(kwarg[1]) == string(a.kwargs[i].args[end-1])
-                new_kwargs[i] = Meta.parse(string(kwarg[1]) *"="*
-                                                   string(kwarg[2]))
+                if isa(kwarg[2], FractalInput)
+                    new_kwargs[i] = Meta.parse(string(kwarg[1]) *"="*
+                                               string(kwarg[2].name))
+                elseif isa(kwarg[2], Array)
+                    error("Cannot create new kwarg array! "*
+                          "Please use Tuple syntax ()!")
+                else
+                    new_kwargs[i] = Meta.parse(string(kwarg[1]) *"="*
+                                               string(kwarg[2]))
+                end
             end
         end
     end
