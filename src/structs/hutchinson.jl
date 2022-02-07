@@ -2,11 +2,18 @@
 function U(args...)
 end
 
+mutable struct Hutchinson
+    op::Function
+    color_set::Union{Array{T,2}, CuArray{T,2}} where T <: AbstractFloat
+    prob_set::Union{NTuple, Tuple}
+    symbols::Union{NTuple, Tuple}
+end
+
 # use repr to go from expr -> string
 # think about recursive unions (barnsley + sierpinski)
 function generate_H(expr)
     fnum = length(expr.args)-1
-    fx_string = "function H(p, tid, t, fid)\n"
+    fx_string = "function H(p, tid, symbols, fid)\n"
     for i = 1:fnum
         temp_string = ""
         if i == 1
@@ -33,30 +40,30 @@ function generate_H(expr)
     return eval(H)
 end
 
-function configure_hutchinson(frops::Vector{FractalOperator},
-                              aux_frops::Vector{FractalOperator})
-    return configure_hutchinson(vcat(frops, aux_frops), length(frops))
+function configure_hutchinson(fos::Vector{FractalOperator},
+                              aux_fos::Vector{FractalOperator})
+    return configure_hutchinson(vcat(fos, aux_fos), length(fos))
 end
 
 # TODO:
 # This is a half-step towards where we want to be. I think the union syntax of
 # the previous function is more elegant, but needs some work.
 # Ultimately working towards an @hutchinson macro
-function configure_hutchinson(frops::Vector{FractalOperator}, N)
+function configure_hutchinson(fos::Vector{FractalOperator}, N)
 
-    fx_string = "function H(p, tid, t, fid)\n"
-    fx_string *= "x = p[tid, 2] \n y = p[tid, 1] \n t = t \n"
+    fx_string = "function H(p, tid, symbols, fid)\n"
+    fx_string *= "x = p[tid, 2] \n y = p[tid, 1] \n"
 
     for i = 1:N
         temp_string = ""
         if i == 1
             temp_string = "if fid == "*string(i)*"\n"*
-                          create_frop_header(frops[i], frops)*
-                          string(frops[i].body)*"\n"
+                          create_fo_header(fos[i], fos)*
+                          string(fos[i].body)*"\n"
         else
             temp_string = "elseif fid == "*string(i)*"\n"*
-                          create_frop_header(frops[i], frops)*
-                          string(frops[i].body)*"\n"
+                          create_fo_header(fos[i], fos)*
+                          string(fos[i].body)*"\n"
         end
         fx_string *= temp_string
     end
@@ -74,12 +81,6 @@ function configure_hutchinson(frops::Vector{FractalOperator}, N)
     return eval(H)
 end
 
-
-mutable struct Hutchinson
-    op::Function
-    color_set::Union{Array{T,2}, CuArray{T,2}} where T <: AbstractFloat
-    prob_set::Union{NTuple, Tuple}
-end
 
 # This is a constructor for when people read in an array of arrays for colors
 function Hutchinson(f_set, color_set::Array{A}, prob_set;

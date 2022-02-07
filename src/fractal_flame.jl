@@ -39,13 +39,13 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
         AT = CuArray
         kernel! = naive_chaos_kernel!(CUDADevice(), numthreads)
     end
-    kernel!(ps.positions, n, H.op, H.color_set, H.prob_set,
+    kernel!(ps.positions, n, H.op, H.color_set, H.prob_set, H.symbols,
             final_fx, final_clr, pxs.values, pxs.reds, pxs.greens, pxs.blues,
             AT(bounds), AT(bin_widths), num_ignore, max_range, t,
             ndrange=size(ps.positions)[1])
 end
 
-@kernel function naive_chaos_kernel!(points, n, H, H_clrs, H_probs,
+@kernel function naive_chaos_kernel!(points, n, H, H_clrs, H_probs, symbols,
                                      final_fx, final_clr, pixel_values,
                                      pixel_reds, pixel_greens, pixel_blues,
                                      bounds, bin_widths, num_ignore,
@@ -77,10 +77,10 @@ end
             @inbounds sketchy_sum += abs(shared_tile[lid,i])
         end
         if sketchy_sum < max_range
-            @inbounds H(shared_tile, lid, t, fid)
+            @inbounds H(shared_tile, lid, symbols, fid)
 
             if final_fx != Fae.null
-                final_fx(shared_tile, lid, t)
+                final_fx(shared_tile, lid, symbols)
             end
 
             on_img_flag = on_image(shared_tile[lid,1], shared_tile[lid,2],

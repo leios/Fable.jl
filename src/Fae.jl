@@ -12,12 +12,13 @@ using Images
 include("histogram.jl")
 
 # Fractal flame structures
+include("structs/fractal_input.jl")
 include("structs/fractal_operators.jl")
 include("structs/flame_structs.jl")
 include("structs/hutchinson.jl")
 
 # Objects
-include("objects/square.jl")
+#include("objects/square.jl")
 
 # Operations
 include("simple_rng.jl")

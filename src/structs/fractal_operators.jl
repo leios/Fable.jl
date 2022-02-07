@@ -1,14 +1,15 @@
 struct FractalOperator
     name::Symbol
     args::Vector{Any}
+    kargs::Vector{Any}
     body::Union{Expr, Number, Symbol}
 end
 
 # Note: this operator currently works like this:
-#       f = @frop function f(x) x+1 end
+#       f = @fo function f(x) x+1 end
 #       There should be a way to define f in this macro, so we don't need to
-#       say `f = @frop function ...`, but instead just `@frop function ...`
-macro frop(expr)
+#       say `f = @fo function ...`, but instead just `@fo function ...`
+macro fo(expr)
 
     if isa(expr, Symbol)
         error("Cannot convert Symbol to Fractal Operator!")
@@ -18,57 +19,28 @@ macro frop(expr)
             def = MacroTools.splitdef(expr)
             name = def[:name]
             args = def[:args]
-            return FractalOperator(name,args,expr.args[2])
+            kwargs = def[:kwargs]
+            return FractalOperator(name,args,kwargs,expr.args[2])
         # inline symbol definitions
         elseif isa(expr.args[1], Symbol)
-            name = expr.args[1]
-            args = []
-            if isa(expr.args[2], Symbol)
-                return FractalOperator(name, args, expr.args[2])
-            end
-            if expr.args[2].args[1] == :eval
-                return FractalOperator(name, args, eval(expr.args[2].args[2]))
-            end
-            if !isa(expr.args[2], Number)
-                args = find_args(expr.args[2])
-            end
-            body = expr.args[2]
-            return FractalOperator(name, args, body)
+            error("Cannot create Fractal Operator (@fo)! "*
+                  "Maybe try Fractal Input (@fi)?")
         end
     elseif expr.head == :function
         def = MacroTools.splitdef(expr)
         name = def[:name]
         args = def[:args]
-        return FractalOperator(name,args,expr.args[2])
+        kwargs = def[:kwargs]
+        return FractalOperator(name,args,kwargs,expr.args[2])
     else
         error("Cannot convert expr to Fractal Operator!")
     end
 end
 
-#This function goes through an expression and returns back any symbols
-function find_args(expr::Union{Expr, Symbol})
-    args = []
-
-    if isa(expr, Expr)
-        for i = 2:length(expr.args)
-            if isa(expr.args[i], Symbol)
-                push!(args, expr.args[i])
-            elseif isa(expr.args[i], Expr)
-                args = vcat(args,find_args(expr.args[i]))
-            end
-        end
-    else
-        push!(args, expr)
-    end
-
-    return args
-    
-end
-
-function find_frop(arg::Symbol, frops::Vector{FractalOperator})
-    for i = 1:length(frops)
-        if arg == frops[i].name
-            return frops[i]
+function find_fo(arg::Symbol, fos::Vector{FractalOperator})
+    for i = 1:length(fos)
+        if arg == fos[i].name
+            return fos[i]
         end
     end
 
@@ -80,36 +52,34 @@ end
 # This function is run with hutchinson configuration and creates a "header" to 
 # configure all Fractal Operators when placed into the Hutchinson operator.
 # Notes:
-#     1. If a frop has a dependency outside of x, y, or t, that dependency
+#     1. If a fo has a dependency outside of x, y, or t, that dependency
 #        will also be placed in the header; however, complex dependencies
-#        might be redundant (if 2 frops need a, a might be defined 2x)
+#        might be redundant (if 2 fos need a, a might be defined 2x)
 #        This redundancy could be removed by erasing the lower definitions...
-function create_frop_header(frop::FractalOperator,
-                            others::Vector{FractalOperator};
-                            max_symbols = 50)
+function create_header(fo::FractalOperator, fis::Vector{FractalInput};
+                       max_symbols = 50)
 
     # Start with the known items
     arg_dict = Dict(
-        :(x) => :(p[tid,2]),
-        :(y) => :(p[tid,1]),
-        :(t) => :(t)
+        :(x) => "p[tid,2]",
+        :(y) => "p[tid,1]",
     )
 
     arg_list = [:(_) for i = 1:max_symbols]
     arg_list[1] = :(x)
     arg_list[2] = :(y)
-    arg_list[3] = :(t)
 
-    index = 4
+    # If you change this value, don't forget to also change the index below!
+    index = 3
 
     # we will DFS through the arg lists
     s = Stack{Symbol}()
 
     # setting up the stack initially
-    for i = 1:length(frop.args)
-        if !in(frop.args[i], arg_list) && isa(frop.args[i],Symbol)
-            push!(s, frop.args[i])
-            arg_list[index] = frop.args[i]
+    for i = 1:length(fo.args)
+        if !in(fo.args[i], arg_list) && isa(fo.args[i],Symbol)
+            push!(s, fo.args[i])
+            arg_list[index] = fo.args[i]
             index += 1
         end
     end
@@ -117,14 +87,19 @@ function create_frop_header(frop::FractalOperator,
     iteration = 0
     while length(s) > 0
         current_arg = pop!(s)
-        current_frop = find_frop(current_arg, others)
-        arg_dict[current_arg] = current_frop.body
-        for i = 1:length(current_frop.args)
-            if frop.args[i] != :(x) &&
-               frop.args[i] != :(y) &&
-               frop.args[i] != :(1)
-                push!(s, frop.args[i])
-                arg_list[index]  = frop.args[i]
+        current_fi = find_fi(current_arg, fis)
+        if (current_fi.body, Symbol)
+            arg_dict[current_arg] = "symbols["* string(current_fi.index)*"]"
+        elseif (current_fi.body, Expr)
+            arg_dict[current_arg] = string(current_fi.body)
+        else
+            arg_dict[current_arg] = string(current_fi.body)
+        end
+        for i = 1:length(current_fi.args)
+            if current_fi.args[i] != :(x) &&
+               current_fi.args[i] != :(y)
+                push!(s, current_fi.args[i])
+                arg_list[index]  = current_fi.args[i]
                 index += 1
             end
         end
@@ -137,24 +112,21 @@ function create_frop_header(frop::FractalOperator,
 
     # Creating string to Meta.parse
     parse_string = ""
-    for i = 4:index-1
-        parse_string *= string(arg_list[i]) *" = "* 
-                        string(arg_dict[arg_list[i]]) *"\n"
+    for i = 3:index-1
+        parse_string *= string(arg_list[i]) *" = "* arg_dict[arg_list[i]] *"\n"
     end
-
-    #println(parse_string)
 
     return parse_string
 
 end
 
-function configure_frop(frop::FractalOperator, frops::Vector{FractalOperator})
+function configure_fo(fo::FractalOperator, fis::Vector{FractalInput})
 
-    fx_string = "function "*string(frop.name)*"_finale(p, tid, t)\n"
-    fx_string *= "x = p[tid, 2] \n y = p[tid, 1] \n t = t \n"
+    fx_string = "function "*string(fo.name)*"_finale(p, tid, symbols)\n"
+    fx_string *= "x = p[tid, 2] \n y = p[tid, 1]"
 
-    fx_string *= create_frop_header(frop, frops)*
-                 string(frop.body)*"\n"
+    fx_string *= create_fo_header(fo, fis)*
+                 string(fo.body)*"\n"
     fx_string *= "p[tid, 2] = x \n p[tid, 1] = y \n"
     fx_string *= "end"
 

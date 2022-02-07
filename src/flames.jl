@@ -1,12 +1,12 @@
 function null()
 end
 
-halfway = Fae.@frop function halfway(x, y, p)
+halfway = Fae.@fo function halfway(x, y, p)
     x = 0.5*(p[1] + x)
     y = 0.5*(p[1] + y)
 end
 
-square_1 = Fae.@frop function square_1(x, y, t)
+square_1 = Fae.@fo function square_1(x, y, t)
     scale = 0.5
     theta = 2*pi*t
     v1 = scale*cos(theta) - scale*sin(theta)
@@ -15,7 +15,7 @@ square_1 = Fae.@frop function square_1(x, y, t)
     y = 0.5*(y+v2)
 end
 
-square_2 = Fae.@frop function square_2(x, y, t)
+square_2 = Fae.@fo function square_2(x, y, t)
     scale = 0.5
     theta = 2*pi*t
     v1 = scale*cos(theta) + scale*sin(theta)
@@ -24,7 +24,7 @@ square_2 = Fae.@frop function square_2(x, y, t)
     y = 0.5*(y+v2)
 end
 
-square_3 = Fae.@frop function square_3(x, y, t)
+square_3 = Fae.@fo function square_3(x, y, t)
     scale = 0.5
     theta = 2*pi*t
     v1 = - scale*cos(theta) + scale*sin(theta)
@@ -33,7 +33,7 @@ square_3 = Fae.@frop function square_3(x, y, t)
     y = 0.5*(y+v2)
 end
 
-square_4 = Fae.@frop function square_4(x, y, t)
+square_4 = Fae.@fo function square_4(x, y, t)
     scale = 0.5
     theta = 2*pi*t
     v1 = - scale*cos(theta) - scale*sin(theta)
@@ -42,12 +42,12 @@ square_4 = Fae.@frop function square_4(x, y, t)
     y = 0.5*(y+v2)
 end
 
-sinusoidal = Fae.@frop function sinusoidal(x, y, t)
+sinusoidal = Fae.@fo function sinusoidal(x, y, t)
     x = sin(p[tid, 2])
     y = sin(p[tid, 1])
 end
 
-polar_play = Fae.@frop function polar_play(x, y, t, theta)
+polar_play = Fae.@fo function polar_play(x, y, t, theta)
     r = sqrt(sum(x*x + y*y))
     theta = atan(y, x) + theta*t
 
@@ -55,7 +55,7 @@ polar_play = Fae.@frop function polar_play(x, y, t, theta)
     x = theta/pi
 end
 
-polar = Fae.@frop function polar(x, y, t, theta)
+polar = Fae.@fo function polar(x, y, t, theta)
     r = sqrt(sum(x*x + y*y))
     theta = atan(y, x) + theta
 
@@ -63,7 +63,7 @@ polar = Fae.@frop function polar(x, y, t, theta)
     x = theta/pi
 end
 
-horseshoe = Fae.@frop function horseshoe(x, y, t)
+horseshoe = Fae.@fo function horseshoe(x, y, t)
     r = sqrt(x*x + y*y)
     if r < 0.001
         r = 0.001
@@ -73,7 +73,7 @@ horseshoe = Fae.@frop function horseshoe(x, y, t)
     y = 2*x*y/r
 end
 
-heart = Fae.@frop function heart(x, y, t, theta)
+heart = Fae.@fo function heart(x, y, t, theta)
     r = sqrt(x*x + y*y)
     theta = atan(y, x) + theta
 
@@ -81,12 +81,12 @@ heart = Fae.@frop function heart(x, y, t, theta)
     x = r*sin(theta*r)
 end
 
-rotate = Fae.@frop function rotate(x, y, t, theta)
+rotate = Fae.@fo function rotate(x, y, t, theta)
     x = x*cos(theta) - y*sin(theta)
     y = x*sin(theta) + y*cos(theta)
 end
 
-swirl = Fae.@frop function swirl(x, y, t)
+swirl = Fae.@fo function swirl(x, y, t)
     r = sqrt(y*y + x*x)
 
     v1 = x*cos(r*r) + y*sin(r*r)
