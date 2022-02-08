@@ -4,7 +4,8 @@ struct FractalInput
     index::Union{Int, UnitRange{Int}}
     name::Symbol
     args::Vector{Any}
-    body::Union{Expr, Symbol, Number, Array}
+    body::Union{Expr, Symbol, Nothing}
+    val::Union{Nothing, Number, Array}
 end
 
 # Note: this operator currently works like this:
@@ -26,17 +27,19 @@ macro fi(expr)
             args = []
 
             if isa(expr.args[2], Union{Symbol, Number})
-                return FractalInput(index, name, args, expr.args[2])
-            elseif isa(expr.args[2].args, Array)
-                return FractalInput(index, name, args, expr.args[2].args)
-            elseif expr.args[2].args[1] == :eval
-                return FractalInput(index, name, args,
-                                    eval(expr.args[2].args[2]))
-            elseif !isa(expr.args[2], Number)
+                return FractalInput(index, name, args, expr.args[2], nothing)
+            elseif isa(expr.args[2].args, Array) &&
+                   isa(expr.args[2].args[end], Number)
+                println(expr.args[2].args)
+                return FractalInput(index, name, args, nothing,
+                                    expr.args[2].args)
+            elseif isa(expr.args[2],Number)
+                return FractalInput(index, name, args, nothing, expr.args[2])
+            else
                 args = find_args(expr.args[2])
             end
             body = expr.args[2]
-            return FractalInput(index, name, args, body)
+            return FractalInput(index, name, args, body, nothing)
         end
     elseif expr.head == :function
         error("Invalid Fractal Input (@fi)! Maybe try Fractal Operator (@fo)?")
@@ -90,33 +93,24 @@ function find_fi(arg::Symbol, fis::Vector{FractalInput})
     error("Symbol ", arg, " not defined!")
 end
 
-function find_fi(arg::Symbol, fis::Vector{FractalInput})
-    for i = 1:length(fis)
-        if arg == fis[i].name
-            return fis[i]
-        end
-    end
-
-    error("Symbol ", arg, " not defined!")
-end
-
 @inline function configure_fis!(fis::Vector{FractalInput};
                                 max_symbols = 2*length(fis))
     temp_fi_vector = zeros(max_symbols)
     idx = 1
     for i = 1:length(fis)
-        println(typeof(fis[i].body))
-        if isa(fis[i].body, Vector)
-            temp_fi_vector[idx:idx+length(fis[i].body)-1] .= fis[i].body[:]
-            fis[i] = FractalInput(idx:idx+length(fis[i].body)-1,
+        if isa(fis[i].val, Vector)
+            temp_fi_vector[idx:idx+length(fis[i].val)-1] .= fis[i].val[:]
+            fis[i] = FractalInput(idx:idx+length(fis[i].val)-1,
                                   fis[i].name,
                                   fis[i].args,
-                                  fis[i].body)
-            idx += length(fis[i].body)
-        elseif isa(fis[i].body, Number)
+                                  fis[i].body,
+                                  fis[i].val)
+            idx += length(fis[i].val)
+        elseif isa(fis[i].val, Number)
             println("number: ", i)
-            fis[i] = FractalInput(idx, fis[i].name, fis[i].args, fis[i].body)
-            temp_fi_vector[idx] = fis[i].body
+            temp_fi_vector[idx] = fis[i].val
+            fis[i] = FractalInput(idx, fis[i].name, fis[i].args, fis[i].body,
+                                  fis[i].val)
             idx += 1
         end
     end

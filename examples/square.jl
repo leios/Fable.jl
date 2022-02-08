@@ -5,21 +5,37 @@ if has_cuda_gpu()
     CUDA.allowscalar(false)
 end
 
-AT = CuArray
-FT = Float32
+function main()
+    AT = Array
+    FT = Float32
 
-H = Fae.define_square([0.0,0.0], 0.0, 1.0, [0.5, 0, 0.5, 1]; AT = AT)
+    num_particles = 10000
+    num_iterations = 10000
+    bounds = [-1.125 1.125; -2 2]
+    res = (1080, 1920)
+    frames = 10
 
-num_particles = 10000
-num_iterations = 10000
-#num_particles = 10
-#num_iterations = 10
-bounds = [-1 1; -1 1]
-res = (1000, 1000)
+    pos = [0.0, 0.0]
+    color = [0.5, 0.25, 0.75, 1]
+    rotation = 0
+    scale = 0.5
 
-pix = Fae.fractal_flame(H, num_particles, num_iterations, bounds, res; AT = AT,
-                        FT = FT)
+    #This is to overcome KA issue #287
+    Hs = Array{Fae.Hutchinson}(undef, frames)
+
+    for i = 1:frames
+        rotation = 2*pi*i/frames
+        Hs[i] = Fae.define_square(pos, rotation, scale, color; AT = AT)
 
 
-println("image time:")
-@time Fae.write_image([pix], "check.png")
+        pix = Fae.fractal_flame(Hs[i], num_particles, num_iterations,
+                                bounds, res; AT = AT, FT = FT)
+
+        filename = "check"*lpad(i-1,5,"0")*".png"
+
+        println("image time:")
+        @time Fae.write_image([pix], filename)
+    end
+end
+
+main()
