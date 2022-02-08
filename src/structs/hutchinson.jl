@@ -9,6 +9,18 @@ mutable struct Hutchinson
     symbols::Union{NTuple, Tuple}
 end
 
+function new_color_array(colors_in::Array{A}, fnum;
+                         FT = Float64, AT = Array) where A
+    temp_colors = zeros(FT,fnum,4)
+    for i = 1:4
+        for j = 1:length(colors_in)
+            temp_colors[j,i] = colors_in[j][i]
+        end
+    end
+
+    return AT(temp_colors)
+end
+
 # use repr to go from expr -> string
 # think about recursive unions (barnsley + sierpinski)
 function generate_H(expr)
@@ -86,22 +98,17 @@ function Hutchinson(f_set, color_set::Array{A}, prob_set;
                     AT = Array, FT = Float64) where A <: Array
 
     fnum = length(f_set.args)-1
-    temp_colors = zeros(FT,fnum,4)
 
     if !isapprox(sum(prob_set),1)
         println("probability set != 1, resetting to be equal probability...")
         prob_set = Tuple(1/fnum for i = 1:fnum)
     end
 
-    for i = 1:4
-        for j = 1:length(color_set)
-            temp_colors[j,i] = color_set[j][i]
-        end
-    end
+    temp_colors = new_color_array(color_set, fnum; FT = FT, AT = AT)
 
     H = generate_H(f_set)
 
-    return Hutchinson(H, AT(temp_colors), prob_set)
+    return Hutchinson(H, temp_colors, prob_set)
 end
 
 # This is a constructor for when people read in an array of arrays for colors
