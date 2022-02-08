@@ -51,86 +51,15 @@ function find_fo(arg::Symbol, fos::Vector{FractalOperator})
     error("Symbol ", arg, " not defined!")
 end
 
-# The FractalOperators can have any number of arguments, but we only know about
-# x -> p[tid,2], y -> p[tid,1], t -> t (we might care about z and w eventually)
-# This function is run with hutchinson configuration and creates a "header" to 
-# configure all Fractal Operators when placed into the Hutchinson operator.
-# Notes:
-#     1. If a fo has a dependency outside of x, y, or t, that dependency
-#        will also be placed in the header; however, complex dependencies
-#        might be redundant (if 2 fos need a, a might be defined 2x)
-#        This redundancy could be removed by erasing the lower definitions...
-function create_header(fo::FractalOperator, fis::Vector;
-                       max_symbols = 50)
-
-    # Start with the known items
-    arg_dict = Dict(
-        :(x) => "p[tid,2]",
-        :(y) => "p[tid,1]",
-    )
-
-    arg_list = [:(_) for i = 1:max_symbols]
-    arg_list[1] = :(x)
-    arg_list[2] = :(y)
-
-    # If you change this value, don't forget to also change the index below!
-    index = 3
-    ignore = index
-
-    # we will DFS through the arg lists
-    s = Stack{Symbol}()
-
-    # setting up the stack initially
-    for i = 1:length(fo.args)
-        if !in(fo.args[i], arg_list) && isa(fo.args[i],Symbol)
-            push!(s, fo.args[i])
-            arg_list[index] = fo.args[i]
-            index += 1
-        end
-    end
-
-    if length(fis) > 0
-        iteration = 0
-        while length(s) > 0
-            current_arg = pop!(s)
-            fi_index = find_fi(current_arg, fis)
-            if isa(fis[fi_index].body, Union{Number, Array})
-                arg_dict[current_arg] = "symbols["* 
-                                         string(fis[fi_index].index)*"]"
-            elseif isa(current_fi.body, Expr)
-                arg_dict[current_arg] = string(fis[fi_index].body)
-            else
-                arg_dict[current_arg] = string(fis[fi_index].body)
-            end
-            for i = 1:length(current_fi.args)
-                if current_fi.args[i] != :(x) &&
-                   current_fi.args[i] != :(y)
-                    push!(s, current_fi.args[i])
-                    arg_list[index]  = fis[fi_index].args[i]
-                    index += 1
-                end
-            end
-
-            iteration += 1
-            if iteration > 100
-                error("Cyclical dependency found in "*
-                      "fractal operator definitions!")
-            end
-        end
-    end
+# This splats all kwargs into a block above each inlined fo
+# note: this only accepts simple expressions for now (p = a), not (p = 10*a)
+function create_header(fo::FractalOperator)
 
     # Creating string to Meta.parse
     parse_string = ""
-    for i = index-1:-1:ignore
-        parse_string *= string(arg_list[i]) *" = "* arg_dict[arg_list[i]] *"\n"
-    end
 
     for i = 1:length(fo.kwargs)
         val = fo.kwargs[i].args[end]
-        if isa(val, Symbol) && is_fi(val, fis)
-            fi_index = find_fi(val, fis)
-            val = "symbols["*string(fis[fi_index].index)*"]"
-        end
         parse_string *= string(fo.kwargs[i].args[end-1]) *" = "* 
                         string(val) *"\n"
     end
@@ -144,8 +73,11 @@ function configure_fo(fo::FractalOperator, fis::Vector{FractalInput})
     fx_string = "function "*string(fo.name)*"_finale(p, tid, symbols)\n"
     fx_string *= "x = p[tid, 2] \n y = p[tid, 1]"
 
-    fx_string *= create_header(fo, fis)*
-                 string(fo.body)*"\n"
+    for i = 1:length(fis)
+        fx_string *= fis[i].name *" = symbols["*string(fis[i].index)*"]\n"
+    end
+
+    fx_string *= create_header(fo) * string(fo.body)*"\n"
     fx_string *= "p[tid, 2] = x \n p[tid, 1] = y \n"
     fx_string *= "end"
 

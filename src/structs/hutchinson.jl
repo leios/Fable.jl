@@ -49,16 +49,19 @@ function configure_hutchinson(fos::Vector{FractalOperator},
 
     fx_string = "function H(p, tid, symbols, fid)\n"
     fx_string *= "x = p[tid, 2] \n y = p[tid, 1] \n"
+    for i = 1:length(fis)
+        fx_string *= fis[i].name*" = symbols["*string(fis[i].index)*"]\n"
+    end
 
     for i = 1:length(fos)
         temp_string = ""
         if i == 1
             temp_string = "if fid == "*string(i)*"\n"*
-                          create_header(fos[i], fis)*
+                          create_header(fos[i])*
                           string(fos[i].body)*"\n"
         else
             temp_string = "elseif fid == "*string(i)*"\n"*
-                          create_header(fos[i], fis)*
+                          create_header(fos[i])*
                           string(fos[i].body)*"\n"
         end
         fx_string *= temp_string
