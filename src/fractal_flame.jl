@@ -29,7 +29,7 @@ end
 end
 
 function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
-                  bounds, bin_widths, final_fx, final_clr, t;
+                  bounds, bin_widths, H2_fx, H2_clrs, H2_symbols, H2_probs;
                   numcores = 4, numthreads=256, num_ignore = 20)
     AT = Array
     max_range = maximum(bounds)*10
@@ -41,22 +41,27 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
     end
     println(H.symbols)
     kernel!(ps.positions, n, H.op, H.color_set, H.prob_set, H.symbols,
-            final_fx, final_clr, pxs.values, pxs.reds, pxs.greens, pxs.blues,
+            H2_fx, H2_clrs, H2_symbols, H2_probs,
+            pxs.values, pxs.reds, pxs.greens, pxs.blues,
             AT(bounds), AT(bin_widths), num_ignore, max_range,
             ndrange=size(ps.positions)[1])
 end
 
 @kernel function naive_chaos_kernel!(points, n, H, H_clrs, H_probs, symbols,
-                                     final_fx, final_clr, pixel_values,
-                                     pixel_reds, pixel_greens, pixel_blues,
-                                     bounds, bin_widths, num_ignore,
-                                     max_range)
+                                     H2_fx, H2_clrs, H2_symbols, H2_probs,
+                                     pixel_values, pixel_reds, pixel_greens,
+                                     pixel_blues, bounds, bin_widths,
+                                     num_ignore, max_range)
 
     tid = @index(Global,Linear)
     lid = @index(Local,Linear)
 
     @uniform dims = size(points)[2]
     @uniform fnum = size(H_clrs)[1]
+    @uniform fnum_2 = 1
+    if !isa(H2_clrs, Union{Tuple, NTuple})
+        fnum_2 = size(H2_clrs)[1]
+    end
 
     @uniform FT = eltype(pixel_reds)
 
@@ -70,18 +75,24 @@ end
     seed = quick_seed(tid)
 
     for i = 1:n
-        seed = simple_rand(seed)
-        fid = find_fid(H_probs, fnum, seed)
-
         sketchy_sum = 0
         for i = 1:dims
             @inbounds sketchy_sum += abs(shared_tile[lid,i])
         end
         if sketchy_sum < max_range
+            seed = simple_rand(seed)
+            fid = find_fid(H_probs, fnum, seed)
+
             @inbounds H(shared_tile, lid, symbols, fid)
 
-            if final_fx != Fae.null
-                final_fx(shared_tile, lid, symbols)
+            fid_2 = fnum_2
+
+            if H2_fx != Fae.null
+                if fid_2 > 1
+                    seed = simple_rand(seed)
+                    fid_2 = find_fid(H2_probs, fnum_2, seed)
+                end
+                H2_fx(shared_tile, lid, H2_symbols, fid_2)
             end
 
             on_img_flag = on_image(shared_tile[lid,1], shared_tile[lid,2],
@@ -97,14 +108,15 @@ end
                                 FT(H_clrs[fid,2]*H_clrs[fid,4]))
                     atomic_add!(pointer(pixel_blues, bin),
                                 FT(H_clrs[fid,3]*H_clrs[fid,4]))
-                    if final_fx != Fae.null
+                    if H2_fx != Fae.null
+                        cid = (fid_2-1)*fnum_2
                         atomic_add!(pointer(pixel_values, bin), Int(1))
                         atomic_add!(pointer(pixel_reds, bin),
-                                    FT(final_clr[1]*final_clr[4]))
+                                    FT(H2_clrs[cid+1]*H2_clrs[4]))
                         atomic_add!(pointer(pixel_greens, bin),
-                                    FT(final_clr[2]*final_clr[4]))
+                                    FT(H2_clrs[cid+2]*H2_clrs[4]))
                         atomic_add!(pointer(pixel_blues, bin),
-                                    FT(final_clr[3]*final_clr[4]))
+                                    FT(H2_clrs[cid+3]*H2_clrs[4]))
                     end
                 end
             end
@@ -114,6 +126,20 @@ end
     for i = 1:dims
         @inbounds points[tid,i] = shared_tile[lid,i]
     end
+end
+
+function fractal_flame(H_1::Hutchinson, H2::Hutchinson, num_particles::Int,
+                       num_iterations::Int, bounds, res;
+                       dims = 2, AT = Array, FT = Float32,
+                       A_set = [], num_ignore = 20, numthreads = 256,
+                       numcores = 4)
+
+    fractal_flame(H_1, num_particles, num_iterations, bounds, res;
+                  dims = dims, AT = AT, FT = FT, A_set = A_set, 
+                  H2_fx = H2.op, H2_clrs = H2.color_set, 
+                  H2_symbols = H2.symbols, H2_probs = H2.prob_set,
+                  num_ignore = num_ignore,
+                  numthreads = numthreads, numcores = numcores)
 end
 
 #TODO: 1. Super sampling must be implemented by increasing the number of bins 
@@ -131,11 +157,11 @@ end
 #   [0.25, 0.25, 0.25, 0.25])
 function fractal_flame(H::Hutchinson, num_particles::Int, num_iterations::Int,
                        bounds, res; dims = 2, AT = Array, FT = Float32,
-                       A_set = [], final_fx = Fae.null, final_clr=(0,0,0,0),
-                       time = 0, num_ignore = 20, numthreads = 256,
-                       numcores = 4)
+                       A_set = [], H2_fx = Fae.null, H2_clrs=(0,0,0,0),
+                       H2_symbols = (()), H2_probs = ((1,)), num_ignore = 20,
+                       numthreads = 256, numcores = 4)
 
-    #println(typeof(final_fxs))
+    #println(typeof(H2_fxs))
     pts = Points(num_particles; FT = FT, dims = dims, AT = AT, bounds = bounds)
 
     pix = Pixels(res; AT = AT, FT = FT)
@@ -150,9 +176,10 @@ function fractal_flame(H::Hutchinson, num_particles::Int, num_iterations::Int,
 
     println("kernel time:")
     CUDA.@time wait(iterate!(pts, pix, H, num_iterations,
-                  bounds, bin_widths, final_fx, final_clr, time;
-                  numcores=numcores, numthreads=numthreads,
-                  num_ignore=num_ignore))
+                             bounds, bin_widths, H2_fx, H2_clrs,
+                             H2_symbols, H2_probs;
+                             numcores=numcores, numthreads=numthreads,
+                             num_ignore=num_ignore))
 
     println(sum(pix.values))
 

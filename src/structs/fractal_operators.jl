@@ -70,7 +70,7 @@ end
 
 function configure_fo(fo::FractalOperator, fis::Vector{FractalInput})
 
-    fx_string = "function "*string(fo.name)*"_finale(p, tid, symbols)\n"
+    fx_string = "function "*string(fo.name)*"_finale(p, tid, symbols, fid)\n"
     fx_string *= "x = p[tid, 2] \n y = p[tid, 1]"
 
     for i = 1:length(fis)

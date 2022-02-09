@@ -53,10 +53,10 @@ end
 # the previous function is more elegant, but needs some work.
 # Ultimately working towards an @hutchinson macro
 function configure_hutchinson(fos::Vector{FractalOperator},
-                              fis::Vector)
+                              fis::Vector; name = "")
 
-    fx_string = "function H(p, tid, symbols, fid)\n"
-    fx_string *= "x = p[tid, 2] \n y = p[tid, 1] \n"
+    fx_string = "function H_"*name*"(_p, tid, symbols, fid)\n"
+    fx_string *= "x = _p[tid, 2] \n y = _p[tid, 1] \n"
     for i = 1:length(fis)
         fx_string *= fis[i].name*" = symbols["*string(fis[i].index)*"]\n"
     end
@@ -77,7 +77,7 @@ function configure_hutchinson(fos::Vector{FractalOperator},
 
     fx_string *= "else error('Function not found!')\n"
     fx_string *= "end\n"
-    fx_string *= "p[tid, 2] = x \n p[tid, 1] = y \n"
+    fx_string *= "_p[tid, 2] = x \n _p[tid, 1] = y \n"
     fx_string *= "end"
 
     H = Meta.parse(replace(fx_string, "'" => '"'))
@@ -92,7 +92,7 @@ end
 function Hutchinson(fos::Array{FractalOperator},
                     fis::Vector,
                     color_set::Array{A}, prob_set;
-                    AT = Array, FT = Float64) where A <: Array
+                    AT = Array, FT = Float64, name = "") where A <: Array
 
     fnum = length(fos)
     temp_colors = new_color_array(color_set, fnum; FT = FT, AT = AT)
@@ -106,7 +106,7 @@ function Hutchinson(fos::Array{FractalOperator},
     if length(fis) > 0
         symbols = configure_fis!(fis)
     end
-    H = configure_hutchinson(fos, fis)
+    H = configure_hutchinson(fos, fis; name = name)
 
     return Hutchinson(H, AT(temp_colors), prob_set, symbols)
 end
