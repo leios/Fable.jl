@@ -6,7 +6,6 @@ function define_rectangle(pos::Vector{FT}, theta::FT, scale_x::FT, scale_y,
     fos, fis = define_rectangle_operators(pos, theta, scale_x, scale_y)
     prob_set = (0.25, 0.25, 0.25, 0.25)
     color_set = [color for i = 1:4]
-    println(color_set)
     return Hutchinson(fos, fis, color_set, prob_set; AT = AT, FT = FT)
 end
 

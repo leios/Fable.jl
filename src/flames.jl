@@ -6,42 +6,6 @@ halfway = Fae.@fo function halfway(x, y; loc=(0,0))
     y = 0.5*(loc[2] + y)
 end
 
-square_1 = Fae.@fo function square_1(x, y, t)
-    scale = 0.5
-    theta = 2*pi*t
-    v1 = scale*cos(theta) - scale*sin(theta)
-    v2 = scale*sin(theta) + scale*cos(theta)
-    x = 0.5*(x+v1)
-    y = 0.5*(y+v2)
-end
-
-square_2 = Fae.@fo function square_2(x, y, t)
-    scale = 0.5
-    theta = 2*pi*t
-    v1 = scale*cos(theta) + scale*sin(theta)
-    v2 = scale*sin(theta) - scale*cos(theta)
-    x = 0.5*(x+v1)
-    y = 0.5*(y+v2)
-end
-
-square_3 = Fae.@fo function square_3(x, y, t)
-    scale = 0.5
-    theta = 2*pi*t
-    v1 = - scale*cos(theta) + scale*sin(theta)
-    v2 = - scale*sin(theta) - scale*cos(theta)
-    x = 0.5*(x+v1)
-    y = 0.5*(y+v2)
-end
-
-square_4 = Fae.@fo function square_4(x, y, t)
-    scale = 0.5
-    theta = 2*pi*t
-    v1 = - scale*cos(theta) - scale*sin(theta)
-    v2 = - scale*sin(theta) + scale*cos(theta)
-    x = 0.5*(x+v1)
-    y = 0.5*(y+v2)
-end
-
 sinusoidal = Fae.@fo function sinusoidal(x, y, t)
     x = sin(p[tid, 2])
     y = sin(p[tid, 1])

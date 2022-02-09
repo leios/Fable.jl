@@ -1,7 +1,3 @@
-# Struct for function composition
-function U(args...)
-end
-
 mutable struct Hutchinson
     op::Function
     color_set::Union{Array{T,2}, CuArray{T,2}} where T <: AbstractFloat
@@ -13,7 +9,7 @@ function new_color_array(colors_in::Array{A}, fnum;
                          FT = Float64, AT = Array) where A
     temp_colors = zeros(FT,fnum,4)
     for i = 1:4
-        for j = 1:length(colors_in)
+        for j = 1:fnum
             temp_colors[j,i] = colors_in[j][i]
         end
     end
@@ -92,42 +88,18 @@ function configure_hutchinson(fos::Vector{FractalOperator},
     return eval(H)
 end
 
-
-# This is a constructor for when people read in an array of arrays for colors
-function Hutchinson(f_set, color_set::Array{A}, prob_set;
-                    AT = Array, FT = Float64) where A <: Array
-
-    fnum = length(f_set.args)-1
-
-    if !isapprox(sum(prob_set),1)
-        println("probability set != 1, resetting to be equal probability...")
-        prob_set = Tuple(1/fnum for i = 1:fnum)
-    end
-
-    temp_colors = new_color_array(color_set, fnum; FT = FT, AT = AT)
-
-    H = generate_H(f_set)
-
-    return Hutchinson(H, temp_colors, prob_set)
-end
-
 # This is a constructor for when people read in an array of arrays for colors
 function Hutchinson(fos::Array{FractalOperator},
                     fis::Vector,
                     color_set::Array{A}, prob_set;
                     AT = Array, FT = Float64) where A <: Array
 
-    temp_colors = zeros(FT, length(fos), 4)
+    fnum = length(fos)
+    temp_colors = new_color_array(color_set, fnum; FT = FT, AT = AT)
 
     if !isapprox(sum(prob_set),1)
         println("probability set != 1, resetting to be equal probability...")
         prob_set = Tuple(1/N for i = 1:N)
-    end
-
-    for i = 1:4
-        for j = 1:length(color_set)
-            temp_colors[j,i] = color_set[j][i]
-        end
     end
 
     symbols = ()

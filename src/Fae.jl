@@ -19,6 +19,7 @@ include("structs/hutchinson.jl")
 
 # Objects
 include("objects/rectangle.jl")
+include("objects/circle.jl")
 
 # Operations
 include("simple_rng.jl")
