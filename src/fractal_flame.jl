@@ -1,12 +1,12 @@
 # couldn't figure out how to get an n-dim version working for GPU
 @inline function on_image(p_y, p_x, bounds, dims)
     flag = true
-    if p_y < bounds[1,1] || p_y > bounds[1,2] ||
+    if p_y < bounds[1] || p_y > bounds[2] ||
        p_y == NaN || p_y == Inf
         flag = false
     end
 
-    if p_x < bounds[2,1] || p_x > bounds[2,2] ||
+    if p_x < bounds[3] || p_x > bounds[4] ||
        p_x == NaN || p_x == Inf
         flag = false
     end
@@ -31,6 +31,7 @@ end
 function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
                   bounds, bin_widths, H2_fx, H2_clrs, H2_symbols, H2_probs;
                   numcores = 4, numthreads=256, num_ignore = 20)
+
     AT = Array
     max_range = maximum(bounds)*10
     if isa(ps.positions, Array)
