@@ -32,12 +32,10 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
                   bounds, bin_widths, H2_fx, H2_clrs, H2_symbols, H2_probs;
                   numcores = 4, numthreads=256, num_ignore = 20)
 
-    AT = Array
     max_range = maximum(bounds)*10
     if isa(ps.positions, Array)
         kernel! = naive_chaos_kernel!(CPU(), numcores)
     else
-        AT = CuArray
         kernel! = naive_chaos_kernel!(CUDADevice(), numthreads)
     end
     println(H.symbols)

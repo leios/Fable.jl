@@ -24,24 +24,10 @@ function main()
     scale_x = 0.5
     scale_y = 0.5
 
-#=
     H = Fae.define_rectangle(pos, rotation, scale_x, scale_y, color; AT = AT)
 
-    H_2 = Fae.Hutchinson([Fae.test_flame], [], [1.0, 0, 1.0, 1.0], (1.0,);
+    H_2 = Fae.Hutchinson([Fae.test_flame], [], [1.0, 0, 1.0, 0.0], (1.0,);
                          AT = AT, name = "test")
-=#
-
-    fos, fis = Fae.define_rectangle_operators(pos, rotation, scale_x, scale_y)
-
-    println(typeof(fos))
-    fos_2 = [fos[1], fos[2], fos[3], fos[4], Fae.test_flame]
-
-    prob_set = (0.2, 0.2, 0.2, 0.2, 0.2)
-
-    color_set = [color for i = 1:5]
-
-    H = Fae.Hutchinson(fos_2, fis, color_set, prob_set; AT = AT, FT = FT,
-                       name = "meh")
 
     frequency_factor = 1.5
     exp_factor = 5
@@ -83,6 +69,7 @@ function main()
 
         pix = Fae.fractal_flame(H, num_particles, num_iterations,
                                 bounds, res; AT = AT, FT = FT)
+        Fae.postprocess!(H_2, pix, bounds)
 
         filename = "check"*lpad(i-1,5,"0")*".png"
 
