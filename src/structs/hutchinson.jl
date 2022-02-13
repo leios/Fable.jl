@@ -8,10 +8,14 @@ end
 function new_color_array(colors_in::Array{A}, fnum;
                          FT = Float64, AT = Array) where A
     temp_colors = zeros(FT,fnum,4)
-    for i = 1:4
-        for j = 1:fnum
-            temp_colors[j,i] = colors_in[j][i]
+    if fnum > 1
+        for i = 1:4
+            for j = 1:fnum
+                temp_colors[j,i] = colors_in[j][i]
+            end
         end
+    elseif fnum == 1
+        return AT(colors_in')
     end
 
     return AT(temp_colors)
@@ -88,10 +92,17 @@ function configure_hutchinson(fos::Vector{FractalOperator},
     return eval(H)
 end
 
+function Hutchinson(fos::Array{FractalOperator},
+                    color_set::Union{Array{A}, Array}, prob_set;
+                    AT = Array, FT = Float64, name = "") where A <: Array
+    Hutchinson(fos, color_set, prob_set; AT = AT, FT = FT, name = name)
+end
+
+
 # This is a constructor for when people read in an array of arrays for colors
 function Hutchinson(fos::Array{FractalOperator},
                     fis::Vector,
-                    color_set::Array{A}, prob_set;
+                    color_set::Union{Array{A}, Array}, prob_set;
                     AT = Array, FT = Float64, name = "") where A <: Array
 
     fnum = length(fos)
@@ -108,6 +119,6 @@ function Hutchinson(fos::Array{FractalOperator},
     end
     H = configure_hutchinson(fos, fis; name = name)
 
-    return Hutchinson(H, AT(temp_colors), prob_set, symbols)
+    return Hutchinson(H, temp_colors, prob_set, symbols)
 end
 

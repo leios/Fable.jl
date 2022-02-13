@@ -48,23 +48,26 @@ function define_rectangle_operators(pos::Vector{FT}, theta::FT,
     return [square_1, square_2, square_3, square_4], [p1, p2, p3, p4]
 end
 
-function update_rectangle!(H, pos, theta, scale_x, scale_y)
-    update_rectangle!(H, pos, theta, scale_x, scale_y, nothing)
+function update_rectangle!(H, pos, theta, scale_x, scale_y; fnum = 4)
+    update_rectangle!(H, pos, theta, scale_x, scale_y, nothing; fnum = fnum)
 end
 
-function update_square!(H, pos, theta, scale)
-    update_rectangle!(H, pos, theta, scale, scale, nothing)
+function update_square!(H, pos, theta, scale; fnum = 4)
+    update_rectangle!(H, pos, theta, scale, scale, nothing; fnum = fnum)
 end
 
 function update_square!(H::Hutchinson, pos::Vector{F}, theta::F,
                         scale, color::Union{Array{F}, Nothing};
-                        FT = Float64, AT = Array) where F <: AbstractFloat
-    update_rectangle!(H, pos, theta, scale, scale, color; FT = FT, AT = AT)
+                        FT = Float64, AT = Array,
+                        fnum = 4) where F <: AbstractFloat
+    update_rectangle!(H, pos, theta, scale, scale, color; FT = FT, AT = AT,
+                      fnum = fnum)
 end
 
 function update_rectangle!(H::Hutchinson, pos::Vector{F}, theta::F,
                            scale_x, scale_y, color::Union{Array{F}, Nothing};
-                           FT = Float64, AT = Array) where F <: AbstractFloat
+                           FT = Float64, AT = Array,
+                           fnum = 4) where F <: AbstractFloat
 
     p1_x = scale_x*cos(theta) - scale_y*sin(theta) + pos[1]
     p1_y = scale_x*sin(theta) + scale_y*cos(theta) + pos[2]
@@ -84,7 +87,8 @@ function update_rectangle!(H::Hutchinson, pos::Vector{F}, theta::F,
 
     H.symbols = configure_fis!([p1, p2, p3, p4])
     if color != nothing
-        H.color_set = new_color_array([color for i = 1:4], 4; FT = FT, AT = AT)
+        H.color_set = new_color_array([color for i = 1:5], fnum;
+                                      FT = FT, AT = AT)
     end
 
 end

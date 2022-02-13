@@ -24,8 +24,6 @@ function main()
     scale_y = 0.75
 
     H = Fae.define_rectangle(pos, rotation, scale_x, scale_y, color; AT = AT)
-    H_2 = Fae.define_sierpinski([-1.0, -1.0], [1.0, -1.0],
-                                [0, 1.74], [0, 1.0, 0, 1.0]; AT = AT)
 
     for i = 1:total_frames
         if i <= scene_1_frames
@@ -51,7 +49,7 @@ function main()
                               FT = FT, AT = AT)
         println(H.color_set)
 
-        pix = Fae.fractal_flame(H, H_2, num_particles, num_iterations,
+        pix = Fae.fractal_flame(H, num_particles, num_iterations,
                                 bounds, res; AT = AT, FT = FT)
 
         filename = "check"*lpad(i-1,5,"0")*".png"

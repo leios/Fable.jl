@@ -1,6 +1,13 @@
 function null()
 end
 
+test_flame = Fae.@fo function test_flame(x, y)
+    r2 = (x*x + y*y)
+    c = 4/(4+r2)
+    x = c*x
+    y = c*y
+end
+
 halfway = Fae.@fo function halfway(x, y; loc=(0,0))
     x = 0.5*(loc[1] + x)
     y = 0.5*(loc[2] + y)
@@ -37,12 +44,12 @@ horseshoe = Fae.@fo function horseshoe(x, y, t)
     y = 2*x*y/r
 end
 
-heart = Fae.@fo function heart(x, y, t, theta)
+heart = Fae.@fo function heart(x, y, t)
     r = sqrt(x*x + y*y)
-    theta = atan(y, x) + theta
+    theta = atan(y, x)
 
-    y = -r*cos(theta*r)
-    x = r*sin(theta*r)
+    y = -r*cos(r)
+    x = r*sin(r)
 end
 
 rotate = Fae.@fo function rotate(x, y, t, theta)
