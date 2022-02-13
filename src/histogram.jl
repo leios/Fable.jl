@@ -7,7 +7,7 @@
 
     for i = 2:dims
         slab *= size(histogram_output)[i-1]
-        b_index += 2
+        b_index += 1
         bin += Int(ceil(Int,((input[tid, i]) - bounds[b_index]) / bin_widths[1])*slab)
     end
 
