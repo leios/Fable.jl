@@ -70,7 +70,7 @@ end
     @uniform FT = eltype(pixel_reds)
 
     @uniform gs = @groupsize()[1]
-    shared_tile = @localmem FT (gs,3)
+    shared_tile = @localmem FT (gs,4)
 
     for i = 1:dims
         @inbounds shared_tile[lid,i] = points[tid,i]
@@ -96,14 +96,14 @@ end
                     seed = simple_rand(seed)
                     fid_2 = find_fid(H2_probs, fnum_2, seed)
                 end
-                H2_fx(shared_tile, lid, H2_symbols, fid_2)
             end
+            H2_fx(shared_tile, lid, H2_symbols, fid_2)
 
-            on_img_flag = on_image(shared_tile[lid,1], shared_tile[lid,2],
+            on_img_flag = on_image(shared_tile[lid,3], shared_tile[lid,4],
                                    bounds, dims)
             if i > num_ignore && on_img_flag
-                bin = find_bin(pixel_values, shared_tile, lid, dims,
-                               bounds, bin_widths)
+                bin = find_bin(pixel_values, shared_tile[lid,3],
+                               shared_tile[lid,4], bounds, bin_widths)
                 if bin > 0 && bin < length(pixel_values)
                     atomic_add!(pointer(pixel_values, bin), Int(1))
                     atomic_add!(pointer(pixel_reds, bin),

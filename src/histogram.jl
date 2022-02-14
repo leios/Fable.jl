@@ -1,3 +1,15 @@
+@inline function find_bin(histogram_output, input_y, input_x,
+                          bounds, bin_widths)
+
+    bin = ceil(Int, (input_y - bounds[1]) / bin_widths[1])
+
+    slab = size(histogram_output)[1]
+    bin += Int(ceil(Int,((input_x) - bounds[2]) / bin_widths[2])*slab)
+
+    return bin
+
+end
+
 @inline function find_bin(histogram_output, input,
                           tid, dims, bounds, bin_widths)
 
@@ -8,7 +20,7 @@
     for i = 2:dims
         slab *= size(histogram_output)[i-1]
         b_index += 1
-        bin += Int(ceil(Int,((input[tid, i]) - bounds[b_index]) / bin_widths[1])*slab)
+        bin += Int(ceil(Int,((input[tid, i]) - bounds[b_index]) / bin_widths[i])*slab)
     end
 
     return bin

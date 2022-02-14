@@ -68,9 +68,10 @@ function to_logscale(r,g,b,val, max_val; gamma = 2.2)
 end
 
 function write_image(pixels::Vector{Pixels}, filename; gamma = 2.2,
-                     img = fill(RGB(0,0,0), size(pixels[1].values)))
+                     img = fill(RGB(0,0,0), size(pixels[1].values)),
+                     diagnostic = false)
     for i = 1:length(pixels)
-        add_layer!(img, pixels[i]; gamma = gamma)
+        add_layer!(img, pixels[i]; gamma = gamma, diagnostic = diagnostic)
     end
 
     save(filename, img)

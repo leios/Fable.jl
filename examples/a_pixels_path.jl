@@ -12,7 +12,8 @@ function main()
     num_particles = 10000
     num_iterations = 10000
     bounds = [-1.125 1.125; -2 2]
-    res = (1080, 1920)
+    res_factor = 0.5
+    res = (Int(res_factor*1080), Int(res_factor*1920))
     scene_1_frames = 5
     scene_2_frames = 32
     scene_3_frames = 32
@@ -27,11 +28,11 @@ function main()
     H = Fae.define_rectangle(pos, rotation, scale_x, scale_y, color; AT = AT,
                              diagnostic = true)
 
-    H_2 = Fae.Hutchinson([Fae.test_flame], [], [1.0, 0, 1.0, 0.0], (1.0,);
-                         AT = AT, name = "test", diagnostic = true)
+    H_2 = Fae.Hutchinson([Fae.bubble], [], [1.0, 0, 1.0, 0.0], (1.0,);
+                         AT = AT, name = "bubble", diagnostic = true,
+                         final = true)
 
     pix = Fae.Pixels(res; AT = AT, FT = FT)
-    pix_final = Fae.Pixels(res; AT = AT, FT = FT)
 
     frequency_factor = 1.5
     exp_factor = 5
@@ -71,15 +72,16 @@ function main()
         Fae.update_rectangle!(H, pos, rotation, scale_x, scale_y, color;
                               FT = FT, AT = AT, fnum = 5)
 
-        pix = Fae.fractal_flame!(pix, H, num_particles, num_iterations,
+        pix = Fae.fractal_flame!(pix, H, H_2, num_particles, num_iterations,
                                  bounds, res; AT = AT, FT = FT)
-        wait(Fae.postprocess!(H_2, pix, pix_final, bounds))
-        wait(Fae.zero!(pix))
 
         filename = "check"*lpad(i-1,5,"0")*".png"
 
         println("image time:")
-        @time Fae.write_image([pix_final], filename)
+        @time Fae.write_image([pix], filename; diagnostic = true)
+
+        println("zero time:")
+        CUDA.@time wait(Fae.zero!(pix))
     end
 end
 
