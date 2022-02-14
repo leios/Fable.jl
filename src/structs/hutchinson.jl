@@ -21,43 +21,8 @@ function new_color_array(colors_in::Array{A}, fnum;
     return AT(temp_colors)
 end
 
-# use repr to go from expr -> string
-# think about recursive unions (barnsley + sierpinski)
-function generate_H(expr)
-    fnum = length(expr.args)-1
-    fx_string = "function H(p, tid, symbols, fid)\n"
-    for i = 1:fnum
-        temp_string = ""
-        if i == 1
-            f_str = repr(expr.args[i+1])[2:end]
-            #println(f_str)
-            temp_string = "if fid == "*string(i)*" "*f_str*"(p, tid, t)\n"
-        else
-            f_str = repr(expr.args[i+1])[2:end]
-            #println(f_str)
-            temp_string = "elseif fid == "*string(i)*" "*f_str*"(p, tid, t)\n"
-        end
-        fx_string *= temp_string
-    end
-
-    fx_string *= "else error('Function not found!')\n"
-    fx_string *= "end\n"
-    fx_string *= "end"
-
-    H = Meta.parse(replace(fx_string, "'" => '"'))
-
-    #println(fx_string)
-    println(H)
-
-    return eval(H)
-end
-
-# TODO:
-# This is a half-step towards where we want to be. I think the union syntax of
-# the previous function is more elegant, but needs some work.
-# Ultimately working towards an @hutchinson macro
 function configure_hutchinson(fos::Vector{FractalOperator},
-                              fis::Vector; name = "")
+                              fis::Vector; name = "", diagnostic = false)
 
     fx_string = "function H_"*name*"(_p, tid, symbols, fid)\n"
     fx_string *= "x = _p[tid, 2] \n y = _p[tid, 1] \n"
@@ -86,16 +51,19 @@ function configure_hutchinson(fos::Vector{FractalOperator},
 
     H = Meta.parse(replace(fx_string, "'" => '"'))
 
-    #println(fx_string)
-    println(H)
+    if diagnostic
+        println(H)
+    end
 
     return eval(H)
 end
 
 function Hutchinson(fos::Array{FractalOperator},
                     color_set::Union{Array{A}, Array}, prob_set;
-                    AT = Array, FT = Float64, name = "") where A <: Array
-    Hutchinson(fos, color_set, prob_set; AT = AT, FT = FT, name = name)
+                    AT = Array, FT = Float64, name = "",
+                    diagnostic = false) where A <: Array
+    Hutchinson(fos, color_set, prob_set;
+               diagnostic = diagnostic, AT = AT, FT = FT, name = name)
 end
 
 
@@ -103,7 +71,8 @@ end
 function Hutchinson(fos::Array{FractalOperator},
                     fis::Vector,
                     color_set::Union{Array{A}, Array}, prob_set;
-                    AT = Array, FT = Float64, name = "") where A <: Array
+                    AT = Array, FT = Float64, name = "",
+                    diagnostic = false) where A <: Array
 
     fnum = length(fos)
     temp_colors = new_color_array(color_set, fnum; FT = FT, AT = AT)
@@ -117,7 +86,7 @@ function Hutchinson(fos::Array{FractalOperator},
     if length(fis) > 0
         symbols = configure_fis!(fis)
     end
-    H = configure_hutchinson(fos, fis; name = name)
+    H = configure_hutchinson(fos, fis; name = name, diagnostic = diagnostic)
 
     return Hutchinson(H, temp_colors, prob_set, symbols)
 end

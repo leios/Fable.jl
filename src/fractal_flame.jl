@@ -30,7 +30,8 @@ end
 
 function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
                   bounds, bin_widths, H2_fx, H2_clrs, H2_symbols, H2_probs;
-                  numcores = 4, numthreads=256, num_ignore = 20)
+                  diagnostic = false, numcores = 4, numthreads=256,
+                  num_ignore = 20)
 
     max_range = maximum(bounds)*10
     if isa(ps.positions, Array)
@@ -38,7 +39,11 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
     else
         kernel! = naive_chaos_kernel!(CUDADevice(), numthreads)
     end
-    println(H.symbols)
+
+    if diagnostic
+        println(H.symbols)
+    end
+
     kernel!(ps.positions, n, H.op, H.color_set, H.prob_set, H.symbols,
             H2_fx, H2_clrs, H2_symbols, H2_probs,
             pxs.values, pxs.reds, pxs.greens, pxs.blues,
@@ -107,7 +112,6 @@ end
                                 FT(H_clrs[fid,2]*H_clrs[fid,4]))
                     atomic_add!(pointer(pixel_blues, bin),
                                 FT(H_clrs[fid,3]*H_clrs[fid,4]))
-#=
                     if H2_fx != Fae.null
                         cid = fid_2
                         atomic_add!(pointer(pixel_values, bin), Int(1))
@@ -118,7 +122,6 @@ end
                         atomic_add!(pointer(pixel_blues, bin),
                             FT(H2_clrs[cid+2*fnum_2]*H2_clrs[cid+3*fnum_2]))
                     end
-=#
                 end
             end
         end
@@ -131,7 +134,7 @@ end
 
 function fractal_flame(H_1::Hutchinson, H2::Hutchinson, num_particles::Int,
                        num_iterations::Int, bounds, res;
-                       dims = 2, AT = Array, FT = Float32,
+                       dims = 2, AT = Array, FT = Float32, diagnostic = false,
                        A_set = [], num_ignore = 20, numthreads = 256,
                        numcores = 4)
 
@@ -141,13 +144,13 @@ function fractal_flame(H_1::Hutchinson, H2::Hutchinson, num_particles::Int,
                    dims = dims, AT = AT, FT = FT, A_set = A_set, 
                    H2_fx = H2.op, H2_clrs = H2.color_set, 
                    H2_symbols = H2.symbols, H2_probs = H2.prob_set,
-                   num_ignore = num_ignore,
+                   num_ignore = num_ignore, diagnostic = diagnostic,
                    numthreads = numthreads, numcores = numcores)
 end
 
 function fractal_flame!(pix::Pixels, H_1::Hutchinson, H2::Hutchinson,
                         num_particles::Int, num_iterations::Int, bounds, res;
-                        dims = 2, AT = Array, FT = Float32,
+                        dims = 2, AT = Array, FT = Float32, diagnostic = false, 
                         A_set = [], num_ignore = 20, numthreads = 256,
                         numcores = 4)
 
@@ -155,7 +158,7 @@ function fractal_flame!(pix::Pixels, H_1::Hutchinson, H2::Hutchinson,
                    dims = dims, AT = AT, FT = FT, A_set = A_set, 
                    H2_fx = H2.op, H2_clrs = H2.color_set, 
                    H2_symbols = H2.symbols, H2_probs = H2.prob_set,
-                   num_ignore = num_ignore,
+                   num_ignore = num_ignore, diagnostic = diagnostic,
                    numthreads = numthreads, numcores = numcores)
 
 end
@@ -164,7 +167,7 @@ function fractal_flame(H::Hutchinson, num_particles::Int,
                        num_iterations::Int, bounds, res;
                        dims = 2, AT = Array, FT = Float32, A_set = [],
                        H2_fx = Fae.null, H2_clrs=(0,0,0,0), H2_symbols = (()),
-                       H2_probs = ((1,)), num_ignore = 20,
+                       H2_probs = ((1,)), num_ignore = 20, diagnostic = false,
                        numthreads = 256, numcores = 4)
 
     pix = Pixels(res; AT = AT, FT = FT)
@@ -173,8 +176,8 @@ function fractal_flame(H::Hutchinson, num_particles::Int,
                    dims = dims, AT = AT, FT = FT, A_set = A_set,
                    H2_fx = H2_fx, H2_clrs = H2_clrs,
                    H2_symbols = H2_symbols, H2_probs = H2_probs, 
-                   num_ignore = nim_ignore, numthreads = numthreads, 
-                   numcores = numcores)
+                   num_ignore = num_ignore, diagnostic = diagnostic,
+                   numthreads = numthreads, numcores = numcores)
 end
 
 
@@ -195,10 +198,10 @@ function fractal_flame!(pix::Pixels, H::Hutchinson, num_particles::Int,
                         num_iterations::Int, bounds, res;
                         dims = 2, AT = Array, FT = Float32, A_set = [],
                         H2_fx = Fae.null, H2_clrs=(0,0,0,0), H2_symbols = (()),
-                        H2_probs = ((1,)), num_ignore = 20,
+                        H2_probs = ((1,)), num_ignore = 20, diagnostic = false,
                         numthreads = 256, numcores = 4)
 
-    #println(typeof(H2_fxs))
+
     pts = Points(num_particles; FT = FT, dims = dims, AT = AT, bounds = bounds)
 
     bin_widths = zeros(size(bounds)[1])
@@ -206,17 +209,12 @@ function fractal_flame!(pix::Pixels, H::Hutchinson, num_particles::Int,
         bin_widths[i] = (bounds[i,2]-bounds[i,1])/res[i]
     end
 
-    println(bin_widths)
-    println(maximum(pts.positions), '\t', minimum(pts.positions))
-
     println("kernel time:")
     CUDA.@time wait(iterate!(pts, pix, H, num_iterations,
                              bounds, bin_widths, H2_fx, H2_clrs,
                              H2_symbols, H2_probs;
                              numcores=numcores, numthreads=numthreads,
-                             num_ignore=num_ignore))
-
-    println(sum(pix.values))
+                             num_ignore=num_ignore, diagnostic = diagnostic))
 
     return pix
 

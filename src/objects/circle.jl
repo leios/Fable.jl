@@ -55,15 +55,16 @@ end
 
 # Returns back H, colors, and probs for a circle
 function define_circle(pos::Vector{FT}, radius::FT, color::Array{FT};
-                       AT = Array, name = "circle") where FT <: AbstractFloat
+                       AT = Array, name = "circle",
+                       diagnostic = false) where FT <: AbstractFloat
 
     fos, fis = define_circle_operators(pos, radius)
     fo_num = length(fos)
     prob_set = Tuple([1/fo_num for i = 1:fo_num])
-    println(prob_set)
+
     color_set = [color for i = 1:9]
     return Hutchinson(fos, fis, color_set, prob_set; AT = AT, FT = FT,
-                      name = name)
+                      name = name, diagnostic = diagnostic)
 end
 
 # This specifically returns the fos for a circle

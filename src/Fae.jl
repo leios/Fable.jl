@@ -27,7 +27,9 @@ include("simple_rng.jl")
 include("transformations.jl")
 include("flames.jl")
 include("fractal_flame.jl")
-include("postprocessing.jl")
-include("image_tools.jl")
+
+# postprocessing
+include("postprocessing/postprocessing.jl")
+include("postprocessing/image_tools.jl")
 
 end # module

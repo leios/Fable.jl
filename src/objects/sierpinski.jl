@@ -1,19 +1,22 @@
 function define_sierpinski(A::Vector{FT}, B::Vector{FT}, C::Vector{FT},
                            color::Array{FT}; AT = Array,
-                           name = "sierpinski") where FT <: AbstractFloat
-    define_sierpinski(A, B, C, color, color, color; AT = AT, name = name)
+                           name = "sierpinski",
+                           diagnostic = false) where FT <: AbstractFloat
+    define_sierpinski(A, B, C, color, color, color;
+                      AT = AT, name = name, diagnostic = diagnostic)
 end
 
 function define_sierpinski(A::Vector{FT}, B::Vector{FT}, C::Vector{FT},
                            color_A::Array{FT}, color_B::Array{FT},
                            color_C::Array{FT}; AT = Array,
-                           name = "sierpinski") where FT <: AbstractFloat
+                           name = "sierpinski", 
+                           diagnostic = false) where FT <: AbstractFloat
 
     fos, fis = define_sierpinski_operators(A, B, C)
     prob_set = (0.33, 0.33, 0.34)
     color_set = [color_A, color_B, color_C]
     return Hutchinson(fos, fis, color_set, prob_set; AT = AT, FT = FT,
-                      name = name)
+                      name = name, diagnostic = diagnostic)
 end
 
 # This specifically returns the fos for a square

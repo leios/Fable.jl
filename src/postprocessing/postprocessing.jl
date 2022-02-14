@@ -65,8 +65,6 @@ function postprocess!(H::Hutchinson, pix_in::Pixels, pix_out::Pixels, bounds;
         kernel! = postprocess_kernel!(CUDADevice(), numthreads)
     end
 
-    println(typeof(pix_in.reds), '\t', typeof(pix_out.reds))
-
     kernel!(H.op, H.color_set, H.prob_set, H.symbols,
             pix_in.values, pix_in.reds, pix_in.greens, pix_in.blues,
             pix_out.values, pix_out.reds, pix_out.greens, pix_out.blues,
@@ -102,7 +100,6 @@ end
             atomic_add!(pointer(pout_blues, bin), pin_blues[tid])
 
             if !isapprox(H_clrs[4], 0)
-                @print("hmmm\n")
                 atomic_add!(pointer(pout_values, bin), Int(1))
                 atomic_add!(pointer(pout_reds, bin),
                             FT(H_clrs[1]*H_clrs[4]))

@@ -24,10 +24,11 @@ function main()
     scale_x = 0.5
     scale_y = 0.5
 
-    H = Fae.define_rectangle(pos, rotation, scale_x, scale_y, color; AT = AT)
+    H = Fae.define_rectangle(pos, rotation, scale_x, scale_y, color; AT = AT,
+                             diagnostic = true)
 
     H_2 = Fae.Hutchinson([Fae.test_flame], [], [1.0, 0, 1.0, 0.0], (1.0,);
-                         AT = AT, name = "test")
+                         AT = AT, name = "test", diagnostic = true)
 
     pix = Fae.Pixels(res; AT = AT, FT = FT)
     pix_final = Fae.Pixels(res; AT = AT, FT = FT)

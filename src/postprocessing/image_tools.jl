@@ -76,7 +76,7 @@ function write_image(pixels::Vector{Pixels}, filename; gamma = 2.2,
     save(filename, img)
 end
 
-function add_layer!(img, layer::Pixels; gamma = 2.2)
+function add_layer!(img, layer::Pixels; gamma = 2.2, diagnostic = false)
 
     pix = layer
 
@@ -86,8 +86,12 @@ function add_layer!(img, layer::Pixels; gamma = 2.2)
     end
 
     max_val = maximum(pix.values)
-    println("max is: ", maximum(layer.reds))
-    println(sum(pix.values))
+    if diagnostic
+        println("sum of all pixel values: ", sum(pix.values))
+        println("max red is: ", maximum(layer.reds))
+        println("max green is: ", maximum(layer.greens))
+        println("max blue is: ", maximum(layer.blues))
+    end
 
     pix.reds[:] .= pix.reds[:] ./ max.(1, pix.values[:])
     pix.greens[:] .= pix.greens[:] ./ max.(1, pix.values[:])
@@ -111,14 +115,19 @@ function add_layer!(img, layer::Pixels; gamma = 2.2)
         img[i] = img[i]*(1-new_val.alpha) + RGB(new_val.r*new_val.alpha,
                                                 new_val.g*new_val.alpha,
                                                 new_val.b*new_val.alpha)
-        if img[i].r >= 1
-            #println(img[i].r)
-        end
-        if img[i].g >= 1
-            #println(img[i].g)
-        end
-        if img[i].b >= 1
-            #println(img[i].b)
+        if diagnostic
+            if img[i].r >= 1
+                println("Red ", i, " has a value greater than 1. "*
+                        "Value of: ", img[i].r)
+            end
+            if img[i].g >= 1
+                println("Green ", i, " has a value greater than 1. "*
+                        "Value of: ", img[i].g)
+            end
+            if img[i].b >= 1
+                println("Blue ", i, " has a value greater than 1. "*
+                        "Value of: ", img[i].b)
+            end
         end
 
     end

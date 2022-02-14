@@ -83,7 +83,6 @@ function configure_fo(fo::FractalOperator, fis::Vector{FractalInput})
 
     F = Meta.parse(replace(fx_string, "'" => '"'))
 
-    #println(fx_string)
     println(F)
 
     return eval(F)
