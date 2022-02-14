@@ -29,6 +29,9 @@ function main()
     H_2 = Fae.Hutchinson([Fae.test_flame], [], [1.0, 0, 1.0, 0.0], (1.0,);
                          AT = AT, name = "test")
 
+    pix = Fae.Pixels(res; AT = AT, FT = FT)
+    pix_final = Fae.Pixels(res; AT = AT, FT = FT)
+
     frequency_factor = 1.5
     exp_factor = 5
 
@@ -67,14 +70,15 @@ function main()
         Fae.update_rectangle!(H, pos, rotation, scale_x, scale_y, color;
                               FT = FT, AT = AT, fnum = 5)
 
-        pix = Fae.fractal_flame(H, num_particles, num_iterations,
-                                bounds, res; AT = AT, FT = FT)
-        Fae.postprocess!(H_2, pix, bounds)
+        pix = Fae.fractal_flame!(pix, H, num_particles, num_iterations,
+                                 bounds, res; AT = AT, FT = FT)
+        wait(Fae.postprocess!(H_2, pix, pix_final, bounds))
+        wait(Fae.zero!(pix))
 
         filename = "check"*lpad(i-1,5,"0")*".png"
 
         println("image time:")
-        @time Fae.write_image([pix], filename)
+        @time Fae.write_image([pix_final], filename)
     end
 end
 

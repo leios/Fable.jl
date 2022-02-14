@@ -1,3 +1,24 @@
+@kernel function zero_kernel!(pix_values, pix_reds, pix_greens, pix_blues)
+    tid = @index(Global, Cartesian)
+    pix_values[tid] = 0
+    pix_reds[tid] = 0
+    pix_greens[tid] = 0
+    pix_blues[tid] = 0
+end
+
+function zero!(pix; numthreads = 256, numcores = 4)
+    
+    if isa(pix.reds, Array)
+        kernel! = zero_kernel!(CPU(), numcores)
+    else
+        kernel! = zero_kernel!(CUDADevice(), numthreads)
+    end
+
+    kernel!(pix.values, pix.reds, pix.greens, pix.blues,
+            ndrange = size(pix.values))
+
+end
+
 function find_point!(tile, bin_widths, tid, bounds, lid)
 
     tile[lid,2] = bounds[2] + (tid[2]+0.5)*bin_widths[2]
@@ -7,7 +28,10 @@ end
 
 function postprocess!(H::Hutchinson, pix::Pixels, bounds;
                       numcores = 4, numthreads=256)
-    pix_out = deepcopy(pix)
+    pix_out = Pixels(CuArray(zeros(Int, size(pix.values))),
+                     CuArray(zeros(size(pix.reds))), 
+                     CuArray(zeros(size(pix.greens))), 
+                     CuArray(zeros(size(pix.blues))))
 
     wait(postprocess!(H, pix, pix_out, bounds,
                       numcores = numcores, numthreads = numthreads))
@@ -26,6 +50,8 @@ function postprocess!(H::Hutchinson, pix_in::Pixels, pix_out::Pixels, bounds;
                 "more than one function found!")
         return
     end
+
+    wait(zero!(pix_out; numthreads = numthreads, numcores = numcores))
 
     res = size(pix_in.values)
     bin_widths = zeros(size(bounds)[1])

@@ -135,13 +135,48 @@ function fractal_flame(H_1::Hutchinson, H2::Hutchinson, num_particles::Int,
                        A_set = [], num_ignore = 20, numthreads = 256,
                        numcores = 4)
 
-    fractal_flame(H_1, num_particles, num_iterations, bounds, res;
-                  dims = dims, AT = AT, FT = FT, A_set = A_set, 
-                  H2_fx = H2.op, H2_clrs = H2.color_set, 
-                  H2_symbols = H2.symbols, H2_probs = H2.prob_set,
-                  num_ignore = num_ignore,
-                  numthreads = numthreads, numcores = numcores)
+    pix = Pixels(res; AT = AT, FT = FT)
+
+    fractal_flame!(pix, H_1, num_particles, num_iterations, bounds, res;
+                   dims = dims, AT = AT, FT = FT, A_set = A_set, 
+                   H2_fx = H2.op, H2_clrs = H2.color_set, 
+                   H2_symbols = H2.symbols, H2_probs = H2.prob_set,
+                   num_ignore = num_ignore,
+                   numthreads = numthreads, numcores = numcores)
 end
+
+function fractal_flame!(pix::Pixels, H_1::Hutchinson, H2::Hutchinson,
+                        num_particles::Int, num_iterations::Int, bounds, res;
+                        dims = 2, AT = Array, FT = Float32,
+                        A_set = [], num_ignore = 20, numthreads = 256,
+                        numcores = 4)
+
+    fractal_flame!(pix, H_1, num_particles, num_iterations, bounds, res;
+                   dims = dims, AT = AT, FT = FT, A_set = A_set, 
+                   H2_fx = H2.op, H2_clrs = H2.color_set, 
+                   H2_symbols = H2.symbols, H2_probs = H2.prob_set,
+                   num_ignore = num_ignore,
+                   numthreads = numthreads, numcores = numcores)
+
+end
+
+function fractal_flame(H::Hutchinson, num_particles::Int,
+                       num_iterations::Int, bounds, res;
+                       dims = 2, AT = Array, FT = Float32, A_set = [],
+                       H2_fx = Fae.null, H2_clrs=(0,0,0,0), H2_symbols = (()),
+                       H2_probs = ((1,)), num_ignore = 20,
+                       numthreads = 256, numcores = 4)
+
+    pix = Pixels(res; AT = AT, FT = FT)
+
+    fractal_flame!(pix, H, num_particles, num_iterations, bounds, res;
+                   dims = dims, AT = AT, FT = FT, A_set = A_set,
+                   H2_fx = H2_fx, H2_clrs = H2_clrs,
+                   H2_symbols = H2_symbols, H2_probs = H2_probs, 
+                   num_ignore = nim_ignore, numthreads = numthreads, 
+                   numcores = numcores)
+end
+
 
 #TODO: 1. Super sampling must be implemented by increasing the number of bins 
 #         before sampling down. Gamma correction at that stage
@@ -156,16 +191,15 @@ end
 #   (Fae.swirl, Fae.heart, Fae.polar, Fae.horseshoe),
 #   [RGB(0,1,0), RGB(0,0,1), RGB(1,0,1), RGB(1,0,0)],
 #   [0.25, 0.25, 0.25, 0.25])
-function fractal_flame(H::Hutchinson, num_particles::Int, num_iterations::Int,
-                       bounds, res; dims = 2, AT = Array, FT = Float32,
-                       A_set = [], H2_fx = Fae.null, H2_clrs=(0,0,0,0),
-                       H2_symbols = (()), H2_probs = ((1,)), num_ignore = 20,
-                       numthreads = 256, numcores = 4)
+function fractal_flame!(pix::Pixels, H::Hutchinson, num_particles::Int,
+                        num_iterations::Int, bounds, res;
+                        dims = 2, AT = Array, FT = Float32, A_set = [],
+                        H2_fx = Fae.null, H2_clrs=(0,0,0,0), H2_symbols = (()),
+                        H2_probs = ((1,)), num_ignore = 20,
+                        numthreads = 256, numcores = 4)
 
     #println(typeof(H2_fxs))
     pts = Points(num_particles; FT = FT, dims = dims, AT = AT, bounds = bounds)
-
-    pix = Pixels(res; AT = AT, FT = FT)
 
     bin_widths = zeros(size(bounds)[1])
     for i = 1:length(bin_widths)
