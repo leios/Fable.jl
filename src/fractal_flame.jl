@@ -97,6 +97,7 @@ end
                     fid_2 = find_fid(H2_probs, fnum_2, seed)
                 end
             end
+
             H2_fx(shared_tile, lid, H2_symbols, fid_2)
 
             on_img_flag = on_image(shared_tile[lid,3], shared_tile[lid,4],
@@ -112,15 +113,14 @@ end
                                 FT(H_clrs[fid,2]*H_clrs[fid,4]))
                     atomic_add!(pointer(pixel_blues, bin),
                                 FT(H_clrs[fid,3]*H_clrs[fid,4]))
-                    if H2_fx != Fae.null
-                        cid = fid_2
+                    if H2_fx != Fae.null && H2_clrs[fid_2+3*fnum_2] > 0
                         atomic_add!(pointer(pixel_values, bin), Int(1))
                         atomic_add!(pointer(pixel_reds, bin),
-                            FT(H2_clrs[cid]*H2_clrs[cid+3*fnum_2]))
+                            FT(H2_clrs[fid_2]*H2_clrs[fid_2+3*fnum_2]))
                         atomic_add!(pointer(pixel_greens, bin),
-                            FT(H2_clrs[cid+1*fnum_2]*H2_clrs[cid+3*fnum_2]))
+                            FT(H2_clrs[fid_2+1*fnum_2]*H2_clrs[fid_2+3*fnum_2]))
                         atomic_add!(pointer(pixel_blues, bin),
-                            FT(H2_clrs[cid+2*fnum_2]*H2_clrs[cid+3*fnum_2]))
+                            FT(H2_clrs[fid_2+2*fnum_2]*H2_clrs[fid_2+3*fnum_2]))
                     end
                 end
             end

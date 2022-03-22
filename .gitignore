@@ -30,3 +30,4 @@ Manifest.toml
 notes
 *.pdf
 *.mp4
+output/*

@@ -5,6 +5,12 @@ if has_cuda_gpu()
     CUDA.allowscalar(false)
 end
 
+right = Fae.@fo function right(x, y)
+end
+
+left = Fae.@fo function left(x, y)
+end
+
 function main()
     AT = CuArray
     FT = Float32
@@ -13,20 +19,23 @@ function main()
     num_iterations = 10000
     bounds = [-1.125 1.125; -2 2]
     res = (1080, 1920)
-    scene_1_frames = 10
-    scene_2_frames = 10
-    scene_3_frames = 10
-    #scene_1_frames = 60
-    #scene_2_frames = 300
-    #scene_3_frames = 90
-    total_frames = scene_1_frames + scene_2_frames + scene_3_frames
+    scene_1_frames = 5
+    scene_2_frames = 5
+    total_frames = scene_1_frames + scene_2_frames
 
     pos = [0.0, 0.0]
     color = [0.5, 0.25, 0.75, 1]
     rotation = 0.0
-    scale = 0.75
+    scale_x = 0.5
+    scale_y = 0.75
 
-    H = Fae.define_square(pos, rotation, scale, color; AT = AT)
+    H = Fae.define_rectangle(pos, rotation, scale_x, scale_y, color; AT = AT)
+
+    f_set = [left, right]
+    color_set = [[1,1,1,1],[1,1,1,1]]
+    prob_set = (0.5, 0.5)
+
+    H_2 = Fae.Hutchinson(f_set, color_set, prob_set; AT = AT, FT = FT)
 
     for i = 1:total_frames
         if i <= scene_1_frames
@@ -38,32 +47,21 @@ function main()
         elseif i > scene_1_frames && i <= scene_2_frames + scene_1_frames
             scene_frame = i - scene_1_frames
 
-            rotation = 0.25*pi - (8.25*pi*scene_frame)/scene_2_frames
-
-            scale = 0.75 - 0.35*scene_frame/scene_2_frames
-            amp = (-2+scale)*scene_frame/scene_2_frames
-            move_theta = 4*pi*scene_frame/scene_2_frames
-
-            pos = [amp*cos(move_theta),0]
+            scale_y = 0.75 - 0.35*scene_frame/scene_2_frames
+            scale_x = 0.5 + 0.35*scene_frame/scene_2_frames
 
             color = [0.5 + 0.25*scene_frame/scene_2_frames,
                      0.25 - 0.25*scene_frame/scene_2_frames,
                      1 - 0.75*scene_frame / scene_2_frames, 1]
-        elseif i > scene_2_frames + scene_1_frames
-            scene_frame = i - scene_1_frames - scene_2_frames
-            rotation = 0.0
-            pos = [-2+scale,(1.125 - scale)*scene_frame/scene_3_frames]
-            color = [0.75 + 0.25*scene_frame/scene_2_frames,
-                     0 + 0.5*scene_frame/scene_2_frames,
-                     0.25 + 0.75*scene_frame / scene_2_frames, 1]
         end
 
         println(color)
 
-        Fae.update_square!(H, pos, rotation, scale, color; FT = FT, AT = AT)
+        Fae.update_rectangle!(H, pos, rotation, scale_x, scale_y, color;
+                              FT = FT, AT = AT)
         println(H.color_set)
 
-        pix = Fae.fractal_flame(H, num_particles, num_iterations,
+        pix = Fae.fractal_flame(H, H_2, num_particles, num_iterations,
                                 bounds, res; AT = AT, FT = FT)
 
         filename = "check"*lpad(i-1,5,"0")*".png"

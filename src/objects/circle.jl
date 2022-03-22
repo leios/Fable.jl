@@ -1,3 +1,9 @@
+function k(theta)
+    #theta = theta % (pi/2)
+    k = - (3/8)*(sin(theta) + cos(theta)) +
+        sqrt(1 - (9/64)*(sin(theta) - cos(theta))^2)
+end
+
 circle_0 = Fae.@fo function circle_0(x, y; radius = 1, pos = (0,0))
     # recentering x / y
     x_temp = x
@@ -6,10 +12,12 @@ circle_0 = Fae.@fo function circle_0(x, y; radius = 1, pos = (0,0))
     #y_temp = y - pos[2]
 
     r = sqrt(x_temp*x_temp + y_temp*y_temp)
-    theta = atan(y/x)
+    theta = atan(y,x)
 
-    k = - (3/8)*(sin(theta) + cos(theta)) +
-        sqrt(1 - (9/64)*(sin(theta) - cos(theta))^2)
+    #k = k(theta)
+    theta_k = theta % (pi/2)
+    k = - (3/8)*(sin(theta_k) + cos(theta_k)) +
+        sqrt(1 - (9/64)*(sin(theta_k) - cos(theta_k))^2)
 
     x = r*k*cos(theta)
     y = r*k*sin(theta)
@@ -23,10 +31,12 @@ circle_odd = Fae.@fo function circle_odd(x, y; radius = 1, n = 0)
     #y_temp = y - pos[2]
 
     r = sqrt(x_temp*x_temp + y_temp*y_temp)
-    theta = atan(y/x)
+    theta = atan(y,x)
 
-    k = - (3/8)*(sin(theta) + cos(theta)) +
-        sqrt(1 - (9/64)*(sin(theta) - cos(theta))^2)
+    #k = k(theta)
+    theta_k = theta % (pi/2)
+    k = - (3/8)*(sin(theta_k) + cos(theta_k)) +
+        sqrt(1 - (9/64)*(sin(theta_k) - cos(theta_k))^2)
 
     x = r*k*cos(theta) + (3*sqrt(2)/8)*cos(n*pi/4)
     y = r*k*sin(theta) + (3*sqrt(2)/8)*sin(n*pi/4)
@@ -41,10 +51,12 @@ circle_even = Fae.@fo function circle_even(x, y; radius = 1, n = 0)
     #y_temp = y - pos[2]
 
     r = sqrt(x_temp*x_temp + y_temp*y_temp)
-    theta = atan(y/x)
+    theta = atan(y,x)
 
-    k = - (3/8)*(sin(theta) + cos(theta)) +
-        sqrt(1 - (9/64)*(sin(theta) - cos(theta))^2)
+    #k = k(theta)
+    theta_k = theta % (pi/2)
+    k = - (3/8)*(sin(theta_k) + cos(theta_k)) +
+        sqrt(1 - (9/64)*(sin(theta_k) - cos(theta_k))^2)
 
     x = r*k*(cos(theta)*cos(pi/4) + sin(theta)*sin(pi/4)) +
         (3*sqrt(2)/8)*cos(n*pi/4)
@@ -62,7 +74,7 @@ function define_circle(pos::Vector{FT}, radius::FT, color::Array{FT};
     fo_num = length(fos)
     prob_set = Tuple([1/fo_num for i = 1:fo_num])
 
-    color_set = [color for i = 1:9]
+    color_set = [color for i = 1:fo_num]
     return Hutchinson(fos, fis, color_set, prob_set; AT = AT, FT = FT,
                       name = name, diagnostic = diagnostic)
 end
@@ -81,8 +93,8 @@ function define_circle_operators(pos::Vector{FT},
    c_6 = circle_even(radius = radius, n = 6)
    c_7 = circle_odd(radius = radius, n = 7)
    c_8 = circle_even(radius = radius, n = 8)
-   return [c_0, c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8], [pos]
-   #return [circle_0], []
+   #return [c_0, c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8], [pos]
+   return [c_0, c_2, c_4, c_6, c_8], [pos]
 
 end
 

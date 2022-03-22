@@ -53,7 +53,7 @@ function main()
         Fae.update_sierpinski!(H, A_1, B_1, C_1; FT = FT, AT = AT)
         Fae.update_sierpinski!(H_2, A_2, B_2, C_2; FT = FT, AT = AT)
 
-        pix = Fae.fractal_flame(H, H_2, num_particles, num_iterations,
+        pix = Fae.fractal_flame(H, num_particles, num_iterations,
                                 bounds, res; AT = AT, FT = FT)
 
         filename = "check"*lpad(i-1,5,"0")*".png"

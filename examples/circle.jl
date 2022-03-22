@@ -19,7 +19,7 @@ function main()
     rotation = 0.0
     radius = 0.75
 
-    H = Fae.define_circle(pos, radius, color; AT = AT)
+    H = Fae.define_circle(pos, radius, color; AT = AT, diagnostic=true)
 
     pix = Fae.fractal_flame(H, num_particles, num_iterations,
                             bounds, res; AT = AT, FT = FT)

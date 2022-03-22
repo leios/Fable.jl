@@ -20,7 +20,7 @@ function new_color_array(colors_in::Array{A}, fnum;
             end
         end
     elseif fnum == 1
-        return AT(colors_in')
+        return AT(transpose(colors_in[1]))
     end
 
     return AT(temp_colors)
@@ -72,7 +72,7 @@ function Hutchinson(fos::Array{FractalOperator},
                     color_set::Union{Array{A}, Array}, prob_set;
                     AT = Array, FT = Float64, name = "",
                     diagnostic = false, final = false) where A <: Array
-    Hutchinson(fos, color_set, prob_set; final = final,
+    Hutchinson(fos, [], color_set, prob_set; final = final,
                diagnostic = diagnostic, AT = AT, FT = FT, name = name)
 end
 
@@ -89,7 +89,7 @@ function Hutchinson(fos::Array{FractalOperator},
 
     if !isapprox(sum(prob_set),1)
         println("probability set != 1, resetting to be equal probability...")
-        prob_set = Tuple(1/N for i = 1:N)
+        prob_set = Tuple(1/fnum for i = 1:fnum)
     end
 
     symbols = ()
@@ -100,5 +100,11 @@ function Hutchinson(fos::Array{FractalOperator},
                              final = final)
 
     return Hutchinson(H, temp_colors, prob_set, symbols)
+end
+
+function update_fis!(H::Hutchinson, fis::Vector{FractalInput};
+                     max_symbols = length(fis)*2)
+
+    H.symbols = configure_fis!(fis; max_symbols = max_symbols)
 end
 

@@ -8,30 +8,30 @@ end
 
 function main()
 
-    check = Fae.@fo function check()
+    squish = Fae.@fo function squish(x, factor)
+        x *= factor
     end
+
+    factor = Fae.fi("factor", 1.0)
 
     AT = CuArray
     FT = Float32
 
-    frames = 1
-
-    theta = Fae.fi("theta", 3.14)
-
-    f_set_2 = [Fae.swirl, Fae.heart]
-    color_set = [[0,1,0,1], [0,0,1,1]]
-    prob_set = (0.5, 0.5)
+    frames = 10
 
     H = Fae.define_square([0.0,0.0], pi/8, 1.0, [1.0,0,1,1]; AT = AT)
-    H_2 = Fae.Hutchinson(f_set_2, color_set, prob_set; AT = AT, FT = FT, diagnostic=true)
+    H_2 = Fae.Hutchinson([squish], [factor], [[1.0,1,1,0]], (1.0,);
+                         AT = AT, FT = FT, final = true)
 
-    num_particles = 10000
-    num_iterations = 10000
+    num_particles = 1000
+    num_iterations = 1000
     bounds = [-1.125 1.125; -2 2]
     res = (1080, 1920)
 
     for i = 1:frames
-        filename = "blah.png"
+        factor = Fae.fi("factor", 1-(i/frames))
+        Fae.update_fis!(H_2, [factor])
+        filename = "check"*lpad(i-1,5,"0")*".png"
 
         pix = Fae.fractal_flame(H, H_2, num_particles, num_iterations, bounds,
                                 res; AT = AT, FT = FT)
