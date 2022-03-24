@@ -6,7 +6,7 @@ if has_cuda_gpu()
 end
 
 function main()
-    AT = CuArray
+    AT = Array
     FT = Float32
 
     num_particles = 10000

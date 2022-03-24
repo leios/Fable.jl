@@ -1,76 +1,53 @@
-function k(theta)
-    #theta = theta % (pi/2)
-    k = - (3/8)*(sin(theta) + cos(theta)) +
-        sqrt(1 - (9/64)*(sin(theta) - cos(theta))^2)
+# TODO:
+#     1. Use Box--Muller so we don't need polar input
+#     2. Add constant density disk
+# Code examples modified from: https://www.math.uwaterloo.ca/~wgilbert/FractalGallery/IFS/IFS.html
+
+disk = Fae.@fo function disk(x, y; radius = 1, pos = (0,0),
+                             function_index = 0)
+    theta = atan(y,x)
+    if y < 0
+        theta += 2*pi
+    end
+    r = sqrt(x*x + y*y)
+
+    if r > 1
+        r = 1
+    end
+
+    theta2 = (r+function_index)*pi
+    r2 = theta/(2*pi)
+
+    x = r2*cos(theta2)
+    y = r2*sin(theta2)
 end
 
-circle_0 = Fae.@fo function circle_0(x, y; radius = 1, pos = (0,0))
-    # recentering x / y
-    x_temp = x
-    y_temp = y
-    #x_temp = x - pos[1]
-    #y_temp = y - pos[2]
-
-    r = sqrt(x_temp*x_temp + y_temp*y_temp)
+constant_disk = Fae.@fo function constant_disk(x, y; radius = 1
+                                               function_index = 0)
     theta = atan(y,x)
+    if y < 0
+        theta += 2*pi
+    end
+    r = sqrt(x*x + y*y)
 
-    #k = k(theta)
-    theta_k = theta % (pi/2)
-    k = - (3/8)*(sin(theta_k) + cos(theta_k)) +
-        sqrt(1 - (9/64)*(sin(theta_k) - cos(theta_k))^2)
+    if r > 1
+        r = 1
+    end
 
-    x = r*k*cos(theta)
-    y = r*k*sin(theta)
-end
+    theta2 = (r+function_index)*pi
+    r2 = theta/(2*pi)
 
-circle_odd = Fae.@fo function circle_odd(x, y; radius = 1, n = 0)
-    # recentering x / y
-    x_temp = x
-    y_temp = y
-    #x_temp = x - pos[1]
-    #y_temp = y - pos[2]
-
-    r = sqrt(x_temp*x_temp + y_temp*y_temp)
-    theta = atan(y,x)
-
-    #k = k(theta)
-    theta_k = theta % (pi/2)
-    k = - (3/8)*(sin(theta_k) + cos(theta_k)) +
-        sqrt(1 - (9/64)*(sin(theta_k) - cos(theta_k))^2)
-
-    x = r*k*cos(theta) + (3*sqrt(2)/8)*cos(n*pi/4)
-    y = r*k*sin(theta) + (3*sqrt(2)/8)*sin(n*pi/4)
-
-end
-
-circle_even = Fae.@fo function circle_even(x, y; radius = 1, n = 0)
-    # recentering x / y
-    x_temp = x
-    y_temp = y
-    #x_temp = x - pos[1]
-    #y_temp = y - pos[2]
-
-    r = sqrt(x_temp*x_temp + y_temp*y_temp)
-    theta = atan(y,x)
-
-    #k = k(theta)
-    theta_k = theta % (pi/2)
-    k = - (3/8)*(sin(theta_k) + cos(theta_k)) +
-        sqrt(1 - (9/64)*(sin(theta_k) - cos(theta_k))^2)
-
-    x = r*k*(cos(theta)*cos(pi/4) + sin(theta)*sin(pi/4)) +
-        (3*sqrt(2)/8)*cos(n*pi/4)
-    y = r*k*(sin(theta)*cos(pi/4) + sin(pi/4)*cos(theta)) +
-        (3*sqrt(2)/8)*sin(n*pi/4)
+    x = r2*cos(theta2)
+    y = r2*sin(theta2)
 
 end
 
 # Returns back H, colors, and probs for a circle
 function define_circle(pos::Vector{FT}, radius::FT, color::Array{FT};
-                       AT = Array, name = "circle",
+                       AT = Array, name = "circle", chosen_fx = :disk,
                        diagnostic = false) where FT <: AbstractFloat
 
-    fos, fis = define_circle_operators(pos, radius)
+    fos, fis = define_circle_operators(pos, radius; chosen_fx = chosen_fx)
     fo_num = length(fos)
     prob_set = Tuple([1/fo_num for i = 1:fo_num])
 
@@ -80,21 +57,21 @@ function define_circle(pos::Vector{FT}, radius::FT, color::Array{FT};
 end
 
 # This specifically returns the fos for a circle
-function define_circle_operators(pos::Vector{FT},
-                                 radius) where FT <: AbstractFloat
+function define_circle_operators(pos::Vector{FT}, radius;
+                                 chosen_fx = :disk) where FT <: AbstractFloat
 
-   pos = fi("pos", pos)
-   c_0 = circle_0(radius = radius)
-   c_1 = circle_odd(radius = radius, n = 1)
-   c_2 = circle_even(radius = radius, n = 2)
-   c_3 = circle_odd(radius = radius, n = 3)
-   c_4 = circle_even(radius = radius, n = 4)
-   c_5 = circle_odd(radius = radius, n = 5)
-   c_6 = circle_even(radius = radius, n = 6)
-   c_7 = circle_odd(radius = radius, n = 7)
-   c_8 = circle_even(radius = radius, n = 8)
-   #return [c_0, c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8], [pos]
-   return [c_0, c_2, c_4, c_6, c_8], [pos]
+    f_0 = fi("f_0", 0)
+    f_1 = fi("f_1", 1)
+    if chosen_fx == :disk
+        d_0 = disk(function_index = f_0)
+        d_1 = disk(function_index = f_1)
+    elseif chosen_fx == constant_disk
+        d_0 = chosen_disk(function_index = f_0)
+        d_1 = chosen_disk(function_index = f_1)
+    else
+        error("function not found for circle IFS!")
+    end
+    return [d_0, d_1], [f_0, f_1]
 
 end
 
