@@ -3,7 +3,7 @@
 struct FractalInput
     index::Union{Int, UnitRange{Int}}
     name::String
-    val::Union{Number, Vector, Tuple, NTuple}
+    val::Union{Number, Vector, Tuple, NTuple, Array}
 end
 
 function fi(args...)
@@ -18,7 +18,7 @@ function configure_fis!(fis::Vector{FractalInput}; max_symbols = length(fis)*2)
     temp_array = zeros(max_symbols)
     idx = 1
     for i = 1:length(fis)
-        if isa(fis[i].val, Union{Vector, Tuple, NTuple})
+        if isa(fis[i].val, Union{Vector, Tuple, NTuple, Array})
             range = idx:idx+length(fis[i].val)-1
             temp_array[range] .= fis[i].val
             fis[i] = FractalInput(range, fis[i].name, fis[i].val)

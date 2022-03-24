@@ -9,8 +9,8 @@ function main()
     AT = Array
     FT = Float32
 
-    num_particles = 10000
-    num_iterations = 10000
+    num_particles = 1000
+    num_iterations = 1000
     bounds = [-1.125 1.125; -2 2]
     res = (1080, 1920)
 
@@ -19,7 +19,8 @@ function main()
     rotation = 0.0
     radius = 0.75
 
-    H = Fae.define_circle(pos, radius, color; AT = AT, diagnostic=true)
+    H = Fae.define_circle(pos, radius, color; AT = AT, diagnostic=true,
+                          bounds = bounds, chosen_fx = :naive_disk)
 
     pix = Fae.fractal_flame(H, num_particles, num_iterations,
                             bounds, res; AT = AT, FT = FT)
