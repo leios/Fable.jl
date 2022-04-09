@@ -1,3 +1,11 @@
+identity = @fo function identity(x, y)
+end
+
+shift = @fo function shift(x, y; loc = (0,0))
+    x += loc[2]
+    y += loc[1]
+end
+
 antibubble = @fo function antibubble(x, y)
     r2 = (x*x + y*y)
     c = r2/4
@@ -17,9 +25,9 @@ halfway = @fo function halfway(x, y; loc=(0,0))
     y = 0.5*(loc[2] + y)
 end
 
-sinusoidal = @fo function sinusoidal(x, y, t)
-    x = sin(p[tid, 2])
-    y = sin(p[tid, 1])
+sinusoidal = @fo function sinusoidal(x, y)
+    x = sin(x)
+    y = sin(y)
 end
 
 polar_play = @fo function polar_play(x, y, t, theta)
@@ -30,7 +38,7 @@ polar_play = @fo function polar_play(x, y, t, theta)
     x = theta/pi
 end
 
-polar = @fo function polar(x, y, t, theta)
+polar = @fo function polar(x, y, theta)
     r = sqrt(sum(x*x + y*y))
     theta = atan(y, x) + theta
 

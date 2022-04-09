@@ -8,12 +8,15 @@ naive_disk = Fae.@fo function naive_disk(x, y; radius = 1, pos = (0,0),
                                          bounds = (0, 0, 1, 1))
     x_temp = (x-pos[2])/radius
     y_temp = (y-pos[1])/radius
-
-    theta = atan(y_temp,x_temp)
-    if y_temp < 0
-        theta += 2*pi
-    end
     r = sqrt(x_temp*x_temp + y_temp*y_temp)
+
+    theta = pi
+    if !isapprox(r, 0)
+        theta = atan(y_temp,x_temp)
+        if y_temp < 0
+            theta += 2*pi
+        end
+    end
 
     theta2 = (r+function_index)*pi
     r2 = theta/(2*pi)
@@ -28,12 +31,15 @@ constant_disk = Fae.@fo function constant_disk(x, y; radius = 1, pos = (0,0),
 
     x_temp = (x-pos[2])/radius
     y_temp = (y-pos[1])/radius
-
-    theta = atan(y_temp,x_temp)
-    if y_temp < 0
-        theta += 2*pi
-    end
     r = x_temp*x_temp + y_temp*y_temp
+
+    theta = pi
+    if !isapprox(r, 0)
+        theta = atan(y_temp,x_temp)
+        if y_temp < 0
+            theta += 2*pi
+        end
+    end
 
     theta2 = (r+function_index)*pi
     r2 = sqrt(theta/(2*pi))
