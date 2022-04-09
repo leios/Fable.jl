@@ -4,40 +4,42 @@
 # Code examples modified from: https://www.math.uwaterloo.ca/~wgilbert/FractalGallery/IFS/IFS.html
 
 naive_disk = Fae.@fo function naive_disk(x, y; radius = 1, pos = (0,0),
-                                   function_index = 0, bounds = (0, 0, 1, 1))
-    theta = atan(y,x)
-    if y < 0
+                                         function_index = 0,
+                                         bounds = (0, 0, 1, 1))
+    x_temp = (x-pos[2])/radius
+    y_temp = (y-pos[1])/radius
+
+    theta = atan(y_temp,x_temp)
+    if y_temp < 0
         theta += 2*pi
     end
-    r = sqrt(x*x + y*y)
+    r = sqrt(x_temp*x_temp + y_temp*y_temp)
 
     theta2 = (r+function_index)*pi
     r2 = theta/(2*pi)
 
-    x = r2*cos(theta2)
-    y = r2*sin(theta2)
+    x = radius*r2*cos(theta2)+pos[2]
+    y = radius*r2*sin(theta2)+pos[1]
 end
 
-constant_disk = Fae.@fo function constant_disk(x, y; radius = 1,
+constant_disk = Fae.@fo function constant_disk(x, y; radius = 1, pos = (0,0),
                                                function_index = 0,
                                                bounds = (0, 0, 1, 1))
-    r = (x - bounds[2])/(bounds[4]-bounds[2])
-    if r > 1
-        r = 1
-    end 
 
-    s = r*((y - bounds[1])/(bounds[3]-bounds[1]))
-    if s > r
-        s = r
-    end 
+    x_temp = (x-pos[2])/radius
+    y_temp = (y-pos[1])/radius
 
-    r2 = 0.5*s + r*(0.5 - function_index) + function_index
-    s = 0.5*r + s*(function_index - 0.5)
+    theta = atan(y_temp,x_temp)
+    if y_temp < 0
+        theta += 2*pi
+    end
+    r = x_temp*x_temp + y_temp*y_temp
 
-    theta = 2*pi*s/r
+    theta2 = (r+function_index)*pi
+    r2 = sqrt(theta/(2*pi))
 
-    x = r2*cos(theta)
-    y = r2*sin(theta)
+    x = radius*r2*cos(theta2)+pos[2]
+    y = radius*r2*sin(theta2)+pos[1]
 
 end
 
@@ -58,23 +60,25 @@ function define_circle(pos::Vector{FT}, radius::FT, color::Array{FT};
 end
 
 # This specifically returns the fos for a circle
-function define_circle_operators(pos::Vector{FT}, radius;
+function define_circle_operators(pos::Union{Vector{FT}, Tuple}, radius;
                                  chosen_fx = :constant_disk,
                                  bounds = (0,0,1,1)) where FT <: AbstractFloat
 
     f_0 = fi("f_0", 0)
     f_1 = fi("f_1", 1)
+    pos = fi("pos", Tuple(pos))
+    radius = fi("radius", radius)
     bounds = fi("bounds", bounds)
     if chosen_fx == :naive_disk
-        d_0 = naive_disk(function_index = f_0)
-        d_1 = naive_disk(function_index = f_1)
+        d_0 = naive_disk(function_index = f_0, pos = pos, radius = radius)
+        d_1 = naive_disk(function_index = f_1, pos = pos, radius = radius)
     elseif chosen_fx == :constant_disk
-        d_0 = constant_disk(function_index = f_0)
-        d_1 = constant_disk(function_index = f_1)
+        d_0 = constant_disk(function_index = f_0, pos = pos, radius = radius)
+        d_1 = constant_disk(function_index = f_1, pos = pos, radius = radius)
     else
         error("function not found for circle IFS!")
     end
-    return [d_0, d_1], [f_0, f_1, bounds]
+    return [d_0, d_1], [f_0, f_1, pos, radius]
 
 end
 
