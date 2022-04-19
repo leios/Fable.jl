@@ -7,9 +7,12 @@ Fractal Flame implementation in Julia (https://flam3.com/flame_draves.pdf)
 
 ### Notes on fractal operators
 1. Create an addition function to add operators to existing Hutchinson ops
+    - Also, how do you add H ops?
 2. Create a simple method to add fis
 3. allow for arrays when configuring fos
 4. Add better defaults for creating custom hutchinson ops
+5. Dynamically change H based on what objects are in frame
+6. Settle on notation. What comes first, x or y?
 
 ### Notes on Audio visualization
 1. We can plot frequencies with FFT

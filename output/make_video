@@ -1,1 +1,1 @@
-ffmpeg -r 60 -i ../check%05d.png -c:v libx264 -pix_fmt yuv420p output.mp4
+ffmpeg -r 30 -i ../check%05d.png -c:v libx264 -pix_fmt yuv420p output.mp4

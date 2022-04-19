@@ -6,7 +6,8 @@ if has_cuda_gpu()
 end
 
 function main()
-    AT = Array
+    #AT = Array
+    AT = CuArray
     FT = Float32
 
     num_particles = 10000
@@ -26,10 +27,10 @@ function main()
     H = Fae.define_circle(pos, radius, color; AT = AT, diagnostic=true,
                           bounds = bounds, chosen_fx = :constant_disk)
     H2 = Fae.Hutchinson([Fae.shift(loc = new_loc), Fae.horseshoe],[new_loc],
-                        [[1.0, 0, 1.0, 1.0],[0,1.0, 0, 1.0]], (0.5, 0.5);
+                        [[1.0, 0, 1.0, 1.0],[0,1.0, 0, 1.0]], (0.75, 0.25);
                         final = true, diagnostic = true)
 
-    pix = Fae.fractal_flame(H, H2, num_particles, num_iterations,
+    pix = Fae.fractal_flame(H, num_particles, num_iterations,
                             bounds, res; AT = AT, FT = FT)
 
     filename = "check.png"
