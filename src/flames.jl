@@ -1,6 +1,44 @@
 identity = @fo function identity(x, y)
 end
 
+waves = @fo function waves(x, y; c = 1, f = 1, b = 1, e = 1)
+    x_temp = x
+
+    x += b * sin(y/c^2)
+    y += e * sin(x_temp/f^2)
+end
+
+cross = @fo function cross(x, y)
+    val = sqrt(1/(x^2 + y^2)^2)
+    x *= val
+    y *= val
+end
+
+fan = @fo function fan(x, y; c = 1, f = 1)
+    t = pi*c^2
+    theta = atan(y,x)
+    if y < 0
+        theta += 2*pi
+    end
+
+    r = sqrt(x^2+y^2)
+
+    if (theta + f) % t > 0.5*t
+        x = r*cos(theta - 0.5*t)
+        y = r*sin(theta - 0.5*t)
+    elseif (theta + f) % t <= 0.5*t
+        x = r*cos(theta + 0.5*t)
+        y = r*sin(theta + 0.5*t)
+    end
+
+end
+
+popcorn = @fo function popcorn(x, y; c = 1, f = 1)
+    x_temp = x
+    x += c*sin(tan(3*y))
+    y += f*sin(tan(3*x_temp))
+end
+
 shift = @fo function shift(x, y; loc = (0,0))
     x += loc[2]
     y += loc[1]
@@ -38,9 +76,9 @@ polar_play = @fo function polar_play(x, y, t, theta)
     x = theta/pi
 end
 
-polar = @fo function polar(x, y, theta)
+polar = @fo function polar(x, y)
     r = sqrt(sum(x*x + y*y))
-    theta = atan(y, x) + theta
+    theta = atan(y, x)
 
     y = r-1
     x = theta/pi
