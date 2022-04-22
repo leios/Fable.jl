@@ -17,9 +17,6 @@ end
 fan = @fo function fan(x, y; c = 1, f = 1)
     t = pi*c^2
     theta = atan(y,x)
-    if y < 0
-        theta += 2*pi
-    end
 
     r = sqrt(x^2+y^2)
 
@@ -70,7 +67,8 @@ end
 
 polar_play = @fo function polar_play(x, y, t, theta)
     r = sqrt(sum(x*x + y*y))
-    theta = atan(y, x) + theta*t
+    theta = atan(y, x)
+    theta += theta*t
 
     y = 1-r
     x = theta/pi
@@ -79,6 +77,7 @@ end
 polar = @fo function polar(x, y)
     r = sqrt(sum(x*x + y*y))
     theta = atan(y, x)
+
 
     y = r-1
     x = theta/pi
@@ -98,11 +97,11 @@ heart = @fo function heart(x, y, t)
     r = sqrt(x*x + y*y)
     theta = atan(y, x)
 
-    y = -r*cos(r)
-    x = r*sin(r)
+    y = -r*cos(theta*r)
+    x = r*sin(theta*r)
 end
 
-rotate = @fo function rotate(x, y, t, theta)
+rotate = @fo function rotate(x, y; theta = 0.5*pi)
     x = x*cos(theta) - y*sin(theta)
     y = x*sin(theta) + y*cos(theta)
 end
