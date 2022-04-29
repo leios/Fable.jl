@@ -94,8 +94,14 @@ function (a::Fae.FractalOperator)(args...; kwargs...)
         for i = 1:length(a.kwargs)
             if string(kwarg[1]) == string(a.kwargs[i].args[end-1])
                 if isa(kwarg[2], FractalInput)
-                    new_kwargs[i] = Meta.parse(string(kwarg[1]) *"="*
-                                               string(kwarg[2].name))
+                    if isa(kwarg[2].val, Number) || kwarg[2].index == 0
+                        new_kwargs[i] = Meta.parse(string(kwarg[1]) *"="*
+                                                   string(kwarg[2].name))
+                    else
+                        new_kwargs[i] = Meta.parse(string(kwarg[1]) *"="*
+                                                   string(kwarg[2].name) *"["*
+                                                   string(kwarg[2].index) *"]")
+                    end
                 elseif isa(kwarg[2], Array)
                     error("Cannot create new kwarg array! "*
                           "Please use Tuple syntax ()!")

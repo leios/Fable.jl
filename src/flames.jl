@@ -8,7 +8,7 @@ waves = @fo function waves(x, y; c = 1, f = 1, b = 1, e = 1)
     y += e * sin(x_temp/f^2)
 end
 
-cross = @fo function cross(x, y)
+fae_cross = @fo function fae_cross(x, y)
     val = sqrt(1/(x^2 + y^2)^2)
     x *= val
     y *= val
@@ -83,17 +83,20 @@ polar = @fo function polar(x, y)
     x = theta/pi
 end
 
-horseshoe = @fo function horseshoe(x, y, t)
+horseshoe = @fo function horseshoe(x, y)
     r = sqrt(x*x + y*y)
     if r < 0.001
         r = 0.001
     end
 
-    x = (x-y)*(x+y)/r
-    y = 2*x*y/r
+    v1 = (x-y)*(x+y)/r
+    v2 = 2*x*y/r
+
+    x = v1
+    y = v2
 end
 
-heart = @fo function heart(x, y, t)
+heart = @fo function heart(x, y)
     r = sqrt(x*x + y*y)
     theta = atan(y, x)
 
@@ -106,7 +109,7 @@ rotate = @fo function rotate(x, y; theta = 0.5*pi)
     y = x*sin(theta) + y*cos(theta)
 end
 
-swirl = @fo function swirl(x, y, t)
+swirl = @fo function swirl(x, y)
     r = sqrt(y*y + x*x)
 
     v1 = x*cos(r*r) + y*sin(r*r)

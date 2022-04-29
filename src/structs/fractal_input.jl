@@ -14,13 +14,18 @@ function fi(name, val)
     return FractalInput(0, name, val)
 end
 
-function configure_fis!(fis::Vector{FractalInput}; max_symbols = length(fis)*2)
+function configure_fis!(fis::Vector{FractalInput})
+    max_symbols = 0
+    for i = 1:length(fis)
+        max_symbols += length(fis[i].val)
+    end
+
     temp_array = zeros(max_symbols)
     idx = 1
     for i = 1:length(fis)
         if isa(fis[i].val, Union{Vector, Tuple, NTuple, Array})
             range = idx:idx+length(fis[i].val)-1
-            temp_array[range] .= fis[i].val
+            temp_array[range] .= fis[i].val[:]
             fis[i] = FractalInput(range, fis[i].name, fis[i].val)
             idx += length(fis[i].val)
         else
@@ -31,4 +36,8 @@ function configure_fis!(fis::Vector{FractalInput}; max_symbols = length(fis)*2)
     end
 
     return Tuple(temp_array[1:idx-1])
+end
+
+function Base.getindex(fi::FractalInput, idx::Union{Int,UnitRange{Int64}})
+    return FractalInput(idx, fi.name, fi.val)
 end
