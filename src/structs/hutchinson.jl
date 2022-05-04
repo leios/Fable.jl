@@ -102,9 +102,69 @@ function Hutchinson(fos::Array{FractalOperator},
     return Hutchinson(H, temp_colors, prob_set, symbols)
 end
 
-function update_fis!(H::Hutchinson, fis::Vector{FractalInput};
-                     max_symbols = length(fis)*2)
+function Hutchinson(fos::Vector{FractalOperator}, fis::Vector;
+                    AT = Array, FT = Float64, name = "",
+                    diagnostic = false, final = false)
 
-    H.symbols = configure_fis!(fis; max_symbols = max_symbols)
+    # constructing probabilities and colors
+    fnum = length(fos)
+    prob_array = zeros(fnum)
+    color_array = zeros(fnum, 4)
+
+    for i = 1:length(fos)
+        color_array[i,:] .= convert_to_array(fos[i].color)
+        prob_array[i] = fos[i].prob
+    end
+
+    prob_set = Tuple(prob_array)
+
+    if !isapprox(sum(prob_set),1)
+        println("probability set != 1, resetting to be equal probability...")
+        prob_set = Tuple(1/fnum for i = 1:fnum)
+    end
+
+    symbols = ()
+    if length(fis) > 0
+        symbols = configure_fis!(fis)
+    end
+
+    H = configure_hutchinson(fos, fis; name = name, diagnostic = diagnostic,
+                             final = final)
+
+    return Hutchinson(H, AT(color_array), prob_set, symbols)
+
 end
 
+function Hutchinson(fos::Vector{FractalOperator};
+                    AT = Array, FT = Float64, name = "",
+                    diagnostic = false, final = false)
+    Hutchinson(fos, [], AT = AT, FT = FT, name = name, diagnostic = diagnostic,
+               final = final)
+end
+
+function update_fis!(H::Hutchinson, fis::Vector{FractalInput})
+    H.symbols = configure_fis!(fis)
+end
+
+function convert_to_array(new_color::Union{RGB,
+                                           RGBA,
+                                           Vector{N},
+                                           Tuple}) where N <: Number
+    if isa(new_color, RGB)
+        return [new_color.r, new_color.g, new_color.b, 1]
+    elseif isa(new_color, RGBA)
+        return [new_color.r, new_color.g, new_color.b, new_color.a]
+    elseif isa(new_color, Vector) || isa(new_color, Tuple)
+        return new_color
+    else
+        error("Cannot convert to color array")
+    end
+
+end
+
+function update_colors!(H::Hutchinson, fx_id,
+                        new_color::Union{RGB, RGBA, Vector{N}};
+                        AT = Array) where N<:Number
+
+    H.color_set[i,:] .= AT(convert_to_array(new_color))
+end

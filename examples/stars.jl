@@ -36,14 +36,15 @@ function main()
     new_loc2 = Fae.fi("loc2",(-0.5, -0.5))
     scale2 = Fae.fi("scale2", 0.75)
 
-    fo1 = scale_and_translate(translation = fi_array[1:2], scale = scale)
-    fo2 = scale_and_translate(translation = new_loc2, scale = scale2)
+    fo1 = scale_and_translate(translation = fi_array[1:2], scale = scale,
+                              prob = 0.5, color = (1,0,1,1))
+    fo2 = scale_and_translate(translation = new_loc2, scale = scale2,
+                              prob = 0.5, color = (0,1,0,1))
 
     H = Fae.define_circle(pos, radius, color; AT = AT, diagnostic=true,
                           bounds = bounds, chosen_fx = :constant_disk)
     H2 = Fae.Hutchinson([fo1, fo2],
-                        [new_loc, scale, new_loc2, scale2, fi_array],
-                        [[1.0, 0, 1.0, 1.0],[0,1.0, 0, 1.0]], (0.75, 0.25);
+                        [new_loc, scale, new_loc2, scale2, fi_array];
                         final = true, diagnostic = true, AT = AT)
 
     pix = Fae.fractal_flame(H, H2, num_particles, num_iterations,

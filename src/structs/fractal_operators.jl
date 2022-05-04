@@ -3,13 +3,53 @@ struct FractalOperator
     args::Vector{Any}
     kwargs::Vector{Any}
     body::Union{Expr, Number, Symbol}
+    color::Union{RGB, RGBA, Vector{N}, Tuple} where N <: Number
+    prob::Number
 end
 
 # Note: this operator currently works like this:
 #       f = @fo function f(x) x+1 end
 #       There should be a way to define f in this macro, so we don't need to
 #       say `f = @fo function ...`, but instead just `@fo function ...`
-macro fo(expr)
+macro fo(ex...)
+
+    expr = ex[end]
+    kwargs = nothing
+
+    # defining color and probability information
+    if length(ex) > 1
+        kwargs = ex[1:end-1]
+    end
+
+    color = (0,0,0,0)
+    prob = 0
+
+    # parsing kwarg symbols
+    for i = 1:length(ex)-1
+        if isa(kwargs[i], Symbol)
+            error("FractalOperator kwarg require = sign! Cannot define: \n"*
+                  string(kwargs[i]))
+        elseif kwargs[i].head == :(=)
+            if(kwargs[i].args[1] == :color)
+                # Note: I don't like this eval, but don't know how to remove it
+                color = eval(kwargs[i].args[2])
+                if isa(color, Vector) || isa(color, Tuple)
+                    if length(color) < 3 || length(color) > 4
+                        error("Colors must have 3 or 4 elements!")
+                    end
+                end
+            elseif(kwargs[i].args[1] == :prob)
+                prob = kwargs[i].args[2]
+            else
+                error("FractalOperators only accept color and prob kwargs! "*
+                      "Cannot define:\n"*
+                      string(kwargs[i]))
+            end
+        else
+            error("FractalOperator kwargs require = sign! Cannot define: \n"*
+                  string(kwargs[i]))
+        end
+    end
 
     if isa(expr, Symbol)
         error("Cannot convert Symbol to Fractal Operator!")
@@ -20,7 +60,7 @@ macro fo(expr)
             name = def[:name]
             args = def[:args]
             kwargs = def[:kwargs]
-            return FractalOperator(name,args,kwargs,expr.args[2])
+            return FractalOperator(name,args,kwargs,expr.args[2], color, prob)
         # inline symbol definitions
         elseif isa(expr.args[1], Symbol)
             error("Cannot create Fractal Operator (@fo)! "*
@@ -31,7 +71,7 @@ macro fo(expr)
         name = def[:name]
         args = def[:args]
         kwargs = def[:kwargs]
-        return FractalOperator(name,args,kwargs,expr.args[2])
+        return FractalOperator(name,args,kwargs,expr.args[2], color, prob)
     else
         error("Cannot convert expr to Fractal Operator!")
     end
@@ -88,10 +128,15 @@ function configure_fo(fo::FractalOperator, fis::Vector{FractalInput})
     return eval(F)
 end
 
+# We single out the prob and color kwarg
 function (a::Fae.FractalOperator)(args...; kwargs...)
+    color = a.color
+    prob = a.prob
+
     new_kwargs = deepcopy(a.kwargs)
     for kwarg in kwargs
         for i = 1:length(a.kwargs)
+            # a.kwargs[i].args[end-1] is the rhs of the fo kwarg
             if string(kwarg[1]) == string(a.kwargs[i].args[end-1])
                 if isa(kwarg[2], FractalInput)
                     if isa(kwarg[2].val, Number) || kwarg[2].index == 0
@@ -109,10 +154,14 @@ function (a::Fae.FractalOperator)(args...; kwargs...)
                     new_kwargs[i] = Meta.parse(string(kwarg[1]) *"="*
                                                string(kwarg[2]))
                 end
+            elseif string(kwarg[1]) == "color"
+                color = kwarg[2]
+            elseif string(kwarg[1]) == "prob"
+                prob = kwarg[2]
             end
         end
     end
 
-    return FractalOperator(a.name, a.args, new_kwargs, a.body)
+    return FractalOperator(a.name, a.args, new_kwargs, a.body, color, prob)
 end
 
