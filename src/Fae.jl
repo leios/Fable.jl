@@ -5,6 +5,7 @@ using CUDA
 using CUDAKernels
 using MacroTools
 using DataStructures
+using Atomix: @atomic, @atomicswap, @atomicreplace
 
 using Images
 using VideoIO

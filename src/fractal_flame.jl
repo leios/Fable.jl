@@ -106,21 +106,34 @@ end
                 bin = find_bin(pixel_values, shared_tile[lid,3],
                                shared_tile[lid,4], bounds, bin_widths)
                 if bin > 0 && bin < length(pixel_values)
-                    atomic_add!(pointer(pixel_values, bin), Int(1))
-                    atomic_add!(pointer(pixel_reds, bin),
-                                FT(H_clrs[fid,1]*H_clrs[fid,4]))
-                    atomic_add!(pointer(pixel_greens, bin),
-                                FT(H_clrs[fid,2]*H_clrs[fid,4]))
-                    atomic_add!(pointer(pixel_blues, bin),
-                                FT(H_clrs[fid,3]*H_clrs[fid,4]))
+                    @atomic pixel_values[bin] += 1
+                    @atomic pixel_reds[bin] += FT(H_clrs[fid,1]*H_clrs[fid,4])
+                    @atomic pixel_greens[bin] += FT(H_clrs[fid,2]*H_clrs[fid,4])
+                    @atomic pixel_blues[bin] += FT(H_clrs[fid,3]*H_clrs[fid,4])
+
+                    #atomic_add!(pointer(pixel_values, bin), Int(1))
+                    #atomic_add!(pointer(pixel_reds, bin),
+                    #            FT(H_clrs[fid,1]*H_clrs[fid,4]))
+                    #atomic_add!(pointer(pixel_greens, bin),
+                    #            FT(H_clrs[fid,2]*H_clrs[fid,4]))
+                    #atomic_add!(pointer(pixel_blues, bin),
+                    #            FT(H_clrs[fid,3]*H_clrs[fid,4]))
                     if H2_fx != Fae.null && H2_clrs[fid_2+3*fnum_2] > 0
-                        atomic_add!(pointer(pixel_values, bin), Int(1))
-                        atomic_add!(pointer(pixel_reds, bin),
-                            FT(H2_clrs[fid_2]*H2_clrs[fid_2+3*fnum_2]))
-                        atomic_add!(pointer(pixel_greens, bin),
-                            FT(H2_clrs[fid_2+1*fnum_2]*H2_clrs[fid_2+3*fnum_2]))
-                        atomic_add!(pointer(pixel_blues, bin),
-                            FT(H2_clrs[fid_2+2*fnum_2]*H2_clrs[fid_2+3*fnum_2]))
+                        @atomic pixel_values[bin] += 1
+                        @atomic pixel_reds[bin] +=
+                                FT(H2_clrs[fid_2,1]*H_clrs[fid_2,4])
+                        @atomic pixel_greens[bin] +=
+                                FT(H_clrs[fid_2,2]*H_clrs[fid_2,4])
+                        @atomic pixel_blues[bin] +=
+                                FT(H_clrs[fid_2,3]*H_clrs[fid_2,4])
+
+                        #atomic_add!(pointer(pixel_values, bin), Int(1))
+                        #atomic_add!(pointer(pixel_reds, bin),
+                        #    FT(H2_clrs[fid_2]*H2_clrs[fid_2+3*fnum_2]))
+                        #atomic_add!(pointer(pixel_greens, bin),
+                        #    FT(H2_clrs[fid_2+1*fnum_2]*H2_clrs[fid_2+3*fnum_2]))
+                        #atomic_add!(pointer(pixel_blues, bin),
+                        #    FT(H2_clrs[fid_2+2*fnum_2]*H2_clrs[fid_2+3*fnum_2]))
                     end
                 end
             end
