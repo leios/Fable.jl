@@ -22,6 +22,8 @@ function main()
     bounds = [-1.125 1.125; -2 2]
     res = (1080, 1920)
 
+    pix = Fae.Pixels(res; AT = AT, FT = FT)
+
     #pos = [-1, -1.5]
     pos = [0, 0.]
     #color = [0.5, 0.25, 0.75, 1]
@@ -47,8 +49,8 @@ function main()
                         [new_loc, scale, new_loc2, scale2, fi_array];
                         final = true, diagnostic = true, AT = AT)
 
-    pix = Fae.fractal_flame(H, H2, num_particles, num_iterations,
-                            bounds, res; AT = AT, FT = FT)
+    Fae.fractal_flame!(pix, H, H2, num_particles, num_iterations,
+                       bounds, res; AT = AT, FT = FT)
 
     filename = "check.png"
 

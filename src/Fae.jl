@@ -7,6 +7,7 @@ using MacroTools
 using DataStructures
 
 using Images
+using VideoIO
 
 # KA kernels
 include("histogram.jl")
@@ -30,6 +31,6 @@ include("fractal_flame.jl")
 
 # postprocessing
 include("postprocessing/postprocessing.jl")
-include("postprocessing/image_tools.jl")
+include("postprocessing/io_tools.jl")
 
 end # module
