@@ -1,3 +1,9 @@
+export Flames
+
+module Flames
+
+import Fae.@fo
+
 identity = @fo function identity(x, y)
 end
 
@@ -118,9 +124,4 @@ swirl = @fo function swirl(x, y)
     y = v1
     x = v2
 end
-
-#=
-function sierpinski(point::T, shape_vertex::T) where T
-    return 0.5*(point .+ shape_vertex)
 end
-=#

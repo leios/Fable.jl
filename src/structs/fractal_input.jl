@@ -1,3 +1,5 @@
+export FractalInput, fi
+
 # Fractal inputs are essentially wrappers for the symbols tuple
 # I would like to use have these outward-facing so users can update the tuple
 struct FractalInput

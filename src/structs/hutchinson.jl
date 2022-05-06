@@ -1,3 +1,5 @@
+export Hutchinson, update_fis!, update_colors!
+
 function null(_p, tid, symbols, fid)
     _p[tid,3] = _p[tid,1]
     _p[tid,4] = _p[tid,2]

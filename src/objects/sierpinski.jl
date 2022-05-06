@@ -1,3 +1,4 @@
+export define_sierpinski, update_sierpinski!
 function define_sierpinski(A::Vector{FT}, B::Vector{FT}, C::Vector{FT},
                            color::Array{FT}; AT = Array,
                            name = "sierpinski",

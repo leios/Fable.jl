@@ -5,7 +5,7 @@ if has_cuda_gpu()
     CUDA.allowscalar(false)
 end
 
-AT = Array
+AT = CuArray
 FT = Float32
 
 frames = 1
@@ -19,27 +19,27 @@ for i = 1:frames
     filename = "check"*lpad(i-1,5,"0")*".png"
     t = 1.5*(i-1)/frames
 
-    H = Fae.Hutchinson([Fae.swirl,
-                        Fae.polar,
-                        Fae.heart,
-                        Fae.horseshoe],
-                       [],
-                       [[0, 1, 0, 1.0],
-                        [0, 0, 1, 1.0],
-                        [1, 0, 1, 1.0],
-                        [1, 0, 0, 1]],
-                       (0.25,0.25, 0.25, 0.25);
-                       final = false, diagnostic = true, AT = AT)
+    H = Hutchinson([Flames.swirl,
+                    Flames.polar,
+                    Flames.heart,
+                    Flames.horseshoe],
+                   [],
+                   [[0, 1, 0, 1.0],
+                    [0, 0, 1, 1.0],
+                    [1, 0, 1, 1.0],
+                    [1, 0, 0, 1]],
+                   (0.25,0.25, 0.25, 0.25);
+                   final = false, diagnostic = true, AT = AT)
 
-    H2 = Fae.Hutchinson([Fae.sinusoidal, Fae.identity],
-                       [],
-                       [[0.25, 0.25, 0.25, 1.0], [0,0,0,0]],
-                       (1,0);
-                       final = true, diagnostic = true, AT = AT, name = "2")
+    H2 = Hutchinson([Flames.sinusoidal, Flames.identity],
+                   [],
+                   [[0.25, 0.25, 0.25, 1.0], [0,0,0,0]],
+                   (1,0);
+                   final = true, diagnostic = true, AT = AT, name = "2")
 
-    pix = Fae.fractal_flame(H, H2, num_particles, num_iterations,
-                            bounds, res; AT = AT, FT = FT)
+    pix = fractal_flame(H, H2, num_particles, num_iterations,
+                        bounds, res; AT = AT, FT = FT)
 
-    @time Fae.write_image([pix], filename)
+    @time write_image([pix], filename)
 
 end

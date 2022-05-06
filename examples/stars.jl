@@ -5,7 +5,7 @@ if has_cuda_gpu()
     CUDA.allowscalar(false)
 end
 
-scale_and_translate = Fae.@fo function scale_and_translate(x, y;
+scale_and_translate = @fo function scale_and_translate(x, y;
                                                        translation = (0,0),
                                                        scale = 1)
     x = scale*x + translation[2]
@@ -22,7 +22,7 @@ function main()
     bounds = [-1.125 1.125; -2 2]
     res = (1080, 1920)
 
-    pix = Fae.Pixels(res; AT = AT, FT = FT)
+    pix = Pixels(res; AT = AT, FT = FT)
 
     #pos = [-1, -1.5]
     pos = [0, 0.]
@@ -31,30 +31,30 @@ function main()
     radius = 0.25
     #radius = 1.0
 
-    fi_array = Fae.fi("fi_array", [0.5 0.5 3; 0.5 5 6])
+    fi_array = fi("fi_array", [0.5 0.5 3; 0.5 5 6])
 
-    new_loc = Fae.fi("loc",(0.5, 0.5))
-    scale = Fae.fi("scale", 0.5)
-    new_loc2 = Fae.fi("loc2",(-0.5, -0.5))
-    scale2 = Fae.fi("scale2", 0.75)
+    new_loc = fi("loc",(0.5, 0.5))
+    scale = fi("scale", 0.5)
+    new_loc2 = fi("loc2",(-0.5, -0.5))
+    scale2 = fi("scale2", 0.75)
 
     fo1 = scale_and_translate(translation = fi_array[1:2], scale = scale,
                               prob = 0.5, color = (1,0,1,1))
     fo2 = scale_and_translate(translation = new_loc2, scale = scale2,
                               prob = 0.5, color = (0,1,0,1))
 
-    H = Fae.define_circle(pos, radius, color; AT = AT, diagnostic=true,
+    H = define_circle(pos, radius, color; AT = AT, diagnostic=true,
                           bounds = bounds, chosen_fx = :constant_disk)
-    H2 = Fae.Hutchinson([fo1, fo2],
+    H2 = Hutchinson([fo1, fo2],
                         [new_loc, scale, new_loc2, scale2, fi_array];
                         final = true, diagnostic = true, AT = AT)
 
-    Fae.fractal_flame!(pix, H, H2, num_particles, num_iterations,
+    fractal_flame!(pix, H, H2, num_particles, num_iterations,
                        bounds, res; AT = AT, FT = FT)
 
     filename = "check.png"
 
-    @time Fae.write_image([pix], filename)
+    @time write_image([pix], filename)
 end
 
 main()

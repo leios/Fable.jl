@@ -1,3 +1,4 @@
+export write_image
 # TODO: Probably shouldn't print anything anymore...
 using LinearAlgebra
 
@@ -67,6 +68,7 @@ function write_image(pixels::Vector{Pixels}, filename; gamma = 2.2,
     end
 
     save(filename, img)
+    println(filename)
 end
 
 function add_layer!(img, layer::Pixels; gamma = 2.2, diagnostic = false)

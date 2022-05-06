@@ -1,3 +1,5 @@
+export define_circle, update_circle
+
 # TODO:
 #     1. Use Box--Muller so we don't need polar input
 #     2. Add constant density disk

@@ -1,3 +1,4 @@
+export define_rectangle, update_rectangle!
 # Returns back H, colors, and probs for a square
 function define_rectangle(pos::Vector{FT}, theta::FT, scale_x::FT, scale_y,
                           color::Array{FT}; AT = Array,

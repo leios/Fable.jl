@@ -1,3 +1,5 @@
+export fractal_flame, fractal_flame!
+
 # couldn't figure out how to get an n-dim version working for GPU
 @inline function on_image(p_y, p_x, bounds, dims)
     flag = true

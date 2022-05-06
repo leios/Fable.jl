@@ -1,3 +1,5 @@
+export FractalOperator, @fo
+
 struct FractalOperator
     name::Symbol
     args::Vector{Any}

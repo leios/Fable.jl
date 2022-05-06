@@ -1,3 +1,5 @@
+export Pixels
+
 # Right now, points just holds positions... Probably can remove this abstraction
 mutable struct Points
     positions::Union{Array{}, CuArray{}} where T <: AbstractFloat
@@ -25,5 +27,3 @@ end
 
 Pixels(s; AT=Array, FT = Float64) = Pixels(AT(zeros(Int,s)), AT(zeros(FT, s)),
                                            AT(zeros(FT, s)), AT(zeros(FT, s)))
-
-Pixel(x) = Pixel(x, RGB(0))
