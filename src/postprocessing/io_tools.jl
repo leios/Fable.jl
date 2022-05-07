@@ -1,4 +1,5 @@
 export write_image
+
 # TODO: Probably shouldn't print anything anymore...
 using LinearAlgebra
 
@@ -33,45 +34,39 @@ function normalize!(img::Array{C,2}) where {C <: Union{RGB, RGBA}}
     
 end
 
-function pixel_sum(signal::Array{Pixel,2})
-    rsum = 0
-    for i = 1:length(signal)
-        rsum += signal[i].val
-    end
-
-    return rsum
-end
-
 function to_rgb(r,g,b)
     return RGB(r,g,b)
 end
 
-
-function to_logscale!(img, pix, max_val; gamma = 2.2)
+function to_logscale!(img, pix)
     for i = 1:length(img)
         if pix.values[i] != 0
-            alpha = log10((9*pix.values[i]/max_val)+1)
+            if pix.logscale
+                alpha = log10((9*pix.values[i]/pix.max_value)+1)
+            else
+                alpha = pix.values[i]/pix.max_value
+            end
 
-            img[i] = RGBA(pix.reds[i]^(1/gamma),
-                          pix.greens[i]^(1/gamma),
-                          pix.blues[i]^(1/gamma),
-                          alpha^(1/gamma))
+            img[i] = RGBA(pix.reds[i]^(1/pix.gamma),
+                          pix.greens[i]^(1/pix.gamma),
+                          pix.blues[i]^(1/pix.gamma),
+                          alpha^(1/pix.gamma))
         end
     end
 end
 
-function write_image(pixels::Vector{Pixels}, filename; gamma = 2.2,
+function write_image(pixels::Vector{Pixels}, filename;
                      img = fill(RGB(0,0,0), size(pixels[1].values)),
                      diagnostic = false)
     for i = 1:length(pixels)
-        add_layer!(img, pixels[i]; gamma = gamma, diagnostic = diagnostic)
+        add_layer!(img, pixels[i]; diagnostic = diagnostic)
     end
 
     save(filename, img)
     println(filename)
 end
 
-function add_layer!(img, layer::Pixels; gamma = 2.2, diagnostic = false)
+function add_layer!(img, layer::Pixels; diagnostic = false)
 
     println("Initialization:")
     @time begin
@@ -82,7 +77,9 @@ function add_layer!(img, layer::Pixels; gamma = 2.2, diagnostic = false)
                          Array(layer.greens), Array(layer.blues))
         end
 
-        max_val = maximum(pix.values)
+        if pix.calc_max_value == 0
+            pix.max_value = maximum(pix.values)
+        end
         if diagnostic
             println("sum of all pixel values: ", sum(pix.values))
             println("max red is: ", maximum(layer.reds))
@@ -109,6 +106,6 @@ function add_layer!(img, layer::Pixels; gamma = 2.2, diagnostic = false)
     end
 
     println("writing to layer")
-    @time to_logscale!(img, pix, max_val; gamma = gamma)
+    @time to_logscale!(img, pix)
 
 end
