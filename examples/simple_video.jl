@@ -8,15 +8,17 @@ end
 AT = CuArray
 FT = Float32
 
-frames = 1
+frames = 10
 
 num_particles = 10000
 num_iterations = 10000
 bounds = [-2 2; -2 2]
 res = (1000, 1000)
 
+video_out = open_video((1000,1000); framerate = 30, filename = "out.mp4",
+                       encoder_options = (crf=23, preset="medium"))
+
 for i = 1:frames
-    filename = "check"*lpad(i-1,5,"0")*".png"
     t = 1.5*(i-1)/frames
 
     H = Hutchinson([Flames.swirl,
@@ -40,6 +42,9 @@ for i = 1:frames
     pix = fractal_flame(H, H2, num_particles, num_iterations,
                         bounds, res; AT = AT, FT = FT)
 
-    @time write_image([pix], filename)
+    println("appending to video:")
+    @time write_video!(video_out, [pix])
 
 end
+
+close_video(video_out)

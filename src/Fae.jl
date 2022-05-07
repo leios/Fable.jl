@@ -5,6 +5,7 @@ using CUDA
 using CUDAKernels
 using MacroTools
 using DataStructures
+using LinearAlgebra
 
 using Images
 using VideoIO
@@ -27,10 +28,13 @@ include("objects/sierpinski.jl")
 include("simple_rng.jl")
 include("transformations.jl")
 include("flames.jl")
-include("fractal_flame.jl")
 
-# postprocessing
+# Postprocessing
+include("postprocessing/io_structs.jl")
 include("postprocessing/postprocessing.jl")
 include("postprocessing/io_tools.jl")
+
+# Main file
+include("fractal_flame.jl")
 
 end # module

@@ -6,6 +6,10 @@
     pix_blues[tid] = 0
 end
 
+function zero!(a::Array{T}) where T <: Union{RGB, RGB{N0f8}}
+    a[:] .= RGB(0)
+end
+
 function zero!(pix; numthreads = 256, numcores = 4)
     
     if isa(pix.reds, Array)

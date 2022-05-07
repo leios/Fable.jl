@@ -43,10 +43,10 @@ function define_rectangle_operators(pos::Vector{FT}, theta::FT,
     p4_y = - scale_x*sin(theta) + scale_y*cos(theta) + pos[2]
     p4 = fi("p4", (p4_x, p4_y))
 
-    square_1 = halfway(loc = p1)
-    square_2 = halfway(loc = p2)
-    square_3 = halfway(loc = p3)
-    square_4 = halfway(loc = p4)
+    square_1 = Flames.halfway(loc = p1)
+    square_2 = Flames.halfway(loc = p2)
+    square_3 = Flames.halfway(loc = p3)
+    square_4 = Flames.halfway(loc = p4)
 
     return [square_1, square_2, square_3, square_4], [p1, p2, p3, p4]
 end

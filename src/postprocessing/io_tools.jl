@@ -1,7 +1,4 @@
-export write_image
-
-# TODO: Probably shouldn't print anything anymore...
-using LinearAlgebra
+export write_image, write_video!
 
 #TODO: maybe normalize channels altogether, not separate?
 function normalize!(img::Array{C,2}) where {C <: Union{RGB, RGBA}}
@@ -64,6 +61,18 @@ function write_image(pixels::Vector{Pixels}, filename;
 
     save(filename, img)
     println(filename)
+end
+
+function write_video!(v::VideoParams, pixels::Vector{Pixels};
+                      diagnostic = false)
+    for i = 1:length(pixels)
+        add_layer!(v.frame, pixels[i]; diagnostic = diagnostic)
+    end
+
+    write(v.writer, v.frame)
+    zero!(v.frame)
+    println(v.frame_count)
+    v.frame_count += 1
 end
 
 function add_layer!(img, layer::Pixels; diagnostic = false)
