@@ -14,7 +14,7 @@ end
 
 
 function main()
-    AT = CuArray
+    AT = Array
     FT = Float32
 
     num_particles = 1000
@@ -44,13 +44,13 @@ function main()
                               prob = 0.5, color = (0,1,0,1))
 
     H = define_circle(pos, radius, color; AT = AT, diagnostic=true,
-                          bounds = bounds, chosen_fx = :constant_disk)
+                      bounds = bounds, chosen_fx = :constant_disk)
     H2 = Hutchinson([fo1, fo2],
-                        [new_loc, scale, new_loc2, scale2, fi_array];
-                        final = true, diagnostic = true, AT = AT)
+                    [new_loc, scale, new_loc2, scale2, fi_array];
+                    final = true, diagnostic = true, AT = AT)
 
     fractal_flame!(pix, H, H2, num_particles, num_iterations,
-                       bounds, res; AT = AT, FT = FT)
+                   bounds, res; AT = AT, FT = FT)
 
     filename = "check.png"
 

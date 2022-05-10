@@ -46,6 +46,7 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
         println(H.symbols)
     end
 
+    println(H.symbols)
     kernel!(ps.positions, n, H.ops, H.color_set, H.prob_set, H.symbols, H.fnums,
             H2.ops, H2.color_set, H2.symbols, H2.prob_set, H2.fnums,
             pxs.values, pxs.reds, pxs.greens, pxs.blues,
@@ -53,8 +54,8 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
             ndrange=size(ps.positions)[1])
 end
 
-@kernel function naive_chaos_kernel!(points, n, H, H_clrs, H_probs, H_fnums, 
-                                     symbols, H2_fx, H2_clrs, H2_symbols,
+@kernel function naive_chaos_kernel!(points, n, H, H_clrs, H_probs, H1_symbols,
+                                     H1_fnums, H2_fx, H2_clrs, H2_symbols,
                                      H2_probs, H2_fnums,
                                      pixel_values, pixel_reds, pixel_greens,
                                      pixel_blues, bounds, bin_widths,
@@ -82,6 +83,8 @@ end
     seed = quick_seed(tid)
 
     for i = 1:n
+
+        # quick way to tell if in range to be calculated or not
         sketchy_sum = 0
         for i = 1:dims
             @inbounds sketchy_sum += abs(shared_tile[lid,i])
@@ -90,7 +93,7 @@ end
             seed = simple_rand(seed)
             fid = find_fid(H_probs, fnum, seed)
 
-            @inbounds H(shared_tile, lid, symbols, fid)
+            @inbounds H(shared_tile, lid, H1_symbols, fid)
 
             fid_2 = fnum_2
 
@@ -111,11 +114,11 @@ end
                 if bin > 0 && bin < length(pixel_values)
                     atomic_add!(pointer(pixel_values, bin), Int(1))
                     atomic_add!(pointer(pixel_reds, bin),
-                                FT(H_clrs[fid,1]*H_clrs[fid,4]))
+                                FT(H_clrs[fid]*H_clrs[fid+3*fnum]))
                     atomic_add!(pointer(pixel_greens, bin),
-                                FT(H_clrs[fid,2]*H_clrs[fid,4]))
+                                FT(H_clrs[fid+1*fnum]*H_clrs[fid+3*fnum]))
                     atomic_add!(pointer(pixel_blues, bin),
-                                FT(H_clrs[fid,3]*H_clrs[fid,4]))
+                                FT(H_clrs[fid+2*fnum]*H_clrs[fid+3*fnum]))
 
                     if H2_fx != Fae.null && H2_clrs[fid_2+3*fnum_2] > 0
                         atomic_add!(pointer(pixel_values, bin), Int(1))

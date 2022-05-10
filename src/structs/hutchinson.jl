@@ -139,7 +139,7 @@ function Hutchinson(fos::Vector{FractalOperator}, fis::Vector;
     H = configure_hutchinson(fos, fis; name = name, diagnostic = diagnostic,
                              final = final)
 
-    return Hutchinson(H, AT(color_array), prob_set, symbols)
+    return Hutchinson(H, AT(color_array), prob_set, symbols, (length(fos)))
 
 end
 

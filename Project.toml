@@ -4,6 +4,7 @@ authors = ["James Schloss <jrs.schloss@gmail.com>"]
 version = "0.1.0"
 
 [deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 CUDAKernels = "72cfdca4-0801-4ab0-bf6a-d52aa10adc57"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
