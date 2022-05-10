@@ -6,10 +6,16 @@ function null(_p, tid, symbols, fid)
 end
 
 mutable struct Hutchinson
-    op::Function
-    color_set::Union{Array{T,2}, CuArray{T,2}} where T <: AbstractFloat
+    ops::Union{Function, Tuple{Function}}
+    color_set::Union{Array{T,2}, CuArray{T,2},
+                     Tuple, NTuple} where T <: AbstractFloat
     prob_set::Union{NTuple, Tuple}
     symbols::Union{NTuple, Tuple}
+    fnums::Union{NTuple, Tuple, Int}
+end
+
+function Hutchinson()
+    return Hutchinson(Fae.null, (()), (()), (()), (()))
 end
 
 function new_color_array(colors_in::Array{A}, fnum;
@@ -74,7 +80,7 @@ function Hutchinson(fos::Array{FractalOperator},
                     color_set::Union{Array{A}, Array}, prob_set;
                     AT = Array, FT = Float64, name = "",
                     diagnostic = false, final = false) where A <: Array
-    Hutchinson(fos, [], color_set, prob_set; final = final,
+    Hutchinson(fos, [], color_set, prob_set, (length(fos)); final = final,
                diagnostic = diagnostic, AT = AT, FT = FT, name = name)
 end
 
@@ -101,7 +107,7 @@ function Hutchinson(fos::Array{FractalOperator},
     H = configure_hutchinson(fos, fis; name = name, diagnostic = diagnostic,
                              final = final)
 
-    return Hutchinson(H, temp_colors, prob_set, symbols)
+    return Hutchinson(H, temp_colors, prob_set, symbols, (length(fos)))
 end
 
 function Hutchinson(fos::Vector{FractalOperator}, fis::Vector;
