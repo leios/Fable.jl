@@ -15,11 +15,11 @@ export fractal_flame, fractal_flame!
     return flag
 end
 
-@inline function find_fid(prob_set, fnum, seed)
+@inline function find_fid(prob_set, fnum_start, fnum_end, seed)
     rnd = seed/typemax(UInt)
     p = 0.0
 
-    for i = 1:fnum
+    for i = fnum_start:fnum_end
         p += prob_set[i]
         if rnd <= p
             return i
@@ -46,7 +46,6 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
         println(H.symbols)
     end
 
-    println(H.symbols)
     kernel!(ps.positions, n, H.ops, H.color_set, H.prob_set, H.symbols, H.fnums,
             H2.ops, H2.color_set, H2.symbols, H2.prob_set, H2.fnums,
             pxs.values, pxs.reds, pxs.greens, pxs.blues,
@@ -55,7 +54,7 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
 end
 
 @kernel function naive_chaos_kernel!(points, n, H, H_clrs, H_probs, H1_symbols,
-                                     H1_fnums, H2_fx, H2_clrs, H2_symbols,
+                                     H1_fnums, H2, H2_clrs, H2_symbols,
                                      H2_probs, H2_fnums,
                                      pixel_values, pixel_reds, pixel_greens,
                                      pixel_blues, bounds, bin_widths,
@@ -64,12 +63,10 @@ end
     tid = @index(Global,Linear)
     lid = @index(Local,Linear)
 
+    fnum_1 = sum(H1_fnums)
+    fnum_2 = sum(H2_fnums)
+
     @uniform dims = size(points)[2]
-    @uniform fnum = size(H_clrs)[1]
-    @uniform fnum_2 = 1
-    if !isa(H2_clrs, Union{Tuple, NTuple})
-        fnum_2 = size(H2_clrs)[1]
-    end
 
     @uniform FT = eltype(pixel_reds)
 
@@ -81,6 +78,8 @@ end
     end
 
     seed = quick_seed(tid)
+    fid = 1
+    fid_2 = 1
 
     for i = 1:n
 
@@ -90,44 +89,68 @@ end
             @inbounds sketchy_sum += abs(shared_tile[lid,i])
         end
         if sketchy_sum < max_range
-            seed = simple_rand(seed)
-            fid = find_fid(H_probs, fnum, seed)
-
-            @inbounds H(shared_tile, lid, H1_symbols, fid)
-
-            fid_2 = fnum_2
-
-            if H2_fx != Fae.null
-                if fid_2 > 1
-                    seed = simple_rand(seed)
-                    fid_2 = find_fid(H2_probs, fnum_2, seed)
+            offset = 1
+            for j = 1:length(H)
+                if j > 1
+                    offset = H1_fnums[j-1]+1
                 end
+                if H1_fnums[j] > 1
+                    seed = simple_rand(seed)
+                    fid = find_fid(H_probs, offset, H1_fnums[j], seed)
+                else
+                    fid = 1
+                end
+
+                @inbounds H[j](shared_tile, lid, H1_symbols, fid)
             end
 
-            H2_fx(shared_tile, lid, H2_symbols, fid_2)
+            offset = 1
+            for j = 1:length(H2)
+                if j > 1
+                    offset = H2_fnums[j-1]+1
+                end
 
-            on_img_flag = on_image(shared_tile[lid,3], shared_tile[lid,4],
-                                   bounds, dims)
-            if i > num_ignore && on_img_flag
-                bin = find_bin(pixel_values, shared_tile[lid,3],
-                               shared_tile[lid,4], bounds, bin_widths)
-                if bin > 0 && bin < length(pixel_values)
-                    atomic_add!(pointer(pixel_values, bin), Int(1))
-                    atomic_add!(pointer(pixel_reds, bin),
-                                FT(H_clrs[fid]*H_clrs[fid+3*fnum]))
-                    atomic_add!(pointer(pixel_greens, bin),
-                                FT(H_clrs[fid+1*fnum]*H_clrs[fid+3*fnum]))
-                    atomic_add!(pointer(pixel_blues, bin),
-                                FT(H_clrs[fid+2*fnum]*H_clrs[fid+3*fnum]))
+                if H2[j] != Fae.null
+                    if H2_fnums[j] > 1
+                        seed = simple_rand(seed)
+                        fid_2 = find_fid(H2_probs, offset, H2_fnums[j], seed)
+                    else
+                        fid_2 = 1
+                    end
+                end
 
-                    if H2_fx != Fae.null && H2_clrs[fid_2+3*fnum_2] > 0
+                H2[j](shared_tile, lid, H2_symbols, fid_2)
+
+                on_img_flag = on_image(shared_tile[lid,3], shared_tile[lid,4],
+                                       bounds, dims)
+                if i > num_ignore && on_img_flag
+                    choice = offset + fid - 1
+
+                    bin = find_bin(pixel_values, shared_tile[lid,3],
+                                   shared_tile[lid,4], bounds, bin_widths)
+                    if bin > 0 && bin < length(pixel_values)
                         atomic_add!(pointer(pixel_values, bin), Int(1))
                         atomic_add!(pointer(pixel_reds, bin),
-                            FT(H2_clrs[fid_2]*H2_clrs[fid_2+3*fnum_2]))
+                                    FT(H_clrs[1, choice]*H_clrs[4, choice]))
                         atomic_add!(pointer(pixel_greens, bin),
-                            FT(H2_clrs[fid_2+1*fnum_2]*H2_clrs[fid_2+3*fnum_2]))
+                                    FT(H_clrs[2, choice]*
+                                       H_clrs[4, choice]))
                         atomic_add!(pointer(pixel_blues, bin),
-                            FT(H2_clrs[fid_2+2*fnum_2]*H2_clrs[fid_2+3*fnum_2]))
+                                    FT(H_clrs[3, choice]*
+                                       H_clrs[4, choice]))
+
+                        if H2[j] != Fae.null && H2_clrs[fid_2+3*fnum_2] > 0
+                            choice = offset + fid_2 - 1
+                            atomic_add!(pointer(pixel_values, bin), Int(1))
+                            atomic_add!(pointer(pixel_reds, bin),
+                                FT(H2_clrs[1, choice]*H2_clrs[4, choice]))
+                            atomic_add!(pointer(pixel_greens, bin),
+                                FT(H2_clrs[2, choice]*
+                                   H2_clrs[4, choice]))
+                            atomic_add!(pointer(pixel_blues, bin),
+                                FT(H2_clrs[3, choice]*
+                                   H2_clrs[4, choice]))
+                        end
                     end
                 end
             end

@@ -6,32 +6,32 @@ function null(_p, tid, symbols, fid)
 end
 
 mutable struct Hutchinson
-    ops::Union{Function, Tuple{Function}}
+    ops::Tuple{Function}
     color_set::Union{Array{T,2}, CuArray{T,2},
                      Tuple, NTuple} where T <: AbstractFloat
     prob_set::Union{NTuple, Tuple}
     symbols::Union{NTuple, Tuple}
-    fnums::Union{NTuple, Tuple, Int}
+    fnums::Union{NTuple, Tuple}
 end
 
 function Hutchinson()
-    return Hutchinson(Fae.null, (()), (()), (()), (()))
+    return Hutchinson(Fae.null, Tuple(0), Tuple(0), Tuple(0), Tuple(0))
 end
 
 function new_color_array(colors_in::Array{A}, fnum;
                          FT = Float64, AT = Array) where A
-    temp_colors = zeros(FT,fnum,4)
+    temp_colors = zeros(FT,4,fnum)
     if fnum > 1
         for i = 1:4
             for j = 1:fnum
-                temp_colors[j,i] = colors_in[j][i]
+                temp_colors[i,j] = colors_in[j][i]
             end
         end
+        return AT(temp_colors)
     elseif fnum == 1
-        return AT(transpose(colors_in[1]))
+        return AT(colors_in[1])
     end
 
-    return AT(temp_colors)
 end
 
 function configure_hutchinson(fos::Vector{FractalOperator},
@@ -107,7 +107,8 @@ function Hutchinson(fos::Array{FractalOperator},
     H = configure_hutchinson(fos, fis; name = name, diagnostic = diagnostic,
                              final = final)
 
-    return Hutchinson(H, temp_colors, prob_set, symbols, (length(fos)))
+    return Hutchinson((H,), temp_colors, prob_set,
+                      symbols, Tuple(length(fos)))
 end
 
 function Hutchinson(fos::Vector{FractalOperator}, fis::Vector;
@@ -117,10 +118,10 @@ function Hutchinson(fos::Vector{FractalOperator}, fis::Vector;
     # constructing probabilities and colors
     fnum = length(fos)
     prob_array = zeros(fnum)
-    color_array = zeros(fnum, 4)
+    color_array = zeros(4, fnum)
 
     for i = 1:length(fos)
-        color_array[i,:] .= convert_to_array(fos[i].color)
+        color_array[:,i] .= convert_to_array(fos[i].color)
         prob_array[i] = fos[i].prob
     end
 
@@ -139,7 +140,8 @@ function Hutchinson(fos::Vector{FractalOperator}, fis::Vector;
     H = configure_hutchinson(fos, fis; name = name, diagnostic = diagnostic,
                              final = final)
 
-    return Hutchinson(H, AT(color_array), prob_set, symbols, (length(fos)))
+    return Hutchinson((H,), AT(color_array), prob_set,
+                      symbols, Tuple(length(fos)))
 
 end
 
