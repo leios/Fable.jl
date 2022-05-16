@@ -32,3 +32,4 @@ notes
 *.mp4
 output/*
 video_ideas/*
+docs/build/
