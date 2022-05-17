@@ -12,6 +12,22 @@ scale_and_translate = @fo function scale_and_translate(x, y;
     y = scale*y + translation[1]
 end
 
+function create_stars(n; scale_factor = 1, max_range = 2, color = [1, 1, 1, 1])
+    fos = [FractalOperator() for i = 1:n]
+    fos = [FractalOperator() for i = 1:n]
+    for i = 1:n
+        temp_translation = (rand()*2*max_range - max_range,
+                            rand()*2*max_range - max_range)
+        temp_scale = scale_factor*(0.5*(rand()-1) + 1)
+        temp_fo = scale_and_translate(translation = temp_translation,
+                                      scale = temp_scale, prob = 1/n,
+                                      color = color)
+        fos[i] = temp_fo
+    end
+    return Hutchinson(fos; final = true, name = "stars", diagnostic = true)
+
+end
+
 
 function main()
     AT = Array
@@ -24,30 +40,14 @@ function main()
 
     pix = Pixels(res; AT = AT, FT = FT)
 
-    #pos = [-1, -1.5]
     pos = [0, 0.]
-    #color = [0.5, 0.25, 0.75, 1]
     color = [1., 1, 1, 1]
     radius = 0.25
-    #radius = 1.0
-
-    fi_array = fi("fi_array", [0.5 0.5 3; 0.5 5 6])
-
-    new_loc = fi("loc",(0.5, 0.5))
-    scale = fi("scale", 0.5)
-    new_loc2 = fi("loc2",(-0.5, -0.5))
-    scale2 = fi("scale2", 0.75)
-
-    fo1 = scale_and_translate(translation = fi_array[1:2], scale = scale,
-                              prob = 0.5, color = (1,0,1,1))
-    fo2 = scale_and_translate(translation = new_loc2, scale = scale2,
-                              prob = 0.5, color = (0,1,0,1))
 
     H = define_circle(pos, radius, color; AT = AT, diagnostic=true,
                       bounds = bounds, chosen_fx = :constant_disk)
-    H2 = Hutchinson([fo1, fo2],
-                    [new_loc, scale, new_loc2, scale2, fi_array];
-                    final = true, diagnostic = true, AT = AT)
+
+    H2 = create_stars(1000; max_range = 1, scale_factor = 0.1)
 
     fractal_flame!(pix, H, H2, num_particles, num_iterations,
                    bounds, res; AT = AT, FT = FT)
