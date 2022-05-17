@@ -15,7 +15,7 @@ mutable struct Hutchinson
 end
 
 function Hutchinson()
-    return Hutchinson(Fae.null, Tuple(0), Tuple(0), Tuple(0), Tuple(0))
+    return Hutchinson((Fae.null,), Tuple(0), Tuple(0), Tuple(0), Tuple(0))
 end
 
 function new_color_array(colors_in::Array{A}, fnum;

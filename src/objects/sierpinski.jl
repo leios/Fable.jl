@@ -20,7 +20,7 @@ function define_sierpinski(A::Vector{FT}, B::Vector{FT}, C::Vector{FT},
                       name = name, diagnostic = diagnostic)
 end
 
-# This specifically returns the fos for a square
+# This specifically returns the fos for a sierpinski triangle
 function define_sierpinski_operators(A::Vector{FT}, B::Vector{FT},
                                      C::Vector{FT}) where FT <: AbstractFloat
 
