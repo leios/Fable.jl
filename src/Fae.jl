@@ -17,7 +17,7 @@ include("histogram.jl")
 include("structs/fractal_input.jl")
 include("structs/fractal_operators.jl")
 include("structs/flame_structs.jl")
-include("structs/hutchinson.jl")
+include("structs/fractal_executable.jl")
 
 # Objects
 include("objects/rectangle.jl")
@@ -29,6 +29,7 @@ include("objects/barnsley.jl")
 include("simple_rng.jl")
 include("transformations.jl")
 include("flames.jl")
+include("colors.jl")
 
 # Postprocessing
 include("postprocessing/io_structs.jl")

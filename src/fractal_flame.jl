@@ -71,7 +71,7 @@ end
     @uniform FT = eltype(pixel_reds)
 
     @uniform gs = @groupsize()[1]
-    shared_tile = @localmem FT (gs,4)
+    shared_tile = @localmem FT (gs, 4)
 
     for i = 1:dims
         @inbounds shared_tile[lid,i] = points[tid,i]

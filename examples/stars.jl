@@ -1,3 +1,4 @@
+# TODO: Use square with fewer points instead of a bunch of circles!
 using Fae, Images, CUDA
 
 if has_cuda_gpu()

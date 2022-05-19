@@ -1,3 +1,4 @@
+# fee = Fractal Executable
 export Hutchinson, update_fis!, update_colors!, new_color_array, fee
 
 fee(args...) = Hutchonson(args...)
