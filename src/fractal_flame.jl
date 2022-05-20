@@ -61,7 +61,7 @@ end
                                      num_ignore, max_range)
 
     tid = @index(Global,Linear)
-    lid = @index(Local,Linear)
+    lid = @index(Local, Linear)
 
     fnum_1 = sum(H1_fnums)
     fnum_2 = sum(H2_fnums)
@@ -72,6 +72,7 @@ end
 
     @uniform gs = @groupsize()[1]
     shared_tile = @localmem FT (gs, 4)
+    shared_colors = @localmem FT (gs, 4)
 
     for i = 1:dims
         @inbounds shared_tile[lid,i] = points[tid,i]
@@ -92,11 +93,11 @@ end
             offset = 1
             for j = 1:length(H)
                 if j > 1
-                    offset = H1_fnums[j-1]+1
+                    @inbounds offset = H1_fnums[j-1]+1
                 end
                 if H1_fnums[j] > 1
                     seed = simple_rand(seed)
-                    fid = find_fid(H_probs, offset, H1_fnums[j], seed)
+                    @inbounds fid = find_fid(H_probs, offset, H1_fnums[j], seed)
                 else
                     fid = 1
                 end
@@ -113,43 +114,57 @@ end
                 if H2[j] != Fae.null
                     if H2_fnums[j] > 1
                         seed = simple_rand(seed)
-                        fid_2 = find_fid(H2_probs, offset, H2_fnums[j], seed)
+                        @inbounds fid_2 = find_fid(H2_probs, offset,
+                                                   H2_fnums[j], seed)
                     else
                         fid_2 = 1
                     end
                 end
 
-                H2[j](shared_tile, lid, H2_symbols, fid_2)
+                @inbounds H2[j](shared_tile, lid, H2_symbols, fid_2)
 
-                on_img_flag = on_image(shared_tile[lid,3], shared_tile[lid,4],
-                                       bounds, dims)
+                @inbounds on_img_flag = on_image(shared_tile[lid,3],
+                                                 shared_tile[lid,4],
+                                                 bounds, dims)
                 if i > num_ignore && on_img_flag
                     choice = offset + fid - 1
 
-                    bin = find_bin(pixel_values, shared_tile[lid,3],
-                                   shared_tile[lid,4], bounds, bin_widths)
+                    @inbounds bin = find_bin(pixel_values, shared_tile[lid,3],
+                                             shared_tile[lid,4], bounds,
+                                             bin_widths)
                     if bin > 0 && bin < length(pixel_values)
+                        # broadcasting gave me an error, so screw it
+                        @inbounds shared_colors[lid,1] = H_clrs[1,choice]
+                        @inbounds shared_colors[lid,2] = H_clrs[2,choice]
+                        @inbounds shared_colors[lid,3] = H_clrs[3,choice]
+                        @inbounds shared_colors[lid,4] = H_clrs[4,choice]
                         atomic_add!(pointer(pixel_values, bin), Int(1))
                         atomic_add!(pointer(pixel_reds, bin),
-                                    FT(H_clrs[1, choice]*H_clrs[4, choice]))
+                                    FT(shared_colors[lid, 1] *
+                                       shared_colors[lid, 4]))
                         atomic_add!(pointer(pixel_greens, bin),
-                                    FT(H_clrs[2, choice]*
-                                       H_clrs[4, choice]))
+                                    FT(shared_colors[lid, 2] *
+                                       shared_colors[lid, 4]))
                         atomic_add!(pointer(pixel_blues, bin),
-                                    FT(H_clrs[3, choice]*
-                                       H_clrs[4, choice]))
+                                    FT(shared_colors[lid, 3] *
+                                       shared_colors[lid, 4]))
 
                         if H2[j] != Fae.null && H2_clrs[fid_2+3*fnum_2] > 0
                             choice = offset + fid_2 - 1
+                            @inbounds shared_colors[lid,1] = H2_clrs[1,choice]
+                            @inbounds shared_colors[lid,2] = H2_clrs[2,choice]
+                            @inbounds shared_colors[lid,3] = H2_clrs[3,choice]
+                            @inbounds shared_colors[lid,4] = H2_clrs[4,choice]
                             atomic_add!(pointer(pixel_values, bin), Int(1))
                             atomic_add!(pointer(pixel_reds, bin),
-                                FT(H2_clrs[1, choice]*H2_clrs[4, choice]))
+                                FT(shared_colors[lid, 1] *
+                                   shared_colors[lid, 4]))
                             atomic_add!(pointer(pixel_greens, bin),
-                                FT(H2_clrs[2, choice]*
-                                   H2_clrs[4, choice]))
+                                FT(shared_colors[lid, 2] *
+                                   shared_colors[lid, 4]))
                             atomic_add!(pointer(pixel_blues, bin),
-                                FT(H2_clrs[3, choice]*
-                                   H2_clrs[4, choice]))
+                                FT(shared_colors[lid, 3] *
+                                   shared_colors[lid, 4]))
                         end
                     end
                 end
