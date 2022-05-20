@@ -1,15 +1,12 @@
 export FractalOperator, @fo
 
 struct FractalOperator
-    name::Symbol
-    args::Vector{Any}
-    kwargs::Vector{Any}
-    body::Union{Expr, Number, Symbol}
+    op::FractalUserMethod
     color::Union{RGB, RGBA, Vector{N}, Tuple} where N <: Number
     prob::Number
 end
 
-FractalOperator() = FractalOperator(:temp, [], [], 0, [0], 0)
+FractalOperator() = FractalOperator(FractalUserMethod(), [0], 0)
 
 # Note: this operator currently works like this:
 #       f = @fo function f(x) x+1 end
@@ -55,30 +52,11 @@ macro fo(ex...)
         end
     end
 
-    if isa(expr, Symbol)
-        error("Cannot convert Symbol to Fractal Operator!")
-    elseif expr.head == :(=)
-        # inline function definitions
-        if isa(expr.args[1], Expr)
-            def = MacroTools.splitdef(expr)
-            name = def[:name]
-            args = def[:args]
-            kwargs = def[:kwargs]
-            return FractalOperator(name,args,kwargs,expr.args[2], color, prob)
-        # inline symbol definitions
-        elseif isa(expr.args[1], Symbol)
-            error("Cannot create Fractal Operator (@fo)! "*
-                  "Maybe try Fractal Input (@fi)?")
-        end
-    elseif expr.head == :function
-        def = MacroTools.splitdef(expr)
-        name = def[:name]
-        args = def[:args]
-        kwargs = def[:kwargs]
-        return FractalOperator(name,args,kwargs,expr.args[2], color, prob)
-    else
-        error("Cannot convert expr to Fractal Operator!")
+    fum_ex = quote
+        @fum $expr
     end
+
+    return FractalOperator(eval(fum_ex), color, prob)
 end
 
 macro fractal_operator(expr)
@@ -98,17 +76,7 @@ end
 # This splats all kwargs into a block above each inlined fo
 # note: this only accepts simple expressions for now (p = a), not (p = 10*a)
 function create_header(fo::FractalOperator)
-
-    # Creating string to Meta.parse
-    parse_string = ""
-
-    for i = 1:length(fo.kwargs)
-        val = fo.kwargs[i].args[end]
-        parse_string *= string(fo.kwargs[i].args[end-1]) *" = "* 
-                        string(val) *"\n"
-    end
-
-    return parse_string
+    create_header(fo.op)
 
 end
 
@@ -137,11 +105,11 @@ function (a::Fae.FractalOperator)(args...; kwargs...)
     color = a.color
     prob = a.prob
 
-    new_kwargs = deepcopy(a.kwargs)
+    new_kwargs = deepcopy(a.op.kwargs)
     for kwarg in kwargs
-        for i = 1:length(a.kwargs)
+        for i = 1:length(a.op.kwargs)
             # a.kwargs[i].args[end-1] is the rhs of the fo kwarg
-            if string(kwarg[1]) == string(a.kwargs[i].args[end-1])
+            if string(kwarg[1]) == string(a.op.kwargs[i].args[end-1])
                 if isa(kwarg[2], FractalInput)
                     if isa(kwarg[2].val, Number) || kwarg[2].index == 0
                         new_kwargs[i] = Meta.parse(string(kwarg[1]) *"="*
@@ -166,6 +134,8 @@ function (a::Fae.FractalOperator)(args...; kwargs...)
         end
     end
 
-    return FractalOperator(a.name, a.args, new_kwargs, a.body, color, prob)
+    fum = a.op(args...;kwargs...)
+
+    return FractalOperator(fum, color, prob)
 end
 

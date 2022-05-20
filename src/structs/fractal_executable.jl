@@ -52,11 +52,11 @@ function configure_hutchinson(fos::Vector{FractalOperator},
         if i == 1
             temp_string = "if fid == "*string(i)*"\n"*
                           create_header(fos[i])*
-                          string(fos[i].body)*"\n"
+                          string(fos[i].op.body)*"\n"
         else
             temp_string = "elseif fid == "*string(i)*"\n"*
                           create_header(fos[i])*
-                          string(fos[i].body)*"\n"
+                          string(fos[i].op.body)*"\n"
         end
         fx_string *= temp_string
     end
