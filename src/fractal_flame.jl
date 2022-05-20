@@ -133,7 +133,7 @@ end
                                              shared_tile[lid,4], bounds,
                                              bin_widths)
                     if bin > 0 && bin < length(pixel_values)
-                        # broadcasting gave me an error, so screw it
+                        # broadcasting gave me an error on the GPU, so screw it
                         @inbounds shared_colors[lid,1] = H_clrs[1,choice]
                         @inbounds shared_colors[lid,2] = H_clrs[2,choice]
                         @inbounds shared_colors[lid,3] = H_clrs[3,choice]

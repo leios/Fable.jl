@@ -1,59 +1,22 @@
-export FractalOperator, @fo
+export FractalUserMethod, @fum
 
-struct FractalOperator
+struct FractalUserMethod
     name::Symbol
     args::Vector{Any}
     kwargs::Vector{Any}
     body::Union{Expr, Number, Symbol}
-    color::Union{RGB, RGBA, Vector{N}, Tuple} where N <: Number
-    prob::Number
 end
 
-FractalOperator() = FractalOperator(:temp, [], [], 0, [0], 0)
+FractalUserMethod() = FractalUserMethod(:temp, [], [], 0)
 
 # Note: this operator currently works like this:
-#       f = @fo function f(x) x+1 end
+#       f = @fum function f(x) x+1 end
 #       There should be a way to define f in this macro, so we don't need to
-#       say `f = @fo function ...`, but instead just `@fo function ...`
-macro fo(ex...)
+#       say `f = @fum function ...`, but instead just `@fum function ...`
+macro fum(ex...)
 
     expr = ex[end]
     kwargs = nothing
-
-    # defining color and probability information
-    if length(ex) > 1
-        kwargs = ex[1:end-1]
-    end
-
-    color = (0,0,0,0)
-    prob = 0
-
-    # parsing kwarg symbols
-    for i = 1:length(ex)-1
-        if isa(kwargs[i], Symbol)
-            error("FractalOperator kwarg require = sign! Cannot define: \n"*
-                  string(kwargs[i]))
-        elseif kwargs[i].head == :(=)
-            if(kwargs[i].args[1] == :color)
-                # Note: I don't like this eval, but don't know how to remove it
-                color = eval(kwargs[i].args[2])
-                if isa(color, Vector) || isa(color, Tuple)
-                    if length(color) < 3 || length(color) > 4
-                        error("Colors must have 3 or 4 elements!")
-                    end
-                end
-            elseif(kwargs[i].args[1] == :prob)
-                prob = kwargs[i].args[2]
-            else
-                error("FractalOperators only accept color and prob kwargs! "*
-                      "Cannot define:\n"*
-                      string(kwargs[i]))
-            end
-        else
-            error("FractalOperator kwargs require = sign! Cannot define: \n"*
-                  string(kwargs[i]))
-        end
-    end
 
     if isa(expr, Symbol)
         error("Cannot convert Symbol to Fractal Operator!")
@@ -64,10 +27,10 @@ macro fo(ex...)
             name = def[:name]
             args = def[:args]
             kwargs = def[:kwargs]
-            return FractalOperator(name,args,kwargs,expr.args[2], color, prob)
+            return FractalUserMethod(name,args,kwargs,expr.args[2])
         # inline symbol definitions
         elseif isa(expr.args[1], Symbol)
-            error("Cannot create Fractal Operator (@fo)! "*
+            error("Cannot create Fractal Operator (@fum)! "*
                   "Maybe try Fractal Input (@fi)?")
         end
     elseif expr.head == :function
@@ -75,36 +38,36 @@ macro fo(ex...)
         name = def[:name]
         args = def[:args]
         kwargs = def[:kwargs]
-        return FractalOperator(name,args,kwargs,expr.args[2], color, prob)
+        return FractalUserMethod(name,args,kwargs,expr.args[2])
     else
         error("Cannot convert expr to Fractal Operator!")
     end
 end
 
-macro fractal_operator(expr)
-    :(@fo($(esc(expr))))
+macro fractal_user_method(expr)
+    :(@fum($(esc(expr))))
 end
 
-function find_fo(arg::Symbol, fos::Vector{FractalOperator})
-    for i = 1:length(fos)
-        if arg == fos[i].name
-            return fos[i]
+function find_fum(arg::Symbol, fums::Vector{FractalUserMethod})
+    for i = 1:length(fums)
+        if arg == fums[i].name
+            return fums[i]
         end
     end
 
     error("Symbol ", arg, " not defined!")
 end
 
-# This splats all kwargs into a block above each inlined fo
+# This splats all kwargs into a block above each inlined fum
 # note: this only accepts simple expressions for now (p = a), not (p = 10*a)
-function create_header(fo::FractalOperator)
+function create_header(fum::FractalUserMethod)
 
     # Creating string to Meta.parse
     parse_string = ""
 
-    for i = 1:length(fo.kwargs)
-        val = fo.kwargs[i].args[end]
-        parse_string *= string(fo.kwargs[i].args[end-1]) *" = "* 
+    for i = 1:length(fum.kwargs)
+        val = fum.kwargs[i].args[end]
+        parse_string *= string(fum.kwargs[i].args[end-1]) *" = "* 
                         string(val) *"\n"
     end
 
@@ -112,16 +75,16 @@ function create_header(fo::FractalOperator)
 
 end
 
-function configure_fo(fo::FractalOperator, fis::Vector{FractalInput})
+function configure_fum(fum::FractalUserMethod, fis::Vector{FractalInput})
 
-    fx_string = "function "*string(fo.name)*"_finale(p, tid, symbols, fid)\n"
+    fx_string = "function "*string(fum.name)*"_finale(p, tid, symbols, fid)\n"
     fx_string *= "x = p[tid, 2] \n y = p[tid, 1]"
 
     for i = 1:length(fis)
         fx_string *= fis[i].name *" = symbols["*string(fis[i].index)*"]\n"
     end
 
-    fx_string *= create_header(fo) * string(fo.body)*"\n"
+    fx_string *= create_header(fum) * string(fum.body)*"\n"
     fx_string *= "p[tid, 2] = x \n p[tid, 1] = y \n"
     fx_string *= "end"
 
@@ -132,15 +95,11 @@ function configure_fo(fo::FractalOperator, fis::Vector{FractalInput})
     return eval(F)
 end
 
-# We single out the prob and color kwarg
-function (a::Fae.FractalOperator)(args...; kwargs...)
-    color = a.color
-    prob = a.prob
-
+function (a::Fae.FractalUserMethod)(args...; kwargs...)
     new_kwargs = deepcopy(a.kwargs)
     for kwarg in kwargs
         for i = 1:length(a.kwargs)
-            # a.kwargs[i].args[end-1] is the rhs of the fo kwarg
+            # a.kwargs[i].args[end-1] is the rhs of the fum kwarg
             if string(kwarg[1]) == string(a.kwargs[i].args[end-1])
                 if isa(kwarg[2], FractalInput)
                     if isa(kwarg[2].val, Number) || kwarg[2].index == 0
@@ -158,14 +117,10 @@ function (a::Fae.FractalOperator)(args...; kwargs...)
                     new_kwargs[i] = Meta.parse(string(kwarg[1]) *"="*
                                                string(kwarg[2]))
                 end
-            elseif string(kwarg[1]) == "color"
-                color = kwarg[2]
-            elseif string(kwarg[1]) == "prob"
-                prob = kwarg[2]
             end
         end
     end
 
-    return FractalOperator(a.name, a.args, new_kwargs, a.body, color, prob)
+    return FractalUserMethod(a.name, a.args, new_kwargs, a.body)
 end
 

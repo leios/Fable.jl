@@ -15,6 +15,7 @@ include("histogram.jl")
 
 # Fractal flame structures
 include("structs/fractal_input.jl")
+include("structs/fractal_user_methods.jl")
 include("structs/fractal_operators.jl")
 include("structs/flame_structs.jl")
 include("structs/fractal_executable.jl")
