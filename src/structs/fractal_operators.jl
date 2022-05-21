@@ -8,6 +8,9 @@ end
 
 FractalOperator() = FractalOperator(FractalUserMethod(), [0], 0)
 
+FractalOperator(f::FractalUserMethod) = FractalOperator(f, [0,0,0,0],0)
+FractalUserMethod(f::FractalOperator) = f.op
+
 # Note: this operator currently works like this:
 #       f = @fo function f(x) x+1 end
 #       There should be a way to define f in this macro, so we don't need to

@@ -1,26 +1,25 @@
 export Flames
 
 module Flames
+import Fae.@fum
 
-import Fae.@fo
-
-identity = @fo function identity(x, y)
+identity = @fum function identity(x, y)
 end
 
-waves = @fo function waves(x, y; c = 1, f = 1, b = 1, e = 1)
+waves = @fum function waves(x, y; c = 1, f = 1, b = 1, e = 1)
     x_temp = x
 
     x += b * sin(y/c^2)
     y += e * sin(x_temp/f^2)
 end
 
-fae_cross = @fo function fae_cross(x, y)
+fae_cross = @fum function fae_cross(x, y)
     val = sqrt(1/(x^2 + y^2)^2)
     x *= val
     y *= val
 end
 
-fan = @fo function fan(x, y; c = 1, f = 1)
+fan = @fum function fan(x, y; c = 1, f = 1)
     t = pi*c^2
     theta = atan(y,x)
 
@@ -36,42 +35,42 @@ fan = @fo function fan(x, y; c = 1, f = 1)
 
 end
 
-popcorn = @fo function popcorn(x, y; c = 1, f = 1)
+popcorn = @fum function popcorn(x, y; c = 1, f = 1)
     x_temp = x
     x += c*sin(tan(3*y))
     y += f*sin(tan(3*x_temp))
 end
 
-shift = @fo function shift(x, y; loc = (0,0))
+shift = @fum function shift(x, y; loc = (0,0))
     x += loc[2]
     y += loc[1]
 end
 
-antibubble = @fo function antibubble(x, y)
+antibubble = @fum function antibubble(x, y)
     r2 = (x*x + y*y)
     c = r2/4
     x = c*x
     y = c*y
 end
 
-bubble = @fo function bubble(x, y)
+bubble = @fum function bubble(x, y)
     r2 = (x*x + y*y)
     c = 4/(4+r2)
     x = c*x
     y = c*y
 end
 
-halfway = @fo function halfway(x, y; loc=(0,0))
+halfway = @fum function halfway(x, y; loc=(0,0))
     x = 0.5*(loc[1] + x)
     y = 0.5*(loc[2] + y)
 end
 
-sinusoidal = @fo function sinusoidal(x, y)
+sinusoidal = @fum function sinusoidal(x, y)
     x = sin(x)
     y = sin(y)
 end
 
-polar_play = @fo function polar_play(x, y, t, theta)
+polar_play = @fum function polar_play(x, y, t, theta)
     r = sqrt(sum(x*x + y*y))
     theta = atan(y, x)
     theta += theta*t
@@ -80,7 +79,7 @@ polar_play = @fo function polar_play(x, y, t, theta)
     x = theta/pi
 end
 
-polar = @fo function polar(x, y)
+polar = @fum function polar(x, y)
     r = sqrt(sum(x*x + y*y))
     theta = atan(y, x)
 
@@ -89,7 +88,7 @@ polar = @fo function polar(x, y)
     x = theta/pi
 end
 
-horseshoe = @fo function horseshoe(x, y)
+horseshoe = @fum function horseshoe(x, y)
     r = sqrt(x*x + y*y)
     if r < 0.001
         r = 0.001
@@ -102,7 +101,7 @@ horseshoe = @fo function horseshoe(x, y)
     y = v2
 end
 
-heart = @fo function heart(x, y)
+heart = @fum function heart(x, y)
     r = sqrt(x*x + y*y)
     theta = atan(y, x)
 
@@ -110,12 +109,12 @@ heart = @fo function heart(x, y)
     x = r*sin(theta*r)
 end
 
-rotate = @fo function rotate(x, y; theta = 0.5*pi)
+rotate = @fum function rotate(x, y; theta = 0.5*pi)
     x = x*cos(theta) - y*sin(theta)
     y = x*sin(theta) + y*cos(theta)
 end
 
-swirl = @fo function swirl(x, y)
+swirl = @fum function swirl(x, y)
     r = sqrt(y*y + x*x)
 
     v1 = x*cos(r*r) + y*sin(r*r)
