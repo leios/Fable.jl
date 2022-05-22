@@ -2,34 +2,36 @@ export Colors
 
 module Colors
 
-function previous(clr)
+import Fae.@fum
+
+previous = @fum function previous(clr)
 end
 
-function red(clr, tid)
-    clr[1,tid] = 1
-    clr[2,tid] = 0
-    clr[3,tid] = 0
-    clr[4,tid] = 1
+red = @fum function red(clr, tid)
+    red = 1
+    green = 0
+    blue = 0
+    alpha = 1
 end
 
-function green(clr, tid)
-    clr[1,tid] = 0
-    clr[2,tid] = 1
-    clr[3,tid] = 0
-    clr[4,tid] = 1
+green = @fum function green(clr, tid)
+    red = 0
+    green = 1
+    blue = 0
+    alpha = 1
 end
 
-function blue(clr, tid)
-    clr[1,tid] = 0
-    clr[2,tid] = 0
-    clr[3,tid] = 1
-    clr[4,tid] = 1
+blue = @fum function blue(clr, tid)
+    red = 0
+    green = 0
+    blue = 1
+    alpha = 1
 end
 
-function magenta(clr, tid)
-    clr[1,tid] = 1
-    clr[2,tid] = 0
-    clr[3,tid] = 1
-    clr[4,tid] = 1
+magenta = @fum function magenta(clr, tid)
+    red = 1
+    green = 0
+    blue = 1
+    alpha = 1
 end
 end

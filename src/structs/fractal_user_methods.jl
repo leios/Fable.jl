@@ -100,12 +100,23 @@ function configure_fum(fum::FractalUserMethod; name = "0")
 end
 
 function configure_fum(fum::FractalUserMethod, fis::Vector{FractalInput};
-                       name = "0")
+                       name = "0", fum_type = :color)
 
     used_fis = find_fis(fum, fis)
-    fx_string = "function "*string(fum.name)*"_"*name*"(p, tid, symbols)\n"
+    if fum_type == :color
+        fx_string = "function "*string(fum.name)*"_"*
+                    name*"(clr, p, tid, symbols)\n"
+    else
+        fx_string = "function "*string(fum.name)*"_"*name*"(p, tid, symbols)\n"
+    end
     fx_string *= "x = p[tid, 2] \n"
     fx_string *= "y = p[tid, 1] \n"
+    if fum_type == :color
+        fx_string *= "red = clr[tid, 1] \n"
+        fx_string *= "green = clr[tid, 2] \n"
+        fx_string *= "blue = clr[tid, 3] \n"
+        fx_string *= "alpha = clr[tid, 4] \n"
+    end
 
     println(used_fis, '\n', fis)
     for i = used_fis
@@ -115,7 +126,14 @@ function configure_fum(fum::FractalUserMethod, fis::Vector{FractalInput};
     end
 
     fx_string *= create_header(fum) * string(fum.body)*"\n"
-    fx_string *= "p[tid, 2] = x \n p[tid, 1] = y \n"
+    fx_string *= "p[tid, 2] = x \n "
+    fx_string *= "p[tid, 1] = y \n"
+    if fum_type == :color
+        fx_string *= "clr[tid, 1] = red \n"
+        fx_string *= "clr[tid, 2] = green \n"
+        fx_string *= "clr[tid, 3] = blue \n"
+        fx_string *= "clr[tid, 4] = alpha \n"
+    end
     fx_string *= "end"
 
     F = Meta.parse(replace(fx_string, "'" => '"'))
