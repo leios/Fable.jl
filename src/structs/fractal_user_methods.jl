@@ -1,4 +1,4 @@
-export FractalUserMethod, @fum
+export FractalUserMethod, @fum, configure_fum
 
 struct FractalUserMethod
     name::Symbol
@@ -75,13 +75,43 @@ function create_header(fum::FractalUserMethod)
 
 end
 
-function configure_fum(fum::FractalUserMethod, fis::Vector{FractalInput})
-
-    fx_string = "function "*string(fum.name)*"_finale(p, tid, symbols, fid)\n"
-    fx_string *= "x = p[tid, 2] \n y = p[tid, 1]"
-
+function find_fis(fum::FractalUserMethod, fis::Vector{FractalInput})
+    fi_indices = zeros(Int, length(fis))
+    current_fi = 1
     for i = 1:length(fis)
-        fx_string *= fis[i].name *" = symbols["*string(fis[i].index)*"]\n"
+        for arg in fum.args
+            if fis[i].name == string(arg)
+                fi_indices[i] = i
+                current_fi += 1
+            end
+        end
+        for kwarg in fum.kwargs
+            if fis[i].name == string(kwarg.args[1])
+                fi_indices[i] = i
+                current_fi += 1
+            end
+        end
+    end
+    return fi_indices[1:current_fi-1]
+end
+
+function configure_fum(fum::FractalUserMethod; name = "0")
+    configure_fum(fum, [FractalInput()]; name = name)
+end
+
+function configure_fum(fum::FractalUserMethod, fis::Vector{FractalInput};
+                       name = "0")
+
+    used_fis = find_fis(fum, fis)
+    fx_string = "function "*string(fum.name)*"_"*name*"(p, tid, symbols)\n"
+    fx_string *= "x = p[tid, 2] \n"
+    fx_string *= "y = p[tid, 1] \n"
+
+    println(used_fis, '\n', fis)
+    for i = used_fis
+        if fis[i].index != 0
+            fx_string *= fis[i].name *" = symbols["*string(fis[i].index)*"]\n"
+        end
     end
 
     fx_string *= create_header(fum) * string(fum.body)*"\n"
