@@ -134,10 +134,8 @@ end
                                              bin_widths)
                     if bin > 0 && bin < length(pixel_values)
                         # broadcasting gave me an error on the GPU, so screw it
-                        @inbounds shared_colors[lid,1] = H_clrs[1,choice]
-                        @inbounds shared_colors[lid,2] = H_clrs[2,choice]
-                        @inbounds shared_colors[lid,3] = H_clrs[3,choice]
-                        @inbounds shared_colors[lid,4] = H_clrs[4,choice]
+                        @inbounds H_clrs[choice](shared_colors, shared_tile,
+                                                 lid, H1_symbols)
                         atomic_add!(pointer(pixel_values, bin), Int(1))
                         atomic_add!(pointer(pixel_reds, bin),
                                     FT(shared_colors[lid, 1] *
@@ -149,12 +147,10 @@ end
                                     FT(shared_colors[lid, 3] *
                                        shared_colors[lid, 4]))
 
-                        if H2[j] != Fae.null && H2_clrs[fid_2+3*fnum_2] > 0
+                        if H2[j] != Fae.null
                             choice = offset + fid_2 - 1
-                            @inbounds shared_colors[lid,1] = H2_clrs[1,choice]
-                            @inbounds shared_colors[lid,2] = H2_clrs[2,choice]
-                            @inbounds shared_colors[lid,3] = H2_clrs[3,choice]
-                            @inbounds shared_colors[lid,4] = H2_clrs[4,choice]
+                            @inbounds H_clrs[choice](shared_colors, shared_tile,
+                                                     lid, H2_symbols)
                             atomic_add!(pointer(pixel_values, bin), Int(1))
                             atomic_add!(pointer(pixel_reds, bin),
                                 FT(shared_colors[lid, 1] *

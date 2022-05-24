@@ -8,10 +8,10 @@ end
 AT = CuArray
 FT = Float32
 
-frames = 10
+frames = 1
 
-num_particles = 10000
-num_iterations = 10000
+num_particles = 1000
+num_iterations = 1000
 bounds = [-2 2; -2 2]
 res = (1000, 1000)
 

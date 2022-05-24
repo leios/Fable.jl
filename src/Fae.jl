@@ -16,21 +16,21 @@ include("histogram.jl")
 # Fractal flame structures
 include("structs/fractal_input.jl")
 include("structs/fractal_user_methods.jl")
+include("colors.jl")
 include("structs/fractal_operators.jl")
 include("structs/flame_structs.jl")
 include("structs/fractal_executable.jl")
+
+# Operations
+include("simple_rng.jl")
+include("transformations.jl")
+include("flames.jl")
 
 # Objects
 include("objects/rectangle.jl")
 include("objects/circle.jl")
 include("objects/sierpinski.jl")
 include("objects/barnsley.jl")
-
-# Operations
-include("simple_rng.jl")
-include("transformations.jl")
-include("flames.jl")
-include("colors.jl")
 
 # Postprocessing
 include("postprocessing/io_structs.jl")

@@ -5,10 +5,10 @@ function define_rectangle(pos::Vector{FT}, theta::FT, scale_x::FT, scale_y,
                           name = "rectangle",
                           diagnostic = false) where FT <: AbstractFloat
 
-    fos, fis = define_rectangle_operators(pos, theta, scale_x, scale_y)
+    fums, fis = define_rectangle_operators(pos, theta, scale_x, scale_y)
     prob_set = (0.25, 0.25, 0.25, 0.25)
     color_set = [color for i = 1:4]
-    return Hutchinson(fos, fis, color_set, prob_set; AT = AT, FT = FT,
+    return Hutchinson(fums, fis, color_set, prob_set; AT = AT, FT = FT,
                       name = name, diagnostic = diagnostic)
 end
 
@@ -22,7 +22,7 @@ function define_square(pos::Vector{FT}, theta::FT, scale::FT,
                             name = name, diagnostic = diagnostic)
 end
 
-# This specifically returns the fos for a square
+# This specifically returns the fums for a square
 function define_rectangle_operators(pos::Vector{FT}, theta::FT,
                                     scale_x, scale_y) where FT <: AbstractFloat
 

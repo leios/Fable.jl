@@ -5,7 +5,7 @@ export define_circle, update_circle
 #     2. Add constant density disk
 # Code examples modified from: https://www.math.uwaterloo.ca/~wgilbert/FractalGallery/IFS/IFS.html
 
-naive_disk = Fae.@fo function naive_disk(x, y; radius = 1, pos = (0,0),
+naive_disk = Fae.@fum function naive_disk(x, y; radius = 1, pos = (0,0),
                                          function_index = 0,
                                          bounds = (0, 0, 1, 1))
     x_temp = (x-pos[2])/radius
@@ -27,7 +27,7 @@ naive_disk = Fae.@fo function naive_disk(x, y; radius = 1, pos = (0,0),
     y = radius*r2*sin(theta2)+pos[1]
 end
 
-constant_disk = Fae.@fo function constant_disk(x, y; radius = 1, pos = (0,0),
+constant_disk = Fae.@fum function constant_disk(x, y; radius = 1, pos = (0,0),
                                                function_index = 0,
                                                bounds = (0, 0, 1, 1))
 
@@ -57,17 +57,17 @@ function define_circle(pos::Vector{FT}, radius::FT, color::Array{FT};
                        chosen_fx = :constant_disk, diagnostic = false,
                        bounds = [0 1; 0 1]) where FT <: AbstractFloat
 
-    fos, fis = define_circle_operators(pos, radius; chosen_fx = chosen_fx,
+    fums, fis = define_circle_operators(pos, radius; chosen_fx = chosen_fx,
                                        bounds = vec(bounds))
-    fo_num = length(fos)
-    prob_set = Tuple([1/fo_num for i = 1:fo_num])
+    fum_num = length(fums)
+    prob_set = Tuple([1/fum_num for i = 1:fum_num])
 
-    color_set = [color for i = 1:fo_num]
-    return Hutchinson(fos, fis, color_set, prob_set; AT = AT, FT = FT,
+    color_set = [color for i = 1:fum_num]
+    return Hutchinson(fums, fis, color_set, prob_set; AT = AT, FT = FT,
                       name = name, diagnostic = diagnostic)
 end
 
-# This specifically returns the fos for a circle
+# This specifically returns the fums for a circle
 function define_circle_operators(pos::Union{Vector{FT}, Tuple}, radius;
                                  chosen_fx = :constant_disk,
                                  bounds = (0,0,1,1)) where FT <: AbstractFloat

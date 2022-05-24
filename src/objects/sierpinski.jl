@@ -13,14 +13,14 @@ function define_sierpinski(A::Vector{FT}, B::Vector{FT}, C::Vector{FT},
                            name = "sierpinski", 
                            diagnostic = false) where FT <: AbstractFloat
 
-    fos, fis = define_sierpinski_operators(A, B, C)
+    fums, fis = define_sierpinski_operators(A, B, C)
     prob_set = (0.33, 0.33, 0.34)
     color_set = [color_A, color_B, color_C]
-    return Hutchinson(fos, fis, color_set, prob_set; AT = AT, FT = FT,
+    return Hutchinson(fums, fis, color_set, prob_set; AT = AT, FT = FT,
                       name = name, diagnostic = diagnostic)
 end
 
-# This specifically returns the fos for a sierpinski triangle
+# This specifically returns the fums for a sierpinski triangle
 function define_sierpinski_operators(A::Vector{FT}, B::Vector{FT},
                                      C::Vector{FT}) where FT <: AbstractFloat
 

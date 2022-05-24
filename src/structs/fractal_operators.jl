@@ -2,13 +2,15 @@ export FractalOperator, @fo
 
 struct FractalOperator
     op::FractalUserMethod
-    color::Union{RGB, RGBA, Vector{N}, Tuple} where N <: Number
+    color::FractalUserMethod
     prob::Number
 end
 
-FractalOperator() = FractalOperator(FractalUserMethod(), [0], 0)
+FractalOperator() = FractalOperator(FractalUserMethod(), FractalUserMethod(), 0)
 
-FractalOperator(f::FractalUserMethod) = FractalOperator(f, [0,0,0,0],0)
+FractalOperator(f::FractalUserMethod) = FractalOperator(f,
+                                                        FractalUserMethod(),
+                                                        0)
 FractalUserMethod(f::FractalOperator) = f.op
 
 # Note: this operator currently works like this:
@@ -25,7 +27,7 @@ macro fo(ex...)
         kwargs = ex[1:end-1]
     end
 
-    color = (0,0,0,0)
+    color = FractalUserMethod()
     prob = 0
 
     # parsing kwarg symbols
@@ -40,7 +42,19 @@ macro fo(ex...)
                 if isa(color, Vector) || isa(color, Tuple)
                     if length(color) < 3 || length(color) > 4
                         error("Colors must have 3 or 4 elements!")
+                    elseif length(color) == 3
+                        color = Colors.custom(red = color[1], green = color[2],
+                                              blue = color[3], alpha = 1)
+                    elseif length(color) == 4
+                        color = Colors.custom(red = color[1], green = color[2],
+                                              blue = color[3], alpha = color[4])
                     end
+                elseif isa(color, RGB)
+                    color = Colors.custom(red = color.r, green = color.g,
+                                          blue = color.b, alpha = 1)
+                elseif isa(color, RGBA)
+                    color = Colors.custom(red = color.r, green = color.g,
+                                          blue = color.b, alpha = color.alpha)
                 end
             elseif(kwargs[i].args[1] == :prob)
                 prob = kwargs[i].args[2]
@@ -130,7 +144,7 @@ function (a::Fae.FractalOperator)(args...; kwargs...)
                                                string(kwarg[2]))
                 end
             elseif string(kwarg[1]) == "color"
-                color = kwarg[2]
+                color = create_color(kwarg[2])
             elseif string(kwarg[1]) == "prob"
                 prob = kwarg[2]
             end

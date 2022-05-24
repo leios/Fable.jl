@@ -10,31 +10,15 @@ end
 
 mutable struct Hutchinson
     ops::Tuple{Function}
-    color_set::Union{Array{T,2}, CuArray{T,2},
-                     Tuple, NTuple} where T <: AbstractFloat
+    color_set::Tuple
     prob_set::Union{NTuple, Tuple}
     symbols::Union{NTuple, Tuple}
     fnums::Union{NTuple, Tuple}
 end
 
 function Hutchinson()
-    return Hutchinson((Fae.null,), Tuple(0), Tuple(0), Tuple(0), Tuple(0))
-end
-
-function new_color_array(colors_in::Array{A}, fnum;
-                         FT = Float64, AT = Array) where A
-    temp_colors = zeros(FT,4,fnum)
-    if fnum > 1
-        for i = 1:4
-            for j = 1:fnum
-                temp_colors[i,j] = colors_in[j][i]
-            end
-        end
-        return AT(temp_colors)
-    elseif fnum == 1
-        return AT(colors_in[1])
-    end
-
+    return Hutchinson((Fae.null,), Tuple(Colors.previous),
+                      Tuple(0), Tuple(0), Tuple(0))
 end
 
 function configure_hutchinson(fos::Vector{FractalOperator},
@@ -42,6 +26,15 @@ function configure_hutchinson(fos::Vector{FractalOperator},
                               diagnostic = false, final = false)
     configure_hutchinson(FractalUserMethod.(fos), fis;
                           name = name, diagnostic = diagnostic, final = final)
+end
+
+function new_color_array(color_array; diagnostic = false)
+    temp_array = [Colors.previous for i = 1:length(color_array)]
+    for i = 1:length(color_array)
+        temp_array[i] = create_color(color_array[i])
+    end
+
+    return Tuple(configure_fum.(temp_array; diagnostic = diagnostic))
 end
 
 function configure_hutchinson(fums::Vector{FractalUserMethod},
@@ -87,7 +80,7 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
 end
 
 function Hutchinson(fums::Array{FractalUserMethod},
-                    color_set::Union{Array{A}, Array}, prob_set;
+                    color_set::Union{Array{A}, Array, RGB, RGBA}, prob_set;
                     AT = Array, FT = Float64, name = "",
                     diagnostic = false, final = false) where A <: Array
     Hutchinson(fums, [], color_set, prob_set, (length(fums)); final = final,
@@ -98,12 +91,12 @@ end
 # This is a constructor for when people read in an array of arrays for colors
 function Hutchinson(fums::Array{FractalUserMethod},
                     fis::Vector,
-                    color_set::Union{Array{A}, Array}, prob_set;
+                    color_set::Union{Array{A}, Array, RGB, RGBA}, prob_set;
                     AT = Array, FT = Float64, name = "",
                     diagnostic = false, final = false) where A <: Array
 
     fnum = length(fums)
-    temp_colors = new_color_array(color_set, fnum; FT = FT, AT = AT)
+    temp_colors = new_color_array(color_set, diagnostic = diagnostic)
 
     if !isapprox(sum(prob_set),1)
         println("probability set != 1, resetting to be equal probability...")
@@ -116,7 +109,6 @@ function Hutchinson(fums::Array{FractalUserMethod},
     end
     H = configure_hutchinson(fums, fis; name = name, diagnostic = diagnostic,
                              final = final)
-
     return Hutchinson((H,), temp_colors, prob_set,
                       symbols, Tuple(length(fums)))
 end
@@ -128,12 +120,8 @@ function Hutchinson(fos::Vector{FractalOperator}, fis::Vector;
     # constructing probabilities and colors
     fnum = length(fos)
     prob_array = zeros(fnum)
-    color_array = zeros(4, fnum)
-
-    for i = 1:length(fos)
-        color_array[:,i] .= convert_to_array(fos[i].color)
-        prob_array[i] = fos[i].prob
-    end
+    color_array = [configure_fum(fos[i].color;
+                                 diagnostic = diagnostic) for i = 1:fnum]
 
     prob_set = Tuple(prob_array)
 
@@ -150,7 +138,7 @@ function Hutchinson(fos::Vector{FractalOperator}, fis::Vector;
     H = configure_hutchinson(fos, fis; name = name, diagnostic = diagnostic,
                              final = final)
 
-    return Hutchinson((H,), AT(color_array), prob_set,
+    return Hutchinson((H,), Tuple(color_array), prob_set,
                       symbols, Tuple(length(fos)))
 
 end
@@ -166,25 +154,14 @@ function update_fis!(H::Hutchinson, fis::Vector{FractalInput})
     H.symbols = configure_fis!(fis)
 end
 
-function convert_to_array(new_color::Union{RGB,
-                                           RGBA,
-                                           Vector{N},
-                                           Tuple}) where N <: Number
-    if isa(new_color, RGB)
-        return [new_color.r, new_color.g, new_color.b, 1]
-    elseif isa(new_color, RGBA)
-        return [new_color.r, new_color.g, new_color.b, new_color.a]
-    elseif isa(new_color, Vector) || isa(new_color, Tuple)
-        return new_color
-    else
-        error("Cannot convert to color array")
-    end
-
-end
-
 function update_colors!(H::Hutchinson, fx_id,
                         new_color::Union{RGB, RGBA, Vector{N}};
                         AT = Array) where N<:Number
 
-    H.color_set[i,:] .= AT(convert_to_array(new_color))
+    temp_color = create_color(new_color)
+
+    temp_vector = [H.color_set[i] for i = 1:length(H.color_set)]
+    temp_vector[fx_id] = configure_fum(temp_color)
+
+    H.color_set = Tuple(temp_vector)
 end

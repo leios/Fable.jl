@@ -15,7 +15,6 @@ end
 
 function create_stars(n; scale_factor = 1, max_range = 2, color = [1, 1, 1, 1])
     fos = [FractalOperator() for i = 1:n]
-    fos = [FractalOperator() for i = 1:n]
     for i = 1:n
         temp_translation = (rand()*2*max_range - max_range,
                             rand()*2*max_range - max_range)
