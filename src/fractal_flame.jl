@@ -75,15 +75,18 @@ end
     shared_colors = @localmem FT (gs, 4)
 
     for i = 1:dims
-        @inbounds shared_tile[lid,i] = points[tid,i]
+        @inbounds shared_colors[lid,i] = 0
     end
 
     seed = quick_seed(tid)
     fid = 1
     fid_2 = 1
-    fx_count = 0
 
     for i = 1:n
+        for k = 1:dims
+            @inbounds shared_colors[lid,k] = 0
+        end
+        fx_count = 0
 
         # quick way to tell if in range to be calculated or not
         sketchy_sum = 0
@@ -106,11 +109,7 @@ end
                 @inbounds H[j](shared_tile, lid, H1_symbols, fid)
                 @inbounds H_clrs[j](shared_colors, shared_tile, lid,
                                     H1_symbols, fid)
-                if H_clrs[j] != Colors.previous
-                    @inbounds H_clrs[j](shared_colors, shared_tile, lid,
-                                        H1_symbols, fid)
-                    fx_count += 1
-                end
+                fx_count += 1
             end
 
             offset = 1
@@ -130,11 +129,9 @@ end
                 end
 
                 @inbounds H2[j](shared_tile, lid, H2_symbols, fid_2)
-                if H2_clrs[j] != Colors.previous
-                    @inbounds H2_clrs[j](shared_colors, shared_tile, lid,
-                                         H2_symbols, fid_2)
-                    fx_count += 1
-                end
+                @inbounds H2_clrs[j](shared_colors, shared_tile, lid,
+                                     H2_symbols, fid_2)
+                fx_count += 1
 
                 @inbounds on_img_flag = on_image(shared_tile[lid,3],
                                                  shared_tile[lid,4],

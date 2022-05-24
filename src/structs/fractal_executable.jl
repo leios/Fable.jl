@@ -115,10 +115,10 @@ function configure_colors(fums::Vector{FractalUserMethod},
 
     fx_string *= "else error('Function not found!')\n"
     fx_string *= "end\n"
-    fx_string *= "_clr[tid, 1] = red \n"
-    fx_string *= "_clr[tid, 2] = green \n"
-    fx_string *= "_clr[tid, 3] = blue \n"
-    fx_string *= "_clr[tid, 4] = alpha \n"
+    fx_string *= "_clr[tid, 1] += red \n"
+    fx_string *= "_clr[tid, 2] += green \n"
+    fx_string *= "_clr[tid, 3] += blue \n"
+    fx_string *= "_clr[tid, 4] += alpha \n"
     fx_string *= "end"
 
     H = Meta.parse(replace(fx_string, "'" => '"'))
