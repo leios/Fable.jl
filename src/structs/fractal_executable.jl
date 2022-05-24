@@ -10,7 +10,11 @@ end
 
 mutable struct Hutchinson
     ops::Tuple{Function}
-    color_set::Tuple
+    cops::Tuple{Function}
+    color_set::Vector{FractalUserMethod}
+    fi_set = Vector{FractalInput}
+    fi_set = Vector{FractalOperator}
+    name_set = Vector{FractalOperator}
     prob_set::Union{NTuple, Tuple}
     symbols::Union{NTuple, Tuple}
     fnums::Union{NTuple, Tuple}
@@ -34,7 +38,7 @@ function new_color_array(color_array; diagnostic = false)
         temp_array[i] = create_color(color_array[i])
     end
 
-    return Tuple(configure_fum.(temp_array; diagnostic = diagnostic))
+    return temp_array
 end
 
 function configure_hutchinson(fums::Vector{FractalUserMethod},
@@ -87,7 +91,6 @@ function Hutchinson(fums::Array{FractalUserMethod},
                diagnostic = diagnostic, AT = AT, FT = FT, name = name)
 end
 
-
 # This is a constructor for when people read in an array of arrays for colors
 function Hutchinson(fums::Array{FractalUserMethod},
                     fis::Vector,
@@ -120,8 +123,7 @@ function Hutchinson(fos::Vector{FractalOperator}, fis::Vector;
     # constructing probabilities and colors
     fnum = length(fos)
     prob_array = zeros(fnum)
-    color_array = [configure_fum(fos[i].color;
-                                 diagnostic = diagnostic) for i = 1:fnum]
+    color_array = [fos[i].color for i = 1:fnum]
 
     prob_set = Tuple(prob_array)
 
@@ -137,8 +139,10 @@ function Hutchinson(fos::Vector{FractalOperator}, fis::Vector;
 
     H = configure_hutchinson(fos, fis; name = name, diagnostic = diagnostic,
                              final = final)
+    colors = configure_colors(color_array, fis; name = name,
+                              diagnostic = diagnostic)
 
-    return Hutchinson((H,), Tuple(color_array), prob_set,
+    return Hutchinson((H,), colors, prob_set,
                       symbols, Tuple(length(fos)))
 
 end
@@ -154,14 +158,16 @@ function update_fis!(H::Hutchinson, fis::Vector{FractalInput})
     H.symbols = configure_fis!(fis)
 end
 
-function update_colors!(H::Hutchinson, fx_id,
+function update_colors!(H::Hutchinson, fx_id, h_id,
                         new_color::Union{RGB, RGBA, Vector{N}};
                         AT = Array) where N<:Number
 
-    temp_color = create_color(new_color)
-
-    temp_vector = [H.color_set[i] for i = 1:length(H.color_set)]
-    temp_vector[fx_id] = configure_fum(temp_color)
-
-    H.color_set = Tuple(temp_vector)
+    offset = 1
+    for i = 2:h_id
+        offset += H.fnums[i-1]
+    end
+    
+    H.color_set[fx_id + offset] = create_color(new_color)
+    H.cops[h_id] = configure_colors(H.color_set[offset:offset + H.fnums[h_id]],
+                                    H.fi_set, name = H.name_set[h_id])
 end

@@ -108,7 +108,7 @@ end
             offset = 1
             for j = 1:length(H2)
                 if j > 1
-                    offset = H2_fnums[j-1]+1
+                    offset += H2_fnums[j-1]
                 end
 
                 if H2[j] != Fae.null
