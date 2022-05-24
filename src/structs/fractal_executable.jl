@@ -12,16 +12,16 @@ mutable struct Hutchinson
     ops::Tuple{Function}
     cops::Tuple{Function}
     color_set::Vector{FractalUserMethod}
-    fi_set = Vector{FractalInput}
-    fi_set = Vector{FractalOperator}
-    name_set = Vector{FractalOperator}
+    fi_set::Vector{FractalInput}
+    name_set::Vector{String}
     prob_set::Union{NTuple, Tuple}
     symbols::Union{NTuple, Tuple}
     fnums::Union{NTuple, Tuple}
 end
 
 function Hutchinson()
-    return Hutchinson((Fae.null,), Tuple(Colors.previous),
+    return Hutchinson((Fae.null,), Tuple(Fae.null,), [Colors.previous],
+                      [FractalInput()], [FractalOperator()], [""],
                       Tuple(0), Tuple(0), Tuple(0))
 end
 
@@ -83,6 +83,53 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
     return eval(H)
 end
 
+function configure_colors(fums::Vector{FractalUserMethod},
+                          fis::Vector; name = "",
+                          diagnostic = false, final = false)
+
+    fx_string = "function color_"*name*"(_clr, _p, tid, symbols, fid)\n"
+    fx_string *= "x = _p[tid, 2] \n"
+    fx_string *= "y = _p[tid, 1] \n"
+    fx_string *= "red = _clr[tid, 1] \n"
+    fx_string *= "green = _clr[tid, 2] \n"
+    fx_string *= "blue = _clr[tid, 3] \n"
+    fx_string *= "alpha = _clr[tid, 4] \n"
+
+    for i = 1:length(fis)
+        fx_string *= fis[i].name*" = symbols["*string(fis[i].index)*"]\n"
+    end
+
+    for i = 1:length(fums)
+        temp_string = ""
+        if i == 1
+            temp_string = "if fid == "*string(i)*"\n"*
+                          create_header(fums[i])*
+                          string(fums[i].body)*"\n"
+        else
+            temp_string = "elseif fid == "*string(i)*"\n"*
+                          create_header(fums[i])*
+                          string(fums[i].body)*"\n"
+        end
+        fx_string *= temp_string
+    end
+
+    fx_string *= "else error('Function not found!')\n"
+    fx_string *= "end\n"
+    fx_string *= "_clr[tid, 1] = red \n"
+    fx_string *= "_clr[tid, 2] = green \n"
+    fx_string *= "_clr[tid, 3] = blue \n"
+    fx_string *= "_clr[tid, 4] = alpha \n"
+    fx_string *= "end"
+
+    H = Meta.parse(replace(fx_string, "'" => '"'))
+
+    if diagnostic
+        println(H)
+    end
+
+    return eval(H)
+end
+
 function Hutchinson(fums::Array{FractalUserMethod},
                     color_set::Union{Array{A}, Array, RGB, RGBA}, prob_set;
                     AT = Array, FT = Float64, name = "",
@@ -112,7 +159,9 @@ function Hutchinson(fums::Array{FractalUserMethod},
     end
     H = configure_hutchinson(fums, fis; name = name, diagnostic = diagnostic,
                              final = final)
-    return Hutchinson((H,), temp_colors, prob_set,
+    colors = configure_colors(temp_colors, fis; name = name,
+                              diagnostic = diagnostic)
+    return Hutchinson((H,), (colors,), temp_colors, fis, [name], prob_set,
                       symbols, Tuple(length(fums)))
 end
 
@@ -142,7 +191,7 @@ function Hutchinson(fos::Vector{FractalOperator}, fis::Vector;
     colors = configure_colors(color_array, fis; name = name,
                               diagnostic = diagnostic)
 
-    return Hutchinson((H,), colors, prob_set,
+    return Hutchinson((H,), (colors,), fis, [name], prob_set,
                       symbols, Tuple(length(fos)))
 
 end

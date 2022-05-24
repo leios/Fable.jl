@@ -46,8 +46,8 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
         println(H.symbols)
     end
 
-    kernel!(ps.positions, n, H.ops, H.color_set, H.prob_set, H.symbols, H.fnums,
-            H2.ops, H2.color_set, H2.symbols, H2.prob_set, H2.fnums,
+    kernel!(ps.positions, n, H.ops, H.cops, H.prob_set, H.symbols, H.fnums,
+            H2.ops, H2.cops, H2.symbols, H2.prob_set, H2.fnums,
             pxs.values, pxs.reds, pxs.greens, pxs.blues,
             Tuple(bounds), Tuple(bin_widths), num_ignore, max_range,
             ndrange=size(ps.positions)[1])
@@ -81,6 +81,7 @@ end
     seed = quick_seed(tid)
     fid = 1
     fid_2 = 1
+    fx_count = 0
 
     for i = 1:n
 
@@ -103,6 +104,13 @@ end
                 end
 
                 @inbounds H[j](shared_tile, lid, H1_symbols, fid)
+                @inbounds H_clrs[j](shared_colors, shared_tile, lid,
+                                    H1_symbols, fid)
+                if H_clrs[j] != Colors.previous
+                    @inbounds H_clrs[j](shared_colors, shared_tile, lid,
+                                        H1_symbols, fid)
+                    fx_count += 1
+                end
             end
 
             offset = 1
@@ -122,20 +130,25 @@ end
                 end
 
                 @inbounds H2[j](shared_tile, lid, H2_symbols, fid_2)
+                if H2_clrs[j] != Colors.previous
+                    @inbounds H2_clrs[j](shared_colors, shared_tile, lid,
+                                         H2_symbols, fid_2)
+                    fx_count += 1
+                end
 
                 @inbounds on_img_flag = on_image(shared_tile[lid,3],
                                                  shared_tile[lid,4],
                                                  bounds, dims)
                 if i > num_ignore && on_img_flag
-                    choice = offset + fid - 1
 
                     @inbounds bin = find_bin(pixel_values, shared_tile[lid,3],
                                              shared_tile[lid,4], bounds,
                                              bin_widths)
                     if bin > 0 && bin < length(pixel_values)
-                        # broadcasting gave me an error on the GPU, so screw it
-                        @inbounds H_clrs[choice](shared_colors, shared_tile,
-                                                 lid, H1_symbols)
+                        shared_colors[lid,1] /= fx_count
+                        shared_colors[lid,2] /= fx_count
+                        shared_colors[lid,3] /= fx_count
+                        shared_colors[lid,4] /= fx_count
                         atomic_add!(pointer(pixel_values, bin), Int(1))
                         atomic_add!(pointer(pixel_reds, bin),
                                     FT(shared_colors[lid, 1] *
@@ -146,22 +159,6 @@ end
                         atomic_add!(pointer(pixel_blues, bin),
                                     FT(shared_colors[lid, 3] *
                                        shared_colors[lid, 4]))
-
-                        if H2[j] != Fae.null
-                            choice = offset + fid_2 - 1
-                            @inbounds H_clrs[choice](shared_colors, shared_tile,
-                                                     lid, H2_symbols)
-                            atomic_add!(pointer(pixel_values, bin), Int(1))
-                            atomic_add!(pointer(pixel_reds, bin),
-                                FT(shared_colors[lid, 1] *
-                                   shared_colors[lid, 4]))
-                            atomic_add!(pointer(pixel_greens, bin),
-                                FT(shared_colors[lid, 2] *
-                                   shared_colors[lid, 4]))
-                            atomic_add!(pointer(pixel_blues, bin),
-                                FT(shared_colors[lid, 3] *
-                                   shared_colors[lid, 4]))
-                        end
                     end
                 end
             end

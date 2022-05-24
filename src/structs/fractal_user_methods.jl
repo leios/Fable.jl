@@ -126,8 +126,6 @@ function configure_fum(fum::FractalUserMethod, fis::Vector{FractalInput};
     end
 
     fx_string *= create_header(fum) * string(fum.body)*"\n"
-    fx_string *= "_p[tid, 2] = x \n "
-    fx_string *= "_p[tid, 1] = y \n"
     if fum_type == :color
         fx_string *= "_clr[tid, 1] = red \n"
         fx_string *= "_clr[tid, 2] = green \n"
