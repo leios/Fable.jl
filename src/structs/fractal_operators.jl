@@ -122,28 +122,9 @@ function (a::Fae.FractalOperator)(args...; kwargs...)
     color = a.color
     prob = a.prob
 
-    new_kwargs = deepcopy(a.op.kwargs)
     for kwarg in kwargs
         for i = 1:length(a.op.kwargs)
-            # a.kwargs[i].args[end-1] is the rhs of the fo kwarg
-            if string(kwarg[1]) == string(a.op.kwargs[i].args[end-1])
-                if isa(kwarg[2], FractalInput)
-                    if isa(kwarg[2].val, Number) || kwarg[2].index == 0
-                        new_kwargs[i] = Meta.parse(string(kwarg[1]) *"="*
-                                                   string(kwarg[2].name))
-                    else
-                        new_kwargs[i] = Meta.parse(string(kwarg[1]) *"="*
-                                                   string(kwarg[2].name) *"["*
-                                                   string(kwarg[2].index) *"]")
-                    end
-                elseif isa(kwarg[2], Array)
-                    error("Cannot create new kwarg array! "*
-                          "Please use Tuple syntax ()!")
-                else
-                    new_kwargs[i] = Meta.parse(string(kwarg[1]) *"="*
-                                               string(kwarg[2]))
-                end
-            elseif string(kwarg[1]) == "color"
+            if string(kwarg[1]) == "color"
                 color = create_color(kwarg[2])
             elseif string(kwarg[1]) == "prob"
                 prob = kwarg[2]
