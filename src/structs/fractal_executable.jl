@@ -1,7 +1,7 @@
 # fee = Fractal Executable
 export Hutchinson, update_fis!, update_colors!, new_color_array, fee
 
-fee(args...) = Hutchonson(args...)
+fee(args...;kwargs...) = Hutchinson(args...;kwargs...)
 
 function previous(_clr, _p, tid, symbols, fid)
     _clr[tid,1] += _clr[tid,1]
@@ -178,7 +178,7 @@ function Hutchinson(fos::Vector{FractalOperator}, fis::Vector;
 
     # constructing probabilities and colors
     fnum = length(fos)
-    prob_array = zeros(fnum)
+    prob_array = [fos[i].prob for i = 1:fnum]
     color_array = [fos[i].color for i = 1:fnum]
 
     prob_set = Tuple(prob_array)
@@ -198,7 +198,7 @@ function Hutchinson(fos::Vector{FractalOperator}, fis::Vector;
     colors = configure_colors(color_array, fis; name = name,
                               diagnostic = diagnostic)
 
-    return Hutchinson((H,), (colors,), fis, [name], prob_set,
+    return Hutchinson((H,), (colors,), color_array, fis, [name], prob_set,
                       symbols, Tuple(length(fos)))
 
 end

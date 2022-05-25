@@ -136,7 +136,7 @@ end
                 @inbounds on_img_flag = on_image(shared_tile[lid,3],
                                                  shared_tile[lid,4],
                                                  bounds, dims)
-                if i > num_ignore && on_img_flag
+                if i > num_ignore && on_img_flag && fx_count > 0
 
                     @inbounds bin = find_bin(pixel_values, shared_tile[lid,3],
                                              shared_tile[lid,4], bounds,
