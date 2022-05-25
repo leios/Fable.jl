@@ -3,6 +3,13 @@ export Hutchinson, update_fis!, update_colors!, new_color_array, fee
 
 fee(args...) = Hutchonson(args...)
 
+function previous(_clr, _p, tid, symbols, fid)
+    _clr[tid,1] += _clr[tid,1]
+    _clr[tid,2] += _clr[tid,2]
+    _clr[tid,3] += _clr[tid,3]
+    _clr[tid,4] += _clr[tid,4]
+end
+
 function null(_p, tid, symbols, fid)
     _p[tid,3] = _p[tid,1]
     _p[tid,4] = _p[tid,2]
@@ -20,8 +27,8 @@ mutable struct Hutchinson
 end
 
 function Hutchinson()
-    return Hutchinson((Fae.null,), Tuple(Fae.null,), [Colors.previous],
-                      [FractalInput()], [FractalOperator()], [""],
+    return Hutchinson((Fae.null,), (Fae.previous,), [Colors.previous],
+                      [FractalInput()], [""],
                       Tuple(0), Tuple(0), Tuple(0))
 end
 

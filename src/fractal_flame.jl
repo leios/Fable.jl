@@ -83,7 +83,7 @@ end
     fid_2 = 1
 
     for i = 1:n
-        for k = 1:dims
+        for k = 1:4
             @inbounds shared_colors[lid,k] = 0
         end
         fx_count = 0
