@@ -5,9 +5,17 @@ if has_cuda_gpu()
     CUDA.allowscalar(false)
 end
 
+
 function main()
     AT = CuArray
     FT = Float32
+
+    gradient = @fum function gradient(x, y)
+        red = abs(y)%1
+        green = 0
+        blue = abs(x)%1
+        alpha = 1
+    end
 
     num_particles = 10000
     num_iterations = 10000
@@ -15,22 +23,14 @@ function main()
     res = (1080, 1920)
 
     pos = [0.0, 0.0]
-    color = [0.5, 0.25, 0.75, 1]
     rotation = 0.0
     scale_x = 0.5
     scale_y = 0.75
 
-    color_1 = [1.0, 0, 0, 1]
-    color_2 = [0, 1.0, 0, 1]
-    color_3 = [0, 0, 1.0, 1]
-    color_4 = [1.0, 0, 1.0, 1]
-
-    colors = new_color_array([color_1, color_2, color_3, color_4], 4; AT = AT,
-                             FT = FT)
-
-    H = Fae.define_rectangle(pos, rotation, scale_x, scale_y, color; AT = AT)
-    H.prob_set = (0.7, 0.1, 0.1, 0.1)
-    H.color_set = colors
+    #H = Fae.define_rectangle(pos, rotation, scale_x, scale_y, gradient; AT = AT)
+    H = Fae.define_circle(pos, 1.0, gradient; AT = AT)
+    #H = Fae.define_barnsley(gradient; AT = AT)
+    #H = Fae.define_sierpinski([-1.,-1], [-1.,1], [0.,0], gradient; AT = AT)
 
     pix = Fae.fractal_flame(H, num_particles, num_iterations,
                             bounds, res; AT = AT, FT = FT)

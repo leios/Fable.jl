@@ -1,22 +1,17 @@
 export define_sierpinski, update_sierpinski!
 function define_sierpinski(A::Vector{FT}, B::Vector{FT}, C::Vector{FT},
-                           color::Array{FT}; AT = Array,
+                           color; AT = Array,
                            name = "sierpinski",
                            diagnostic = false) where FT <: AbstractFloat
-    define_sierpinski(A, B, C, color, color, color;
-                      AT = AT, name = name, diagnostic = diagnostic)
-end
-
-function define_sierpinski(A::Vector{FT}, B::Vector{FT}, C::Vector{FT},
-                           color_A::Array{FT}, color_B::Array{FT},
-                           color_C::Array{FT}; AT = Array,
-                           name = "sierpinski", 
-                           diagnostic = false) where FT <: AbstractFloat
-
     fums, fis = define_sierpinski_operators(A, B, C)
-    prob_set = (0.33, 0.33, 0.34)
-    color_set = [color_A, color_B, color_C]
-    return Hutchinson(fums, fis, color_set, prob_set; AT = AT, FT = FT,
+    if length(color) == 1
+        color_set = [color for i = 1:3]
+    else
+        color_set = [color[i] for i = 1:3]
+    end
+    fos = [FractalOperator(fums[i], color_set[i], 1/3) for i = 1:3]
+
+    return Hutchinson(fos, fis; AT = AT, FT = FT,
                       name = name, diagnostic = diagnostic)
 end
 
@@ -28,9 +23,9 @@ function define_sierpinski_operators(A::Vector{FT}, B::Vector{FT},
     f_B = fi("B",B)
     f_C = fi("C",C)
 
-    s_1 = halfway(loc = f_A)
-    s_2 = halfway(loc = f_B)
-    s_3 = halfway(loc = f_C)
+    s_1 = Flames.halfway(loc = f_A)
+    s_2 = Flames.halfway(loc = f_B)
+    s_3 = Flames.halfway(loc = f_C)
 
     return [s_1, s_2, s_3], [f_A,f_B,f_C]
 end

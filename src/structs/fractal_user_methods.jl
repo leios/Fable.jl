@@ -8,6 +8,7 @@ struct FractalUserMethod
 end
 
 FractalUserMethod() = FractalUserMethod(:temp, [], [], 0)
+Base.length(FractalUserMethod) = 1
 
 # Note: this operator currently works like this:
 #       f = @fum function f(x) x+1 end
@@ -19,7 +20,7 @@ macro fum(ex...)
     kwargs = nothing
 
     if isa(expr, Symbol)
-        error("Cannot convert Symbol to Fractal Operator!")
+        error("Cannot convert Symbol to Fractal User Method!")
     elseif expr.head == :(=)
         # inline function definitions
         if isa(expr.args[1], Expr)
@@ -30,7 +31,7 @@ macro fum(ex...)
             return FractalUserMethod(name,args,kwargs,expr.args[2])
         # inline symbol definitions
         elseif isa(expr.args[1], Symbol)
-            error("Cannot create Fractal Operator (@fum)! "*
+            error("Cannot create Fractal User Method (@fum)! "*
                   "Maybe try Fractal Input (@fi)?")
         end
     elseif expr.head == :function
@@ -40,7 +41,7 @@ macro fum(ex...)
         kwargs = def[:kwargs]
         return FractalUserMethod(name,args,kwargs,expr.args[2])
     else
-        error("Cannot convert expr to Fractal Operator!")
+        error("Cannot convert expr to Fractal User Method!")
     end
 end
 

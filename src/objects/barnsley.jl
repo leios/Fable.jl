@@ -1,20 +1,16 @@
 export define_barnsley, update_barnsley!
-function define_barnsley(color::Array{FT}; AT = Array,
+function define_barnsley(color; AT = Array,
                          name = "barnsley",
-                         diagnostic = false) where FT <: AbstractFloat
-    define_barnsley(color, color, color, color;
-                    AT = AT, name = name, diagnostic = diagnostic)
-end
-
-function define_barnsley(color_1::Array{FT}, color_2::Array{FT},
-                         color_3::Array{FT}, color_4::Array{FT};
-                         AT = Array, name = "barnsley", 
-                         diagnostic = false) where FT <: AbstractFloat
-
+                         diagnostic = false, FT = Float32)
     fums, fis = define_barnsley_operators()
+    if length(color) == 1
+        color_set = [color for i = 1:4]
+    else
+        color_set = [color[i] for i = 1:4]
+    end
     prob_set = (0.01, 0.85, 0.07, 0.07)
-    color_set = [color_1, color_2, color_3, color_4]
-    return Hutchinson(fums, fis, color_set, prob_set; AT = AT, FT = FT,
+    fos = [FractalOperator(fums[i], color_set[i], prob_set[i]) for i = 1:4]
+    return Hutchinson(fos, fis; AT = AT, FT = FT,
                       name = name, diagnostic = diagnostic)
 end
 

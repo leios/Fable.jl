@@ -1,20 +1,24 @@
 export define_rectangle, update_rectangle!
 # Returns back H, colors, and probs for a square
 function define_rectangle(pos::Vector{FT}, theta::FT, scale_x::FT, scale_y,
-                          color::Array{FT}; AT = Array,
+                          color; AT = Array,
                           name = "rectangle",
                           diagnostic = false) where FT <: AbstractFloat
 
     fums, fis = define_rectangle_operators(pos, theta, scale_x, scale_y)
-    prob_set = (0.25, 0.25, 0.25, 0.25)
-    color_set = [color for i = 1:4]
-    return Hutchinson(fums, fis, color_set, prob_set; AT = AT, FT = FT,
+    if length(color) == 1
+        color_set = [color for i = 1:4]
+    else
+        color_set = [color[i] for i = 1:4]
+    end
+    fos = [FractalOperator(fums[i], color_set[i], 0.25) for i = 1:4]
+    return Hutchinson(fos, fis; AT = AT, FT = FT,
                       name = name, diagnostic = diagnostic)
 end
 
 # Returns back H, colors, and probs for a square
 function define_square(pos::Vector{FT}, theta::FT, scale::FT,
-                       color::Array{FT}; AT = Array,
+                       color; AT = Array,
                        name = "square",
                        diagnostic = false) where FT <: AbstractFloat
 

@@ -52,18 +52,20 @@ constant_disk = Fae.@fum function constant_disk(x, y; radius = 1, pos = (0,0),
 end
 
 # Returns back H, colors, and probs for a circle
-function define_circle(pos::Vector{FT}, radius::FT, color::Array{FT};
+function define_circle(pos::Vector{FT}, radius::FT, color;
                        AT = Array, name = "circle",
                        chosen_fx = :constant_disk, diagnostic = false,
                        bounds = [0 1; 0 1]) where FT <: AbstractFloat
 
     fums, fis = define_circle_operators(pos, radius; chosen_fx = chosen_fx,
-                                       bounds = vec(bounds))
-    fum_num = length(fums)
-    prob_set = Tuple([1/fum_num for i = 1:fum_num])
-
-    color_set = [color for i = 1:fum_num]
-    return Hutchinson(fums, fis, color_set, prob_set; AT = AT, FT = FT,
+                                        bounds = bounds)
+    if length(color) == 1
+        color_set = [color for i = 1:2]
+    else
+        color_set = [color[i] for i = 1:2]
+    end
+    fos = [FractalOperator(fums[i], color_set[i], 0.5) for i = 1:2]
+    return Hutchinson(fos, fis; AT = AT, FT = FT,
                       name = name, diagnostic = diagnostic)
 end
 

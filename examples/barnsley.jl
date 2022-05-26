@@ -14,7 +14,7 @@ scale_and_translate = @fo function scale_and_translate(x, y;
 end
 
 function main()
-    AT = Array
+    AT = CuArray
     FT = Float32
 
     num_particles = 1000
