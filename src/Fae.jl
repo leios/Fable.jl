@@ -10,6 +10,8 @@ using LinearAlgebra
 using Images
 using VideoIO
 
+using Atomix: @atomic
+
 # KA kernels
 include("histogram.jl")
 

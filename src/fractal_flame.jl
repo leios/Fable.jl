@@ -142,20 +142,18 @@ end
                                              shared_tile[lid,4], bounds,
                                              bin_widths)
                     if bin > 0 && bin < length(pixel_values)
-                        shared_colors[lid,1] /= fx_count
-                        shared_colors[lid,2] /= fx_count
-                        shared_colors[lid,3] /= fx_count
-                        shared_colors[lid,4] /= fx_count
-                        atomic_add!(pointer(pixel_values, bin), Int(1))
-                        atomic_add!(pointer(pixel_reds, bin),
-                                    FT(shared_colors[lid, 1] *
-                                       shared_colors[lid, 4]))
-                        atomic_add!(pointer(pixel_greens, bin),
-                                    FT(shared_colors[lid, 2] *
-                                       shared_colors[lid, 4]))
-                        atomic_add!(pointer(pixel_blues, bin),
-                                    FT(shared_colors[lid, 3] *
-                                       shared_colors[lid, 4]))
+                        @inbounds shared_colors[lid,1] /= fx_count
+                        @inbounds shared_colors[lid,2] /= fx_count
+                        @inbounds shared_colors[lid,3] /= fx_count
+                        @inbounds shared_colors[lid,4] /= fx_count
+
+                        @atomic pixel_values[bin] += 1
+                        @atomic pixel_reds[bin] += FT(shared_colors[lid, 1] *
+                                                      shared_colors[lid, 4])
+                        @atomic pixel_greens[bin] += FT(shared_colors[lid, 2] *
+                                                        shared_colors[lid, 4])
+                        @atomic pixel_blues[bin] += FT(shared_colors[lid, 3] *
+                                                       shared_colors[lid, 4])
                     end
                 end
             end

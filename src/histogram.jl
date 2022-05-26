@@ -34,7 +34,7 @@ end
 
     # I want to turn this in to an @uniform, but that fails on CPU (#274)
     bin = find_bin(histogram_output, input, tid, dims, bounds, bin_widths)
-    atomic_add!(pointer(histogram_output, bin), Int(1))
+    @atomic histogram_output[bin] += 1
 
 end
 
@@ -75,15 +75,14 @@ end
         # Defining bin on shared memory and writing to it if possible
         if bin >= min_element && bin < max_element
             bin -= min_element-1
-            atomic_add!(pointer(shared_histogram, bin), Int(1))
+            @atomic shared_histogram[bin] += 1
             max_element = N
         end
 
         @synchronize()
 
         if ((lid+min_element-1) <= N)
-            atomic_add!(pointer(histogram_output, lid+min_element-1),
-                        shared_histogram[lid])
+            @atomic histogram_output[lid+min_element-1] += shared_histogram[lid]
         end
 
         min_element += gs

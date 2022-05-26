@@ -98,19 +98,16 @@ end
         bin = find_bin(pout_values, shared_tile, lid, 2,
                        bounds, bin_widths)
         if bin > 0 && bin < length(pout_values)
-            atomic_add!(pointer(pout_values, bin), pin_values[tid])
-            atomic_add!(pointer(pout_reds, bin), pin_reds[tid])
-            atomic_add!(pointer(pout_greens, bin), pin_greens[tid])
-            atomic_add!(pointer(pout_blues, bin), pin_blues[tid])
+            @atomic pout_values[bin] += pin_values[tid]
+            @atomic pout_reds[bin] += pin_reds[tid]
+            @atomic pout_greens[bin] += pin_greens[tid]
+            @atomic pout_blues[bin] += pin_blues[tid]
 
             if !isapprox(H_clrs[4], 0)
-                atomic_add!(pointer(pout_values, bin), Int(1))
-                atomic_add!(pointer(pout_reds, bin),
-                            FT(H_clrs[1]*H_clrs[4]))
-                atomic_add!(pointer(pout_greens, bin),
-                            FT(H_clrs[2]*H_clrs[4]))
-                atomic_add!(pointer(pout_blues, bin),
-                            FT(H_clrs[3]*H_clrs[4]))
+                @atomic pout_values[bin] += 1
+                @atomic pout_reds[bin] += FT(H_clrs[1]*H_clrs[4])
+                @atomic pout_greens[bin] += FT(H_clrs[2]*H_clrs[4])
+                @atomic pout_blues[bin] += FT(H_clrs[3]*H_clrs[4])
             end
         end
     end
