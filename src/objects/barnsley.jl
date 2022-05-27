@@ -1,8 +1,7 @@
 export define_barnsley, update_barnsley!
-function define_barnsley(color; AT = Array,
-                         name = "barnsley",
-                         diagnostic = false, FT = Float32)
-    fums, fis = define_barnsley_operators()
+function define_barnsley(color; AT = Array, name = "barnsley",
+                         diagnostic = false, FT = Float32, tilt = 0)
+    fums, fis = define_barnsley_operators(tilt = tilt)
     if length(color) == 1 || eltype(color) <: Number
         color_set = [create_color(color) for i = 1:4]
     else
@@ -15,16 +14,16 @@ function define_barnsley(color; AT = Array,
 end
 
 # This specifically returns the fums for a barnsley fern
-function define_barnsley_operators()
+function define_barnsley_operators(; tilt = 0)
 
     s_1 = @fum function s_1()
         x = 0
         y = 0.16*y
     end
 
-    s_2 = @fum function s_2()
+    s_2 = @fum function s_2(;tilt = 0)
         x_temp = x
-        x = 0.85*x_temp + 0.04*y
+        x = 0.85*x_temp + (0.04+tilt)*y
         y = -0.04*x_temp + 0.85*y + 1.6
     end
 
@@ -40,5 +39,5 @@ function define_barnsley_operators()
         y = 0.26*x_temp + 0.24*y + 0.44
     end
 
-    return [s_1, s_2, s_3, s_4], []
+    return [s_1, s_2(tilt = tilt), s_3, s_4], []
 end

@@ -31,20 +31,23 @@ function define_rectangle_operators(pos::Vector{FT}, theta::FT,
                                     scale_x, scale_y) where FT <: AbstractFloat
 
 
-    p1_x = scale_x*cos(theta) - scale_y*sin(theta) + pos[1]
-    p1_y = scale_x*sin(theta) + scale_y*cos(theta) + pos[2]
+    scale_x *= 0.5
+    scale_y *= 0.5
+
+    p1_x = scale_x*cos(theta) - scale_y*sin(theta) + pos[2]
+    p1_y = scale_x*sin(theta) + scale_y*cos(theta) + pos[1]
     p1 = fi("p1", (p1_x, p1_y))
 
-    p2_x = scale_x*cos(theta) + scale_y*sin(theta) + pos[1]
-    p2_y = scale_x*sin(theta) - scale_y*cos(theta) + pos[2]
+    p2_x = scale_x*cos(theta) + scale_y*sin(theta) + pos[2]
+    p2_y = scale_x*sin(theta) - scale_y*cos(theta) + pos[1]
     p2 = fi("p2", (p2_x, p2_y))
 
-    p3_x = - scale_x*cos(theta) + scale_y*sin(theta) + pos[1]
-    p3_y = - scale_x*sin(theta) - scale_y*cos(theta) + pos[2]
+    p3_x = - scale_x*cos(theta) + scale_y*sin(theta) + pos[2]
+    p3_y = - scale_x*sin(theta) - scale_y*cos(theta) + pos[1]
     p3 = fi("p3", (p3_x, p3_y))
 
-    p4_x = - scale_x*cos(theta) - scale_y*sin(theta) + pos[1]
-    p4_y = - scale_x*sin(theta) + scale_y*cos(theta) + pos[2]
+    p4_x = - scale_x*cos(theta) - scale_y*sin(theta) + pos[2]
+    p4_y = - scale_x*sin(theta) + scale_y*cos(theta) + pos[1]
     p4 = fi("p4", (p4_x, p4_y))
 
     square_1 = Flames.halfway(loc = p1)

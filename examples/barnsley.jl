@@ -33,8 +33,8 @@ function main()
     color_3 = [0.,1,0,1]
     color_4 = [0.,0,1,1]
 
-    H = define_barnsley(color_1, color_2, color_3, color_4;
-                        AT = AT, diagnostic=true)
+    H = define_barnsley([color_1, color_2, color_3, color_4];
+                        AT = AT, diagnostic=true, tilt = -0.04)
 
     fo_1 = scale_and_translate(prob = 0.5, color = Colors.previous,
                                translation = (0.5, 0.5), scale = 0.5)

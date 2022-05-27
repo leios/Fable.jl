@@ -44,10 +44,11 @@ function to_logscale!(img, pix)
                 alpha = pix.values[i]/pix.max_value
             end
 
-            img[i] = RGBA(pix.reds[i]^(1/pix.gamma),
-                          pix.greens[i]^(1/pix.gamma),
-                          pix.blues[i]^(1/pix.gamma),
-                          alpha^(1/pix.gamma))
+            new_color = RGB(pix.reds[i]^(1/pix.gamma),
+                            pix.greens[i]^(1/pix.gamma),
+                            pix.blues[i]^(1/pix.gamma)) * alpha^(1/pix.gamma)
+
+            img[i] = img[i]*(1-alpha^(1/pix.gamma)) + new_color
         end
     end
 end
@@ -86,7 +87,7 @@ function add_layer!(img, layer::Pixels; diagnostic = false)
                          Array(layer.greens), Array(layer.blues))
         end
 
-        if pix.calc_max_value == 0
+        if pix.calc_max_value != 0
             pix.max_value = maximum(pix.values)
         end
         if diagnostic

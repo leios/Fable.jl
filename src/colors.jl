@@ -45,7 +45,7 @@ end
 
 create_color(a::FractalUserMethod) = a
 
-function create_color(a::Union{Array, RGB, RGBA})
+function create_color(a::Union{Array, Tuple, RGB, RGBA})
     if isa(a, Array) || isa(a, Tuple)
         if length(a) == 3
             fid = "_" * string(round(a[1]; digits=4))*

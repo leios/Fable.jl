@@ -26,6 +26,35 @@ mutable struct Hutchinson
     fnums::Union{NTuple, Tuple}
 end
 
+function Hutchinson(Hs::HT) where HT <: Union{Vector{Hutchinson},
+                                              Tuple{Hutchinson}}
+    ops = Tuple([Hs[i].ops for i = 1:length(Hs)])
+    cops = Tuple([Hs[i].cops for i = 1:length(Hs)])
+    color_set = Hs[1].color_set
+
+    fi_set = Hs[1].fi_set
+    name_set = Hs[1].name_set
+    prob_set = [Hs[1].prob_set[i] for i = 1:length(Hs[1].prob_set)]
+    symbols = [Hs[1].symbols for i = 1:length(Hs[1].symbols)]
+    fnums = [Hs[1].fnums for i = 1:length(Hs[1].fnums)]
+
+    for j = 2:length(Hs)
+        fi_set = vcat(fi_set, Hs[j].fi_set)
+        name_set = vcat(name_set, Hs[j].name_set)
+
+        temp_prob = [Hs[j].prob_set[i] for i = 1:length(Hs[1].prob_set)]
+        temp_symbols = [Hs[j].symbols[i] for i = 1:length(Hs[1].symbols)]
+        temp_fnums = [Hs[j].fnums[i] for i = 1:length(Hs[1].fnums)]
+
+        prob_set = vcat(prob_set, temp_prob)
+        symbols = vcat(symbols, temp_symbols)
+        fnums = vcat(fnums, temp_fnumss)
+    end
+
+    return Hutchinson(ops, cops, color_set, fi_set, name_set, Tuple(prob_set),
+                      Tuple(symbols), Tuple(fnums))
+end
+
 function Hutchinson()
     return Hutchinson((Fae.null,), (Fae.previous,), [Colors.previous],
                       [FractalInput()], [""],
