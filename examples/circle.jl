@@ -26,8 +26,8 @@ function main()
 
     H = Fae.define_circle(pos, radius, color; AT = AT, diagnostic=true,
                           bounds = bounds, chosen_fx = :constant_disk)
-    H2 = Fae.Hutchinson([Fae.shift(loc = new_loc),
-                         Fae.waves(f = 0.5, c = 0.5, b = 2, e = 2)],
+    H2 = Fae.Hutchinson([Flames.shift(loc = new_loc),
+                         Flames.waves(f = 0.5, c = 0.5, b = 2, e = 2)],
                         [new_loc],
                         [[1.0, 0, 1.0, 1.0],[0,1.0, 0, 1.0]], (0.75, 0.25);
                         final = true, diagnostic = true, AT = AT)

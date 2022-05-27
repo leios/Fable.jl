@@ -4,10 +4,10 @@ function define_sierpinski(A::Vector{FT}, B::Vector{FT}, C::Vector{FT},
                            name = "sierpinski",
                            diagnostic = false) where FT <: AbstractFloat
     fums, fis = define_sierpinski_operators(A, B, C)
-    if length(color) == 1
-        color_set = [color for i = 1:3]
+    if length(color) == 1 || eltype(color) <: Number
+        color_set = [create_color(color) for i = 1:3]
     else
-        color_set = [color[i] for i = 1:3]
+        color_set = [create_color(color[i]) for i = 1:3]
     end
     fos = [FractalOperator(fums[i], color_set[i], 1/3) for i = 1:3]
 

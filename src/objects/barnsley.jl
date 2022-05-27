@@ -3,10 +3,10 @@ function define_barnsley(color; AT = Array,
                          name = "barnsley",
                          diagnostic = false, FT = Float32)
     fums, fis = define_barnsley_operators()
-    if length(color) == 1
-        color_set = [color for i = 1:4]
+    if length(color) == 1 || eltype(color) <: Number
+        color_set = [create_color(color) for i = 1:4]
     else
-        color_set = [color[i] for i = 1:4]
+        color_set = [create_color(color[i]) for i = 1:4]
     end
     prob_set = (0.01, 0.85, 0.07, 0.07)
     fos = [FractalOperator(fums[i], color_set[i], prob_set[i]) for i = 1:4]

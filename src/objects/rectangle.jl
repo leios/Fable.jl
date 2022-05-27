@@ -6,10 +6,10 @@ function define_rectangle(pos::Vector{FT}, theta::FT, scale_x::FT, scale_y,
                           diagnostic = false) where FT <: AbstractFloat
 
     fums, fis = define_rectangle_operators(pos, theta, scale_x, scale_y)
-    if length(color) == 1
-        color_set = [color for i = 1:4]
+    if length(color) == 1 || eltype(color) <: Number
+        color_set = [create_color(color) for i = 1:4]
     else
-        color_set = [color[i] for i = 1:4]
+        color_set = [create_color(color[i]) for i = 1:4]
     end
     fos = [FractalOperator(fums[i], color_set[i], 0.25) for i = 1:4]
     return Hutchinson(fos, fis; AT = AT, FT = FT,
