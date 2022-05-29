@@ -35,6 +35,7 @@ function main()
 
     H = define_barnsley([color_1, color_2, color_3, color_4];
                         AT = AT, diagnostic=true, tilt = -0.04)
+    H.prob_set = (0.01, 0.5, 0.245, 0.245)
 
     fo_1 = scale_and_translate(prob = 0.5, color = Colors.previous,
                                translation = (0.5, 0.5), scale = 0.5)

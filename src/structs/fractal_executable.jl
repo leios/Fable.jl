@@ -16,8 +16,8 @@ function null(_p, tid, symbols, fid)
 end
 
 mutable struct Hutchinson
-    ops::Tuple{Function}
-    cops::Tuple{Function}
+    ops
+    cops
     color_set::Vector{FractalUserMethod}
     fi_set::Vector{FractalInput}
     name_set::Vector{String}
@@ -26,38 +26,65 @@ mutable struct Hutchinson
     fnums::Union{NTuple, Tuple}
 end
 
-function Hutchinson(Hs::HT) where HT <: Union{Vector{Hutchinson},
-                                              Tuple{Hutchinson}}
-    ops = Tuple([Hs[i].ops for i = 1:length(Hs)])
-    cops = Tuple([Hs[i].cops for i = 1:length(Hs)])
+function Hutchinson(Hs::HT;
+                    diagnostic = false) where HT <: Union{Vector{Hutchinson},
+                                                         Tuple{Hutchinson}}
+    ops = [Hs[1].ops[i] for i = 1:length(Hs[1].ops)]
+    cops = [Hs[1].cops[i] for i = 1:length(Hs[1].cops)]
     color_set = Hs[1].color_set
-
     fi_set = Hs[1].fi_set
     name_set = Hs[1].name_set
     prob_set = [Hs[1].prob_set[i] for i = 1:length(Hs[1].prob_set)]
-    symbols = [Hs[1].symbols for i = 1:length(Hs[1].symbols)]
-    fnums = [Hs[1].fnums for i = 1:length(Hs[1].fnums)]
+    symbols = [Hs[1].symbols[i] for i = 1:length(Hs[1].symbols)]
+    fnums = [Hs[1].fnums[i] for i = 1:length(Hs[1].fnums)]
+
+    fsum = sum(Hs[1].fnums)-1
 
     for j = 2:length(Hs)
-        fi_set = vcat(fi_set, Hs[j].fi_set)
+        color_set = vcat(color_set, Hs[j].color_set)
+        fi_set = vcat(fi_set, add(Hs[j].fi_set, fsum))
         name_set = vcat(name_set, Hs[j].name_set)
 
-        temp_prob = [Hs[j].prob_set[i] for i = 1:length(Hs[1].prob_set)]
-        temp_symbols = [Hs[j].symbols[i] for i = 1:length(Hs[1].symbols)]
-        temp_fnums = [Hs[j].fnums[i] for i = 1:length(Hs[1].fnums)]
+        temp_ops = [Hs[j].ops[i] for i = 1:length(Hs[j].ops)]
+        temp_cops = [Hs[j].cops[i] for i = 1:length(Hs[j].cops)]
+        temp_prob = [Hs[j].prob_set[i] for i = 1:length(Hs[j].prob_set)]
+        temp_symbols = [Hs[j].symbols[i] for i = 1:length(Hs[j].symbols)]
+        temp_fnums = [Hs[j].fnums[i] for i = 1:length(Hs[j].fnums)]
 
+        ops = vcat(ops, temp_ops)
+        cops = vcat(cops, temp_cops)
         prob_set = vcat(prob_set, temp_prob)
         symbols = vcat(symbols, temp_symbols)
-        fnums = vcat(fnums, temp_fnumss)
+        fnums = vcat(fnums, temp_fnums)
+
+        fsum += sum(Hs[j].fnums)-1
     end
 
-    return Hutchinson(ops, cops, color_set, fi_set, name_set, Tuple(prob_set),
+    if length(fi_set) == 0
+        fi_set = Vector{FractalInput}()
+    end
+    if length(name_set) == 0
+        name_set = Vector{String}()
+    end
+    if diagnostic
+        println("combined operators:\n", ops)
+        println("combined color operators:\n", cops)
+        println("combined color set:\n", color_set)
+        println("combined fractal inputs:\n", fi_set)
+        println("combined names:\n", name_set)
+        println("combined probabilities:\n", prob_set)
+        println("combined symbols:\n", symbols)
+        println("combined function numbers:\n", fnums)
+    end
+
+    return Hutchinson(Tuple(ops), Tuple(cops),
+                      color_set, fi_set, name_set, Tuple(prob_set),
                       Tuple(symbols), Tuple(fnums))
 end
 
 function Hutchinson()
     return Hutchinson((Fae.null,), (Fae.previous,), [Colors.previous],
-                      [FractalInput()], [""],
+                      Vector{FractalInput}(), Vector{String}(),
                       Tuple(0), Tuple(0), Tuple(0))
 end
 
