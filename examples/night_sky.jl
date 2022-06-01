@@ -102,7 +102,7 @@ function create_forest!(pix, num_trees, num_particles, num_iterations,
                                scale_y = -scales[i]) for i = 1:num_trees]
     tree_2 = fee(fos; name = "tree_2", final = true)
 
-    H_2 = Hutchinson([tree_2, reflect_operation])
+    H_2 = Hutchinson([tree_2, reflect_operation]; diagnostic = true)
 
     fractal_flame!(pix, tree, H_2,
                    num_particles, num_iterations,
@@ -137,5 +137,5 @@ function main(num_particles, num_iterations; AT = Array, FT = Float32)
 
     #@time Fae.write_image([sky_pix, star_pix, moon_pix], filename)
     #@time Fae.write_image([sky_pix, star_pix, moon_pix, forest_pix], filename)
-    @time Fae.write_image([forest_pix], filename)
+    #@time Fae.write_image([forest_pix], filename)
 end

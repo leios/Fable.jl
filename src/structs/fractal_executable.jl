@@ -41,9 +41,17 @@ function Hutchinson(Hs::HT;
     fsum = sum(Hs[1].fnums)-1
 
     for j = 2:length(Hs)
-        color_set = vcat(color_set, Hs[j].color_set)
-        fi_set = vcat(fi_set, add(Hs[j].fi_set, fsum))
-        name_set = vcat(name_set, Hs[j].name_set)
+        if length(Hs[j].color_set) > 0
+            color_set = vcat(color_set, Hs[j].color_set)
+        end
+
+        if length(Hs[j].fi_set) > 0
+            fi_set = vcat(fi_set, add(Hs[j].fi_set, fsum))
+        end
+
+        if length(Hs[j].name_set) > 0
+            name_set = vcat(name_set, Hs[j].name_set)
+        end
 
         temp_ops = [Hs[j].ops[i] for i = 1:length(Hs[j].ops)]
         temp_cops = [Hs[j].cops[i] for i = 1:length(Hs[j].cops)]

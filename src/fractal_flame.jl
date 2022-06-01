@@ -15,14 +15,14 @@ export fractal_flame, fractal_flame!
     return flag
 end
 
-@inline function find_fid(prob_set, fnum_start, fnum_end, seed)
+@inline function find_fid(prob_set, start, fnum, seed)
     rnd = seed/typemax(UInt)
     p = 0.0
 
-    for i = fnum_start:fnum_end
+    for i = start:start + fnum - 1
         p += prob_set[i]
         if rnd <= p
-            return i
+            return i - start + 1
         end
     end
 
@@ -114,6 +114,7 @@ end
 
             offset = 1
             for j = 1:length(H2)
+
                 if j > 1
                     offset += H2_fnums[j-1]
                 end
