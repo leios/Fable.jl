@@ -46,8 +46,8 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
         println(H.symbols)
     end
 
-    kernel!(ps.positions, n, H.ops, H.cops, H.prob_set, H.symbols, H.fnums,
-            H2.ops, H2.cops, H2.symbols, H2.prob_set, H2.fnums,
+    kernel!(ps.positions, n, H.op, H.cop, H.prob_set, H.symbols, H.fnums,
+            H2.op, H2.cop, H2.symbols, H2.prob_set, H2.fnums,
             pxs.values, pxs.reds, pxs.greens, pxs.blues,
             Tuple(bounds), Tuple(bin_widths), num_ignore, max_range,
             ndrange=size(ps.positions)[1])
@@ -82,6 +82,8 @@ end
     fid = 1
     fid_2 = 1
 
+    offset = 1
+
     for i = 1:n
         for k = 1:4
             @inbounds shared_colors[lid,k] = 0
@@ -93,69 +95,57 @@ end
         for i = 1:dims
             @inbounds sketchy_sum += abs(shared_tile[lid,i])
         end
-        if sketchy_sum < max_range
-            offset = 1
-            for j = 1:length(H)
-                if j > 1
-                    @inbounds offset = H1_fnums[j-1]+1
-                end
-                if H1_fnums[j] > 1
-                    seed = simple_rand(seed)
-                    @inbounds fid = find_fid(H_probs, offset, H1_fnums[j], seed)
-                else
-                    fid = 1
-                end
 
-                @inbounds H[j](shared_tile, lid, H1_symbols, fid)
-                @inbounds H_clrs[j](shared_colors, shared_tile, lid,
-                                    H1_symbols, fid)
+        if sketchy_sum < max_range
+            if H1_fnums[1] > 1
+                seed = simple_rand(seed)
+                @inbounds fid = find_fid(H_probs, offset, H1_fnums[1], seed)
+            else
+                fid = 1
+            end
+
+            @inbounds H(shared_tile, lid, H1_symbols, fid)
+            @inbounds H_clrs(shared_colors, shared_tile, lid,
+                             H1_symbols, fid)
+            fx_count += 1
+
+            if H2 != Fae.null
+                if H2_fnums[1] > 1
+                    seed = simple_rand(seed)
+                    @inbounds fid_2 = find_fid(H2_probs, offset,
+                                               H2_fnums[1], seed)
+                else
+                    fid_2 = 1
+                end
+            else
                 fx_count += 1
             end
 
-            offset = 1
-            for j = 1:length(H2)
+            @inbounds H2(shared_tile, lid, H2_symbols, fid_2)
+            @inbounds H2_clrs(shared_colors, shared_tile, lid,
+                              H2_symbols, fid_2)
 
-                if j > 1
-                    offset += H2_fnums[j-1]
-                end
+            @inbounds on_img_flag = on_image(shared_tile[lid,3],
+                                             shared_tile[lid,4],
+                                             bounds, dims)
+            if i > num_ignore && on_img_flag && fx_count > 0
 
-                if H2[j] != Fae.null
-                    if H2_fnums[j] > 1
-                        seed = simple_rand(seed)
-                        @inbounds fid_2 = find_fid(H2_probs, offset,
-                                                   H2_fnums[j], seed)
-                    else
-                        fid_2 = 1
-                    end
-                end
+                @inbounds bin = find_bin(pixel_values, shared_tile[lid,3],
+                                         shared_tile[lid,4], bounds,
+                                         bin_widths)
+                if bin > 0 && bin < length(pixel_values)
+                    @inbounds shared_colors[lid,1] /= fx_count
+                    @inbounds shared_colors[lid,2] /= fx_count
+                    @inbounds shared_colors[lid,3] /= fx_count
+                    @inbounds shared_colors[lid,4] /= fx_count
 
-                @inbounds H2[j](shared_tile, lid, H2_symbols, fid_2)
-                @inbounds H2_clrs[j](shared_colors, shared_tile, lid,
-                                     H2_symbols, fid_2)
-                fx_count += 1
-
-                @inbounds on_img_flag = on_image(shared_tile[lid,3],
-                                                 shared_tile[lid,4],
-                                                 bounds, dims)
-                if i > num_ignore && on_img_flag && fx_count > 0
-
-                    @inbounds bin = find_bin(pixel_values, shared_tile[lid,3],
-                                             shared_tile[lid,4], bounds,
-                                             bin_widths)
-                    if bin > 0 && bin < length(pixel_values)
-                        @inbounds shared_colors[lid,1] /= fx_count
-                        @inbounds shared_colors[lid,2] /= fx_count
-                        @inbounds shared_colors[lid,3] /= fx_count
-                        @inbounds shared_colors[lid,4] /= fx_count
-
-                        @atomic pixel_values[bin] += 1
-                        @atomic pixel_reds[bin] += FT(shared_colors[lid, 1] *
-                                                      shared_colors[lid, 4])
-                        @atomic pixel_greens[bin] += FT(shared_colors[lid, 2] *
-                                                        shared_colors[lid, 4])
-                        @atomic pixel_blues[bin] += FT(shared_colors[lid, 3] *
-                                                       shared_colors[lid, 4])
-                    end
+                    @atomic pixel_values[bin] += 1
+                    @atomic pixel_reds[bin] += FT(shared_colors[lid, 1] *
+                                                  shared_colors[lid, 4])
+                    @atomic pixel_greens[bin] += FT(shared_colors[lid, 2] *
+                                                    shared_colors[lid, 4])
+                    @atomic pixel_blues[bin] += FT(shared_colors[lid, 3] *
+                                                   shared_colors[lid, 4])
                 end
             end
         end

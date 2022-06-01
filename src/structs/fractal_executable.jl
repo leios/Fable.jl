@@ -16,8 +16,8 @@ function null(_p, tid, symbols, fid)
 end
 
 mutable struct Hutchinson
-    ops
-    cops
+    op
+    cop
     color_set::Vector{FractalUserMethod}
     fi_set::Vector{FractalInput}
     name_set::Vector{String}
@@ -29,8 +29,8 @@ end
 function Hutchinson(Hs::HT;
                     diagnostic = false) where HT <: Union{Vector{Hutchinson},
                                                          Tuple{Hutchinson}}
-    ops = [Hs[1].ops[i] for i = 1:length(Hs[1].ops)]
-    cops = [Hs[1].cops[i] for i = 1:length(Hs[1].cops)]
+    op = [Hs[1].op[i] for i = 1:length(Hs[1].op)]
+    cop = [Hs[1].cop[i] for i = 1:length(Hs[1].cop)]
     color_set = Hs[1].color_set
     fi_set = Hs[1].fi_set
     name_set = Hs[1].name_set
@@ -53,14 +53,14 @@ function Hutchinson(Hs::HT;
             name_set = vcat(name_set, Hs[j].name_set)
         end
 
-        temp_ops = [Hs[j].ops[i] for i = 1:length(Hs[j].ops)]
-        temp_cops = [Hs[j].cops[i] for i = 1:length(Hs[j].cops)]
+        temp_op = [Hs[j].op[i] for i = 1:length(Hs[j].op)]
+        temp_cop = [Hs[j].cop[i] for i = 1:length(Hs[j].cop)]
         temp_prob = [Hs[j].prob_set[i] for i = 1:length(Hs[j].prob_set)]
         temp_symbols = [Hs[j].symbols[i] for i = 1:length(Hs[j].symbols)]
         temp_fnums = [Hs[j].fnums[i] for i = 1:length(Hs[j].fnums)]
 
-        ops = vcat(ops, temp_ops)
-        cops = vcat(cops, temp_cops)
+        op = vcat(op, temp_op)
+        cop = vcat(cop, temp_cop)
         prob_set = vcat(prob_set, temp_prob)
         symbols = vcat(symbols, temp_symbols)
         fnums = vcat(fnums, temp_fnums)
@@ -75,8 +75,8 @@ function Hutchinson(Hs::HT;
         name_set = Vector{String}()
     end
     if diagnostic
-        println("combined operators:\n", ops)
-        println("combined color operators:\n", cops)
+        println("combined operators:\n", op)
+        println("combined color operators:\n", cop)
         println("combined color set:\n", color_set)
         println("combined fractal inputs:\n", fi_set)
         println("combined names:\n", name_set)
@@ -85,13 +85,13 @@ function Hutchinson(Hs::HT;
         println("combined function numbers:\n", fnums)
     end
 
-    return Hutchinson(Tuple(ops), Tuple(cops),
+    return Hutchinson(Tuple(op), Tuple(cop),
                       color_set, fi_set, name_set, Tuple(prob_set),
                       Tuple(symbols), Tuple(fnums))
 end
 
 function Hutchinson()
-    return Hutchinson((Fae.null,), (Fae.previous,), [Colors.previous],
+    return Hutchinson(Fae.null, Colors.previous, [Colors.previous],
                       Vector{FractalInput}(), Vector{String}(),
                       Tuple(0), Tuple(0), Tuple(0))
 end
@@ -232,7 +232,7 @@ function Hutchinson(fums::Array{FractalUserMethod},
                              final = final)
     colors = configure_colors(temp_colors, fis; name = name,
                               diagnostic = diagnostic)
-    return Hutchinson((H,), (colors,), temp_colors, fis, [name], prob_set,
+    return Hutchinson(H, colors, temp_colors, fis, [name], prob_set,
                       symbols, Tuple(length(fums)))
 end
 
@@ -262,7 +262,7 @@ function Hutchinson(fos::Vector{FractalOperator}, fis::Vector;
     colors = configure_colors(color_array, fis; name = name,
                               diagnostic = diagnostic)
 
-    return Hutchinson((H,), (colors,), color_array, fis, [name], prob_set,
+    return Hutchinson(H, colors, color_array, fis, [name], prob_set,
                       symbols, Tuple(length(fos)))
 
 end
@@ -288,6 +288,6 @@ function update_colors!(H::Hutchinson, fx_id, h_id,
     end
     
     H.color_set[fx_id + offset] = create_color(new_color)
-    H.cops[h_id] = configure_colors(H.color_set[offset:offset + H.fnums[h_id]],
+    H.cop[h_id] = configure_colors(H.color_set[offset:offset + H.fnums[h_id]],
                                     H.fi_set, name = H.name_set[h_id])
 end
