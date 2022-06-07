@@ -26,7 +26,7 @@ function simple_rand(x::Union{Int, UInt})
     return LCG_step(UInt(x), UInt(2862933555777941757), UInt(1))
 end
 
-@inline function find_fid(prob_set, start, fnum, seed)
+@inline function find_choice(prob_set, start, fnum, seed)
     rnd = seed/typemax(UInt)
     p = 0.0
 
@@ -90,7 +90,7 @@ function create_fid(probs, fnums, seed)
     for i = 1:length(fnums)
         if probs[fx_offset] < 1
             seed = simple_rand(UInt(seed))
-            choice = find_fid(probs, fx_offset, fnums[i], seed)
+            choice = find_choice(probs, fx_offset, fnums[i], seed)
             fid += ((choice-1) << bit_offset)
             bit_offset += ceil(UInt, log2(fnums[i]))
         end

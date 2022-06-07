@@ -3,14 +3,14 @@ export Hutchinson, update_fis!, update_colors!, new_color_array, fee
 
 fee(args...;kwargs...) = Hutchinson(args...;kwargs...)
 
-function previous(_clr, _p, tid, symbols, fid)
+function previous(_clr, _p, tid, symbols, choice)
     _clr[tid,1] += _clr[tid,1]
     _clr[tid,2] += _clr[tid,2]
     _clr[tid,3] += _clr[tid,3]
     _clr[tid,4] += _clr[tid,4]
 end
 
-function null(_p, tid, symbols, fid)
+function null(_p, tid, symbols, choice)
     _p[tid,3] = _p[tid,1]
     _p[tid,4] = _p[tid,2]
 end
@@ -113,10 +113,10 @@ function new_color_array(color_array; diagnostic = false)
 end
 
 function configure_hutchinson(fums::Vector{FractalUserMethod},
-                              fis::Vector; name = "",
-                              diagnostic = false, final = false)
+                              fis::Vector; name = "", diagnostic = false,
+                              final = false, evaluate = true)
 
-    fx_string = "function H_"*name*"(_p, tid, symbols, fid)\n"
+    fx_string = "function H_"*name*"(_p, tid, symbols, choice)\n"
     fx_string *= "x = _p[tid, 2] \n y = _p[tid, 1] \n"
     for i = 1:length(fis)
         fx_string *= fis[i].name*" = symbols["*string(fis[i].index)*"]\n"
@@ -125,11 +125,11 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
     for i = 1:length(fums)
         temp_string = ""
         if i == 1
-            temp_string = "if fid == "*string(i)*"\n"*
+            temp_string = "if choice == "*string(i)*"\n"*
                           create_header(fums[i])*
                           string(fums[i].body)*"\n"
         else
-            temp_string = "elseif fid == "*string(i)*"\n"*
+            temp_string = "elseif choice == "*string(i)*"\n"*
                           create_header(fums[i])*
                           string(fums[i].body)*"\n"
         end
@@ -151,14 +151,25 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
         println(H)
     end
 
-    return eval(H)
+    if evaluate
+        return eval(H)
+    else
+        return H
+    end
 end
+
+function configure_hutchinson(fums::Vector{FractalUserMethod},
+                              fis::Vector, fnums::Vector;
+                              name = "", diagnostic = false,
+                              final = false, evaluate = true)
+end
+
 
 function configure_colors(fums::Vector{FractalUserMethod},
                           fis::Vector; name = "",
                           diagnostic = false, final = false)
 
-    fx_string = "function color_"*name*"(_clr, _p, tid, symbols, fid)\n"
+    fx_string = "function color_"*name*"(_clr, _p, tid, symbols, choice)\n"
     fx_string *= "x = _p[tid, 2] \n"
     fx_string *= "y = _p[tid, 1] \n"
     fx_string *= "red = _clr[tid, 1] \n"
@@ -173,11 +184,11 @@ function configure_colors(fums::Vector{FractalUserMethod},
     for i = 1:length(fums)
         temp_string = ""
         if i == 1
-            temp_string = "if fid == "*string(i)*"\n"*
+            temp_string = "if choice == "*string(i)*"\n"*
                           create_header(fums[i])*
                           string(fums[i].body)*"\n"
         else
-            temp_string = "elseif fid == "*string(i)*"\n"*
+            temp_string = "elseif choice == "*string(i)*"\n"*
                           create_header(fums[i])*
                           string(fums[i].body)*"\n"
         end

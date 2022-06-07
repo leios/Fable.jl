@@ -15,21 +15,6 @@ export fractal_flame, fractal_flame!
     return flag
 end
 
-@inline function find_fid(prob_set, start, fnum, seed)
-    rnd = seed/typemax(UInt)
-    p = 0.0
-
-    for i = start:start + fnum - 1
-        p += prob_set[i]
-        if rnd <= p
-            return i - start + 1
-        end
-    end
-
-    return 0
-
-end
-
 function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
                   bounds, bin_widths, H2::Hutchinson;
                   diagnostic = false, numcores = 4, numthreads=256,
@@ -99,7 +84,7 @@ end
         if sketchy_sum < max_range
             if H1_fnums[1] > 1
                 seed = simple_rand(seed)
-                @inbounds fid = find_fid(H_probs, offset, H1_fnums[1], seed)
+                @inbounds fid = find_choice(H_probs, offset, H1_fnums[1], seed)
             else
                 fid = 1
             end
@@ -112,8 +97,8 @@ end
             if H2 != Fae.null
                 if H2_fnums[1] > 1
                     seed = simple_rand(seed)
-                    @inbounds fid_2 = find_fid(H2_probs, offset,
-                                               H2_fnums[1], seed)
+                    @inbounds fid_2 = find_choice(H2_probs, offset,
+                                                  H2_fnums[1], seed)
                 else
                     fid_2 = 1
                 end
