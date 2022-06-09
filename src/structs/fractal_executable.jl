@@ -183,7 +183,7 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
                                            evaluate = false)
         fx_string *= temp_string
         fx_offset += fnums[i]
-        bit_offset +== ceil(UInt,log2(fnums[i]))
+        bit_offset += ceil(UInt,log2(fnums[i]))
     end
 
     if final
