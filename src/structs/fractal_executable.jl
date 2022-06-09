@@ -116,8 +116,11 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
                               fis::Vector; name = "", diagnostic = false,
                               final = false, evaluate = true)
 
-    fx_string = "function H_"*name*"(_p, tid, symbols, choice)\n"
-    fx_string *= "x = _p[tid, 2] \n y = _p[tid, 1] \n"
+    fx_string = ""
+    if evaluate
+        fx_string = "function H_"*name*"(_p, tid, symbols, choice)\n"
+        fx_string *= "x = _p[tid, 2] \n y = _p[tid, 1] \n"
+    end
     for i = 1:length(fis)
         fx_string *= fis[i].name*" = symbols["*string(fis[i].index)*"]\n"
     end
@@ -138,12 +141,15 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
 
     fx_string *= "else error('Function not found!')\n"
     fx_string *= "end\n"
-    if final
-        fx_string *= "_p[tid, 4] = x \n _p[tid, 3] = y \n"
-    else
-        fx_string *= "_p[tid, 2] = x \n _p[tid, 1] = y \n"
+
+    if evaluate
+        if final
+            fx_string *= "_p[tid, 4] = x \n _p[tid, 3] = y \n"
+        else
+            fx_string *= "_p[tid, 2] = x \n _p[tid, 1] = y \n"
+        end
+        fx_string *= "end"
     end
-    fx_string *= "end"
 
     H = Meta.parse(replace(fx_string, "'" => '"'))
 
@@ -162,6 +168,44 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
                               fis::Vector, fnums::Vector;
                               name = "", diagnostic = false,
                               final = false, evaluate = true)
+    fx_string = "function H_"*name*"(_p, tid, symbols, fid)\n"
+    fx_string *= "x = _p[tid, 2] \n y = _p[tid, 1] \n"
+
+    fx_offset = 1
+    bit_offset = 0
+
+    for i = 1:length(fnums)
+        fx_string *= "bit_offset = " * string(bit_offset) *"\n"
+        f_range = fx_offset:fx_offset + fnums[i] - 1
+        fx_string *= "choice = decode_fid(fid, bit_offset, " *
+                     string(fnums[i]) * ")\n"
+        temp_string = configure_hutchinson(fums[f_range], fis;
+                                           evaluate = false)
+        fx_string *= temp_string
+        fx_offset += fnums[i]
+        bit_offset +== ceil(UInt,log2(fnums[i]))
+    end
+
+    if final
+        fx_string *= "_p[tid, 4] = x \n _p[tid, 3] = y \n"
+    else
+        fx_string *= "_p[tid, 2] = x \n _p[tid, 1] = y \n"
+    end
+    fx_string *= "end"
+
+    H = Meta.parse(replace(fx_string, "'" => '"'))
+
+    if diagnostic
+        println(H)
+    end
+
+    if evaluate
+        return eval(H)
+    else
+        return H
+    end
+
+
 end
 
 
