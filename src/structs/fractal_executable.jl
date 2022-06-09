@@ -19,6 +19,7 @@ mutable struct Hutchinson
     op
     cop
     color_set::Vector{FractalUserMethod}
+    fum_set::Vector{FractalUserMethod}
     fi_set::Vector{FractalInput}
     name_set::Vector{String}
     prob_set::Union{NTuple, Tuple}
@@ -29,9 +30,8 @@ end
 function Hutchinson(Hs::HT;
                     diagnostic = false) where HT <: Union{Vector{Hutchinson},
                                                          Tuple{Hutchinson}}
-    op = [Hs[1].op[i] for i = 1:length(Hs[1].op)]
-    cop = [Hs[1].cop[i] for i = 1:length(Hs[1].cop)]
     color_set = Hs[1].color_set
+    fum_set = Hs[1].fum_set
     fi_set = Hs[1].fi_set
     name_set = Hs[1].name_set
     prob_set = [Hs[1].prob_set[i] for i = 1:length(Hs[1].prob_set)]
@@ -53,14 +53,14 @@ function Hutchinson(Hs::HT;
             name_set = vcat(name_set, Hs[j].name_set)
         end
 
-        temp_op = [Hs[j].op[i] for i = 1:length(Hs[j].op)]
-        temp_cop = [Hs[j].cop[i] for i = 1:length(Hs[j].cop)]
+        if length(Hs[j].fum_set) > 0
+            fi_set = vcat(fum_set, Hs[j].fum_set)
+        end
+
         temp_prob = [Hs[j].prob_set[i] for i = 1:length(Hs[j].prob_set)]
         temp_symbols = [Hs[j].symbols[i] for i = 1:length(Hs[j].symbols)]
         temp_fnums = [Hs[j].fnums[i] for i = 1:length(Hs[j].fnums)]
 
-        op = vcat(op, temp_op)
-        cop = vcat(cop, temp_cop)
         prob_set = vcat(prob_set, temp_prob)
         symbols = vcat(symbols, temp_symbols)
         fnums = vcat(fnums, temp_fnums)
@@ -74,19 +74,27 @@ function Hutchinson(Hs::HT;
     if length(name_set) == 0
         name_set = Vector{String}()
     end
+
     if diagnostic
-        println("combined operators:\n", op)
-        println("combined color operators:\n", cop)
         println("combined color set:\n", color_set)
+        println("combined fractal User Methods:\n", fum_set)
         println("combined fractal inputs:\n", fi_set)
         println("combined names:\n", name_set)
         println("combined probabilities:\n", prob_set)
         println("combined symbols:\n", symbols)
         println("combined function numbers:\n", fnums)
     end
+    new_H = configure_hutchinson(fum_set, fi_set, fnums;
+                                 name = name, diagnostic = diagnostic,
+                                 final = final)
+    new_colors = configure_colors(color_set, fi_set; name = name,
+                              diagnostic = diagnostic)
+    return Hutchinson(H, colors, temp_colors, fis, [name], prob_set,
+                      symbols, Tuple(length(fums)))
 
-    return Hutchinson(Tuple(op), Tuple(cop),
-                      color_set, fi_set, name_set, Tuple(prob_set),
+
+    return Hutchinson(new_H, new_colors,
+                      color_set, fum_set, fi_set, name_set, Tuple(prob_set),
                       Tuple(symbols), Tuple(fnums))
 end
 
@@ -205,7 +213,6 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
         return H
     end
 
-
 end
 
 
@@ -287,7 +294,7 @@ function Hutchinson(fums::Array{FractalUserMethod},
                              final = final)
     colors = configure_colors(temp_colors, fis; name = name,
                               diagnostic = diagnostic)
-    return Hutchinson(H, colors, temp_colors, fis, [name], prob_set,
+    return Hutchinson(H, colors, temp_colors, fums, fis, [name], prob_set,
                       symbols, Tuple(length(fums)))
 end
 
@@ -317,7 +324,8 @@ function Hutchinson(fos::Vector{FractalOperator}, fis::Vector;
     colors = configure_colors(color_array, fis; name = name,
                               diagnostic = diagnostic)
 
-    return Hutchinson(H, colors, color_array, fis, [name], prob_set,
+    fums = FractalUserMethod.(fos)
+    return Hutchinson(H, colors, color_array, fums, fis, [name], prob_set,
                       symbols, Tuple(length(fos)))
 
 end
@@ -344,5 +352,5 @@ function update_colors!(H::Hutchinson, fx_id, h_id,
     
     H.color_set[fx_id + offset] = create_color(new_color)
     H.cop[h_id] = configure_colors(H.color_set[offset:offset + H.fnums[h_id]],
-                                    H.fi_set, name = H.name_set[h_id])
+                                   H.fi_set, name = H.name_set[h_id])
 end
