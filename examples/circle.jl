@@ -7,7 +7,7 @@ end
 
 function main()
     #AT = Array
-    AT = Array
+    AT = CuArray
     FT = Float32
 
     num_particles = 1000

@@ -50,7 +50,7 @@ end
 #     As a UInt, the value is saved as 25
 # encoding an fid involves generating a random UInt and going through the
 #   bitstring to ensure that each set of possible values is a possible option
-function create_fid(rng::UI, fnums) where UI <: Unsigned
+function create_fid(fnums, rng::UI) where UI <: Unsigned
     val = UI(0)
     offset = UI(0)
 
@@ -96,7 +96,11 @@ function create_fid(probs, fnums, seed)
         end
         fx_offset += fnums[i]
     end
-    return fid
+    if length(fnums) == 1
+        return fid + 1
+    else
+        return fid
+    end
 end
 
 # Decoding takes an offset, which is the number of digits on the fid bitstring

@@ -19,7 +19,6 @@ end
 @testset "affine transformation tests" begin
 
     a = zeros(1024,1024)
-    #a = zeros(10,10)
 
     threshold = 0.00001
 
@@ -47,7 +46,7 @@ end
 @testset "fid tests" begin
     fnums = Tuple([UInt16(i) for i = 1:7])
     rng = typemax(UInt16)
-    fid = Fae.create_fid(rng, fnums)
+    fid = Fae.create_fid(fnums, rng)
 
     @test bitstring(UInt16(fid)) == "0000101100011001"
 

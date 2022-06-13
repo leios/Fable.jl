@@ -38,18 +38,15 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
             ndrange=size(ps.positions)[1])
 end
 
-@kernel function naive_chaos_kernel!(points, n, H, H_clrs, H_probs, H1_symbols,
-                                     H1_fnums, H2, H2_clrs, H2_symbols,
-                                     H2_probs, H2_fnums,
+@kernel function naive_chaos_kernel!(points, n, H1, H1_clrs, H1_probs,
+                                     H1_symbols, H1_fnums, H2, H2_clrs,
+                                     H2_symbols, H2_probs, H2_fnums,
                                      pixel_values, pixel_reds, pixel_greens,
                                      pixel_blues, bounds, bin_widths,
                                      num_ignore, max_range)
 
     tid = @index(Global,Linear)
     lid = @index(Local, Linear)
-
-    fnum_1 = sum(H1_fnums)
-    fnum_2 = sum(H2_fnums)
 
     @uniform dims = size(points)[2]
 
@@ -64,8 +61,10 @@ end
     end
 
     seed = quick_seed(tid)
-    fid = 1
-    fid_2 = 1
+    fid = create_fid(H1_probs, H1_fnums, seed)
+    fid_2 = create_fid(H2_probs, H2_fnums, seed)
+
+    #@print("fid is: ", fid, '\t', H1_probs, '\t', H1_fnums, '\n')
 
     offset = 1
 
@@ -73,7 +72,6 @@ end
         for k = 1:4
             @inbounds shared_colors[lid,k] = 0
         end
-        fx_count = 0
 
         # quick way to tell if in range to be calculated or not
         sketchy_sum = 0
@@ -84,53 +82,46 @@ end
         if sketchy_sum < max_range
             if H1_fnums[1] > 1
                 seed = simple_rand(seed)
-                @inbounds fid = find_choice(H_probs, offset, H1_fnums[1], seed)
+                fid = create_fid(H1_probs, H1_fnums, seed)
             else
                 fid = 1
             end
 
-            @inbounds H(shared_tile, lid, H1_symbols, fid)
-            @inbounds H_clrs(shared_colors, shared_tile, lid,
-                             H1_symbols, fid)
-            fx_count += 1
+            H1(shared_tile, lid, H1_symbols, fid)
+            H1_clrs(shared_colors, shared_tile, lid, H1_symbols, fid)
 
             if H2 != Fae.null
                 if H2_fnums[1] > 1
                     seed = simple_rand(seed)
-                    @inbounds fid_2 = find_choice(H2_probs, offset,
-                                                  H2_fnums[1], seed)
+                    fid_2 = create_fid(H1_probs, H2_fnums, seed)
                 else
                     fid_2 = 1
                 end
-            else
-                fx_count += 1
             end
 
-            @inbounds H2(shared_tile, lid, H2_symbols, fid_2)
-            @inbounds H2_clrs(shared_colors, shared_tile, lid,
-                              H2_symbols, fid_2)
+            H2(shared_tile, lid, H2_symbols, fid_2)
+            H2_clrs(shared_colors, shared_tile, lid, H2_symbols, fid_2)
 
             @inbounds on_img_flag = on_image(shared_tile[lid,3],
                                              shared_tile[lid,4],
                                              bounds, dims)
-            if i > num_ignore && on_img_flag && fx_count > 0
+            if i > num_ignore && on_img_flag
 
                 @inbounds bin = find_bin(pixel_values, shared_tile[lid,3],
                                          shared_tile[lid,4], bounds,
                                          bin_widths)
                 if bin > 0 && bin < length(pixel_values)
-                    @inbounds shared_colors[lid,1] /= fx_count
-                    @inbounds shared_colors[lid,2] /= fx_count
-                    @inbounds shared_colors[lid,3] /= fx_count
-                    @inbounds shared_colors[lid,4] /= fx_count
 
+#=
                     @atomic pixel_values[bin] += 1
+                    #@print(string(eltype(pixel_reds)), '\t', string(FT), '\n')
                     @atomic pixel_reds[bin] += FT(shared_colors[lid, 1] *
                                                   shared_colors[lid, 4])
                     @atomic pixel_greens[bin] += FT(shared_colors[lid, 2] *
                                                     shared_colors[lid, 4])
                     @atomic pixel_blues[bin] += FT(shared_colors[lid, 3] *
                                                    shared_colors[lid, 4])
+=#
                 end
             end
         end
