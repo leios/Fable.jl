@@ -112,16 +112,16 @@ end
                                          bin_widths)
                 if bin > 0 && bin < length(pixel_values)
 
-#=
-                    @atomic pixel_values[bin] += 1
-                    #@print(string(eltype(pixel_reds)), '\t', string(FT), '\n')
-                    @atomic pixel_reds[bin] += FT(shared_colors[lid, 1] *
-                                                  shared_colors[lid, 4])
-                    @atomic pixel_greens[bin] += FT(shared_colors[lid, 2] *
-                                                    shared_colors[lid, 4])
-                    @atomic pixel_blues[bin] += FT(shared_colors[lid, 3] *
-                                                   shared_colors[lid, 4])
-=#
+                    atomic_add!(pointer(pixel_values, bin), Int(1))
+                    atomic_add!(pointer(pixel_reds, bin),
+                                FT(shared_colors[lid, 1] *
+                                   shared_colors[lid, 4]))
+                    atomic_add!(pointer(pixel_greens, bin),
+                                FT(shared_colors[lid, 2] *
+                                   shared_colors[lid, 4]))
+                    atomic_add!(pointer(pixel_blues, bin),
+                                FT(shared_colors[lid, 3] *
+                                   shared_colors[lid, 4]))
                 end
             end
         end

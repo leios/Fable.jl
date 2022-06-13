@@ -7,7 +7,7 @@ end
 
 
 function main()
-    AT = Array
+    AT = CuArray
     FT = Float32
 
     gradient = @fum function gradient(x, y)

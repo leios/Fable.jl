@@ -147,7 +147,7 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
         fx_string *= temp_string
     end
 
-    fx_string *= "else error('Function ', choice, ' not found!')\n"
+    fx_string *= "else error('Function not found!')\n"
     fx_string *= "end\n"
 
     if evaluate
@@ -249,7 +249,7 @@ function configure_colors(fums::Vector{FractalUserMethod},
         fx_string *= temp_string
     end
 
-    fx_string *= "else error('Function ', choice, ' not found!')\n"
+    fx_string *= "else error('Function not found!')\n"
     fx_string *= "end\n"
     if evaluate
         fx_string *= "_clr[tid, 1] += red \n"
