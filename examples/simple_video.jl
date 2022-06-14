@@ -5,13 +5,13 @@ if has_cuda_gpu()
     CUDA.allowscalar(false)
 end
 
-AT = CuArray
+AT = Array
 FT = Float32
 
 frames = 10
 
-num_particles = 10000
-num_iterations = 10000
+num_particles = 1000
+num_iterations = 1000
 bounds = [-2 2; -2 2]
 res = (1000, 1000)
 
@@ -35,6 +35,8 @@ H2 = Hutchinson([Flames.sinusoidal, Flames.identity],
                [[0.25, 0.25, 0.25, 1.0], [0,0,0,0]],
                (1,0);
                final = true, diagnostic = true, AT = AT, name = "2")
+println(H)
+println(H2)
 for i = 1:frames
     t = 1.5*(i-1)/frames
 

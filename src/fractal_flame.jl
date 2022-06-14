@@ -64,8 +64,6 @@ end
     fid = create_fid(H1_probs, H1_fnums, seed)
     fid_2 = create_fid(H2_probs, H2_fnums, seed)
 
-    #@print("fid is: ", fid, '\t', H1_probs, '\t', H1_fnums, '\n')
-
     offset = 1
 
     for i = 1:n
@@ -93,7 +91,7 @@ end
             if H2 != Fae.null
                 if H2_fnums[1] > 1
                     seed = simple_rand(seed)
-                    fid_2 = create_fid(H1_probs, H2_fnums, seed)
+                    fid_2 = create_fid(H2_probs, H2_fnums, seed)
                 else
                     fid_2 = 1
                 end
