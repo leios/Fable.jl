@@ -189,8 +189,12 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
     for i = 1:length(fnums)
         fx_string *= "bit_offset = " * string(bit_offset) *"\n"
         f_range = fx_offset:fx_offset + fnums[i] - 1
-        fx_string *= "choice = decode_fid(fid, bit_offset, " *
-                     string(fnums[i]) * ")\n"
+
+        fx_string *= "bitsize = ceil(UInt, log2("*string(fnums[i])*"))\n"
+        fx_string *= "bitmask = UInt(2^(bitsize + bit_offset) - 1"*
+                     " - (2^bit_offset - 1))\n"
+        fx_string *= "choice = UInt((fid & bitmask) >> bit_offset) + 1\n"
+
         temp_string = configure_hutchinson(fums[f_range], fis;
                                            evaluate = false)
         fx_string *= temp_string
@@ -300,8 +304,12 @@ function configure_colors(fums::Vector{FractalUserMethod},
     for i = 1:length(fnums)
         fx_string *= "bit_offset = " * string(bit_offset) *"\n"
         f_range = fx_offset:fx_offset + fnums[i] - 1
-        fx_string *= "choice = decode_fid(fid, bit_offset, " *
-                     string(fnums[i]) * ")\n"
+
+        fx_string *= "bitsize = ceil(UInt, log2("*string(fnums[i])*"))\n"
+        fx_string *= "bitmask = UInt(2^(bitsize + bit_offset) - 1"*
+                     " - (2^bit_offset - 1))\n"
+        fx_string *= "choice = UInt((fid & bitmask) >> bit_offset) + 1\n"
+
         temp_string = configure_colors(fums[f_range], fis;
                                        evaluate = false)
         fx_string *= temp_string

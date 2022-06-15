@@ -10,8 +10,8 @@ function main()
     AT = CuArray
     FT = Float32
 
-    num_particles = 1000
-    num_iterations = 1000
+    num_particles = 10000
+    num_iterations = 10000
     bounds = [-1.125 1.125; -2 2]
     res = (1080, 1920)
 
