@@ -11,18 +11,18 @@
 #}
 
 # This is a quick and dirty method to generate a seed
-function quick_seed(id)
+@inline function quick_seed(id)
     return UInt(id*1099087573)
 end
 
 # This is a linear congruential generator (LCG)
 # This uses a default modulo 64 for UInt
-function LCG_step(x::UInt, a::UInt, c::UInt)
+@inline function LCG_step(x::UInt, a::UInt, c::UInt)
     return UInt(a*x+c) #%m, where m = 64
 end
 
 # This is a combination of both
-function simple_rand(x::Union{Int, UInt})
+@inline function simple_rand(x::Union{Int, UInt})
     return LCG_step(UInt(x), UInt(2862933555777941757), UInt(1))
 end
 
@@ -50,7 +50,7 @@ end
 #     As a UInt, the value is saved as 25
 # encoding an fid involves generating a random UInt and going through the
 #   bitstring to ensure that each set of possible values is a possible option
-function create_fid(fnums, rng::UI) where UI <: Unsigned
+@inline function create_fid(fnums, rng::UI) where UI <: Unsigned
     val = UI(0)
     offset = UI(0)
 
@@ -83,7 +83,7 @@ function create_fid(fnums, rng::UI) where UI <: Unsigned
     return val
 end
 
-function create_fid(probs, fnums, seed)
+@inline function create_fid(probs, fnums, seed)
     fid = UInt(0)
     bit_offset = 0
     fx_offset = 1
@@ -106,7 +106,7 @@ end
 # Decoding takes an offset, which is the number of digits on the fid bitstring
 #   to ignore from the right hand side.
 # Should probably add an error, but was afraid of the conditional
-function decode_fid(fid::UI, offset, fnum) where UI <: Unsigned
+@inline function decode_fid(fid::UI, offset, fnum) where UI <: Unsigned
     bitsize = ceil(UI, log2(fnum))
     bitmask = UI(2^(bitsize + offset) - 1 - (2^offset - 1))
     value = UI((fid & bitmask) >> offset) + 1

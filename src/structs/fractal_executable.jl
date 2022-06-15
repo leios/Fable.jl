@@ -27,9 +27,9 @@ mutable struct Hutchinson
     fnums::Union{NTuple, Tuple}
 end
 
-function Hutchinson(Hs::HT;
-                    diagnostic = false) where HT <: Union{Vector{Hutchinson},
-                                                         Tuple{Hutchinson}}
+function Hutchinson(Hs::HT; diagnostic = false, name = "",
+                    final = false) where HT <: Union{Vector{Hutchinson},
+                                                     Tuple{Hutchinson}}
     color_set = Hs[1].color_set
     fum_set = Hs[1].fum_set
     fi_set = Hs[1].fi_set
@@ -54,7 +54,7 @@ function Hutchinson(Hs::HT;
         end
 
         if length(Hs[j].fum_set) > 0
-            fi_set = vcat(fum_set, Hs[j].fum_set)
+            fum_set = vcat(fum_set, Hs[j].fum_set)
         end
 
         temp_prob = [Hs[j].prob_set[i] for i = 1:length(Hs[j].prob_set)]
@@ -75,6 +75,17 @@ function Hutchinson(Hs::HT;
         name_set = Vector{String}()
     end
 
+    if name == ""
+        for i = 1:length(name_set)
+            name *= name_set[i] * "_"
+        end
+    end
+    new_H = configure_hutchinson(fum_set, fi_set, fnums;
+                                 name = name, diagnostic = diagnostic,
+                                 final = final)
+    new_colors = configure_colors(color_set, fi_set, fnums; name = name,
+                                  diagnostic = diagnostic)
+
     if diagnostic
         println("combined color set:\n", color_set)
         println("combined fractal User Methods:\n", fum_set)
@@ -83,15 +94,9 @@ function Hutchinson(Hs::HT;
         println("combined probabilities:\n", prob_set)
         println("combined symbols:\n", symbols)
         println("combined function numbers:\n", fnums)
+        println("combined fractal executables:\n", new_H)
+        println("combined colors:\n", new_colors)
     end
-    new_H = configure_hutchinson(fum_set, fi_set, fnums;
-                                 name = name, diagnostic = diagnostic,
-                                 final = final)
-    new_colors = configure_colors(color_set, fi_set, fnums; name = name,
-                                  diagnostic = diagnostic)
-    return Hutchinson(H, colors, temp_colors, fis, [name], prob_set,
-                      symbols, Tuple(length(fums)))
-
 
     return Hutchinson(new_H, new_colors,
                       color_set, fum_set, fi_set, name_set, Tuple(prob_set),
@@ -100,8 +105,9 @@ end
 
 function Hutchinson()
     return Hutchinson(Fae.null, Colors.previous, [Colors.previous],
+                      [Flames.identity],
                       Vector{FractalInput}(), Vector{String}(),
-                      Tuple(0), Tuple(0), Tuple(0))
+                      Tuple(0), Tuple(0), Tuple(1))
 end
 
 function configure_hutchinson(fos::Vector{FractalOperator},
@@ -126,7 +132,7 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
 
     fx_string = ""
     if evaluate
-        fx_string = "function H_"*name*"(_p, tid, symbols, choice)\n"
+        fx_string = "@inline function H_"*name*"(_p, tid, symbols, choice)\n"
         fx_string *= "x = _p[tid, 2] \n y = _p[tid, 1] \n"
     end
     for i = 1:length(fis)
@@ -157,18 +163,16 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
             fx_string *= "_p[tid, 2] = x \n _p[tid, 1] = y \n"
         end
         fx_string *= "end"
-    end
 
-    H = Meta.parse(replace(fx_string, "'" => '"'))
+        H = Meta.parse(replace(fx_string, "'" => '"'))
 
-    if diagnostic
-        println(H)
-    end
+        if diagnostic
+            println(H)
+        end
 
-    if evaluate
         return eval(H)
     else
-        return H
+        return fx_string
     end
 end
 
@@ -176,7 +180,7 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
                               fis::Vector, fnums::Vector;
                               name = "", diagnostic = false,
                               final = false, evaluate = true)
-    fx_string = "function H_"*name*"(_p, tid, symbols, fid)\n"
+    fx_string = "@inline function H_"*name*"(_p, tid, symbols, fid)\n"
     fx_string *= "x = _p[tid, 2] \n y = _p[tid, 1] \n"
 
     fx_offset = 1
@@ -194,23 +198,23 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
         bit_offset += ceil(UInt,log2(fnums[i]))
     end
 
-    if final
-        fx_string *= "_p[tid, 4] = x \n _p[tid, 3] = y \n"
-    else
-        fx_string *= "_p[tid, 2] = x \n _p[tid, 1] = y \n"
-    end
-    fx_string *= "end"
-
-    H = Meta.parse(replace(fx_string, "'" => '"'))
-
-    if diagnostic
-        println(H)
-    end
-
     if evaluate
+        if final
+            fx_string *= "_p[tid, 4] = x \n _p[tid, 3] = y \n"
+        else
+            fx_string *= "_p[tid, 2] = x \n _p[tid, 1] = y \n"
+        end
+        fx_string *= "end"
+
+        H = Meta.parse(replace(fx_string, "'" => '"'))
+
+        if diagnostic
+            println(H)
+        end
+
         return eval(H)
     else
-        return H
+        return fx_string
     end
 
 end
@@ -222,7 +226,8 @@ function configure_colors(fums::Vector{FractalUserMethod},
 
     fx_string = ""
     if evaluate
-        fx_string *= "function color_"*name*"(_clr, _p, tid, symbols, choice)\n"
+        fx_string *= "@inline function color_"*name*"(_clr, _p, tid,"*
+                     " symbols, choice)\n"
         fx_string *= "x = _p[tid, 2] \n"
         fx_string *= "y = _p[tid, 1] \n"
         fx_string *= "red = _clr[tid, 1] \n"
@@ -259,16 +264,16 @@ function configure_colors(fums::Vector{FractalUserMethod},
         fx_string *= "end"
     end
 
-    H = Meta.parse(replace(fx_string, "'" => '"'))
-
-    if diagnostic
-        println(H)
-    end
-
     if evaluate
+        H = Meta.parse(replace(fx_string, "'" => '"'))
+
+        if diagnostic
+            println(H)
+        end
+
         return eval(H)
     else
-        return H
+        return fx_string
     end
 end
 
@@ -276,14 +281,14 @@ function configure_colors(fums::Vector{FractalUserMethod},
                           fis::Vector, fnums::Vector;
                           name = "", diagnostic = false,
                           final = false, evaluate = true)
-    fx_string *= "function color_"*name*"(_clr, _p, tid, symbols, choice)\n"
+    fx_string = "@inline function color_"*name*"(_clr, _p, tid, symbols, fid)\n"
     fx_string *= "x = _p[tid, 2] \n"
     fx_string *= "y = _p[tid, 1] \n"
     fx_string *= "red = _clr[tid, 1] \n"
     fx_string *= "green = _clr[tid, 2] \n"
     fx_string *= "blue = _clr[tid, 3] \n"
     fx_string *= "alpha = _clr[tid, 4] \n"
-    fx_string *= "fx_count = 0"
+    fx_string *= "fx_count = 0 \n"
 
     for i = 1:length(fis)
         fx_string *= fis[i].name*" = symbols["*string(fis[i].index)*"]\n"
@@ -311,16 +316,16 @@ function configure_colors(fums::Vector{FractalUserMethod},
     fx_string *= "_clr[tid, 4] += alpha / fx_count \n"
     fx_string *= "end"
 
-    H = Meta.parse(replace(fx_string, "'" => '"'))
-
-    if diagnostic
-        println(H)
-    end
-
     if evaluate
+        H = Meta.parse(replace(fx_string, "'" => '"'))
+
+        if diagnostic
+            println(H)
+        end
+
         return eval(H)
     else
-        return H
+        return fx_string
     end
 end
 

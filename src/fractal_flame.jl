@@ -105,6 +105,7 @@ end
                                              bounds, dims)
             if i > num_ignore && on_img_flag
 
+                #@print(shared_tile[lid,3], '\t', shared_tile[lid,4], '\n')
                 @inbounds bin = find_bin(pixel_values, shared_tile[lid,3],
                                          shared_tile[lid,4], bounds,
                                          bin_widths)

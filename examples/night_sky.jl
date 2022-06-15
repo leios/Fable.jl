@@ -5,9 +5,9 @@ function create_sky!(pix, num_particles, num_iterations, reflect_operation;
                      AT = Array, FT = Float32,
                      bounds = [-1.125 1.125; -2 2], res = (1080, 1920))
     sky_color = @fum function sky_color(; bound = 1.125)
-        red = 1/exp(10*abs(y/bound))
-        green = 1/exp(10*abs(y/bound))
-        blue = 1/exp(3*abs(y/bound))
+        red = 0.1/exp(10*abs(y/bound))
+        green = 0.1/exp(10*abs(y/bound))
+        blue = 0.1/exp(3*abs(y/bound))
         #red = abs(0.1 + 0.1*(y/bound))%1
         #green = abs(0.1 + 0.1*(y/bound))%1
         #blue = abs(0.5 + 0.5*(y/bound))%1
@@ -77,14 +77,15 @@ function create_forest!(pix, num_trees, num_particles, num_iterations,
                         bounds = [-1.125 1.125; -2 2], res = (1080, 1920))
 
     tree_black = @fum function tree_black()
-        red = 0
-        green = 0
-        blue = 0
+        red = 1
+        green = 1
+        blue = 1
         alpha = 1
     end
 
-    tree = define_barnsley(create_color((0.0, 0.0, 0.0, 0.0));
-                           AT = AT, name = "moon", tilt = -0.04)
+    tree = define_barnsley(create_color((1.0, 1.0, 1.0, 1.0));
+                           AT = AT, name = "tree", tilt = -0.04,
+                           diagnostic = true)
     tree.prob_set = (0.01, 0.5, 0.245, 0.245)
 
     max_range = bounds[2,2] - bounds[2,1]
@@ -102,7 +103,8 @@ function create_forest!(pix, num_trees, num_particles, num_iterations,
                                scale_y = -scales[i]) for i = 1:num_trees]
     tree_2 = fee(fos; name = "tree_2", final = true)
 
-    H_2 = Hutchinson([tree_2, reflect_operation]; diagnostic = true)
+    H_2 = Hutchinson([tree_2, reflect_operation]; diagnostic = true,
+                     final = true)
 
     fractal_flame!(pix, tree, H_2,
                    num_particles, num_iterations,
@@ -126,8 +128,8 @@ function main(num_particles, num_iterations; AT = Array, FT = Float32)
     #create_stars!(star_pix, 10, 100, reflect_operation; AT = AT)
 
     #moon_pix = Pixels((1080,1920); AT = AT, FT = FT, logscale = false)
-    #create_moon!(moon_pix, num_particles, num_iterations, reflect_operation;
-    #             AT = AT)
+    #create_moon!(moon_pix, Int(0.5*num_particles), Int(0.5*num_iterations),
+    #             reflect_operation; AT = AT)
 
     forest_pix = Pixels((1080,1920); AT = AT, FT = FT, logscale = false)
     create_forest!(forest_pix, 2, 2*num_particles, 2*num_iterations,
@@ -137,5 +139,5 @@ function main(num_particles, num_iterations; AT = Array, FT = Float32)
 
     #@time Fae.write_image([sky_pix, star_pix, moon_pix], filename)
     #@time Fae.write_image([sky_pix, star_pix, moon_pix, forest_pix], filename)
-    #@time Fae.write_image([forest_pix], filename)
+    @time Fae.write_image([forest_pix], filename)
 end

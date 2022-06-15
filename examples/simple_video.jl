@@ -5,7 +5,7 @@ if has_cuda_gpu()
     CUDA.allowscalar(false)
 end
 
-AT = Array
+AT = CuArray
 FT = Float32
 
 frames = 10
