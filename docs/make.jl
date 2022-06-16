@@ -11,3 +11,7 @@ makedocs(
         ],
     ],
 )
+
+deploydocs(;
+    repo="github.com/leios/Fae.jl",
+)
