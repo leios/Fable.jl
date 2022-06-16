@@ -1,22 +1,9 @@
-# FFlamify.jl
-Fractal Flame implementation in Julia (https://flam3.com/flame_draves.pdf)
+# Fae.jl
 
-## Notes on what to do:
-1. Transitions between objects
-2. How to fractalize an existing object
+The Fractal Animation Engine, FAE.jl, is an attempt to use [Iterated Function Systems](https://www.algorithm-archive.org/contents/IFS/IFS.html)(IFS) to create clear, visual scenes.
+The principle is simple: an IFS can draw any object with the right set of equations, so if we can find that set of equations, we can render dynamic scenes.
 
-### Notes on fractal operators
-1. Create an addition function to add operators to existing Hutchinson ops
-    - Also, how do you add H ops?
-2. Create a simple method to add fis
-3. allow for arrays when configuring fos
-4. Add better defaults for creating custom hutchinson ops
-5. Dynamically change H based on what objects are in frame
-6. Settle on notation. What comes first, x or y?
+This package uses KernelAbstractions.jl and is built with parallelism and performance in mind.
+There are also a bunch of different research projects to look into.
 
-### Notes on Audio visualization
-1. We can plot frequencies with FFT
-    a. what window function should we use: https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows
-    b. Should we use Goertzel: https://en.wikipedia.org/wiki/Goertzel_algorithm
-2. In visualization of frequencies, resonance is structural and can be found by sweeping through all notes: https://boomspeaker.com/speaker-resonant-frequency/#Free_Air_Resonance
-3. pitch analysis -> visual
+I still need to add docs, tests, and examples before raching V 0.0.1, but we'll get there soon!
