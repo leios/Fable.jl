@@ -1,6 +1,7 @@
 # Fae.jl
 
-[![][docs-latest-img]][docs-url]
+[![Developer Documentation][docs-latest-img]][docs-url]
+
 [docs-url]: https://www.leioslabs.com/Fae.jl/dev/
 [docs-latest-img]: https://img.shields.io/badge/docs-dev-blue.svg
 
