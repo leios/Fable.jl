@@ -105,22 +105,21 @@ end
                                              bounds, dims)
             if i > num_ignore && on_img_flag
 
-                #@print(shared_tile[lid,3], '\t', shared_tile[lid,4], '\n')
                 @inbounds bin = find_bin(pixel_values, shared_tile[lid,3],
                                          shared_tile[lid,4], bounds,
                                          bin_widths)
                 if bin > 0 && bin < length(pixel_values)
 
-                    atomic_add!(pointer(pixel_values, bin), Int(1))
-                    atomic_add!(pointer(pixel_reds, bin),
-                                FT(shared_colors[lid, 1] *
-                                   shared_colors[lid, 4]))
-                    atomic_add!(pointer(pixel_greens, bin),
-                                FT(shared_colors[lid, 2] *
-                                   shared_colors[lid, 4]))
-                    atomic_add!(pointer(pixel_blues, bin),
-                                FT(shared_colors[lid, 3] *
-                                   shared_colors[lid, 4]))
+                    @inbounds @atomic pixel_values[bin] += 1
+                    @inbounds @atomic pixel_reds[bin] +=
+                                  shared_colors[lid, 1] *
+                                  shared_colors[lid, 4]
+                    @inbounds @atomic pixel_greens[bin] +=
+                                  shared_colors[lid, 2] *
+                                  shared_colors[lid, 4]
+                    @inbounds @atomic pixel_blues[bin] +=
+                                  shared_colors[lid, 3] *
+                                  shared_colors[lid, 4]
                 end
             end
         end

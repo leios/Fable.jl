@@ -1,6 +1,7 @@
 module Fae
 
 using KernelAbstractions
+using KernelAbstractions: @atomic
 using CUDA
 using CUDAKernels
 using MacroTools
@@ -9,6 +10,7 @@ using LinearAlgebra
 
 using Images
 using VideoIO
+
 
 # KA kernels
 include("histogram.jl")
