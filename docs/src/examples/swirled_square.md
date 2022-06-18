@@ -59,7 +59,7 @@ Finally, we solve the function system with
 
 This should provide the following image:
 
-ADD IMAGE
+![a simple square](res/swirled_square_1.png)
 
 The full code will look like 
 
@@ -141,12 +141,12 @@ There are a few nuances to point out:
 
 1. We are using `Fae.Colors.previous`, which simply means that the swirl will use whatever colors were specified in `H1`.
 2. Fractal operators can be called with `fee` or `Hutchinson` and require `Array` or `Tuple` inputs.
-3. `final = true`, means that this is a postprocessing operations. In other words, `H1` creates the object primitive (square), and `H2` always operates on that square.
+3. `final = true`, means that this is a post processing operations. In other words, `H1` creates the object primitive (square), and `H2` always operates on that square.
 4. We are specifying the Floating Type, `FT`, as `Float32`, but that is not necessary.
 
 Once this is run, it should provide the following image:
 
-ADD IMAGE
+![a swirled square](res/swirled_square_2.png)
 
 ## Step 3: a different kind of swirl
 
@@ -157,7 +157,7 @@ In other words, why is the swirl so clearly different than the square operation?
 This is because we operate on two separate sets of points.
 `H1` creates object primitives. Every step of the simulation, we will read from the points after `H1` operates on them.
 `H2` works on a completely different location in memory specifically for image output.
-If we want, we can make `H2` operate on the object, itself, by createing a new fractal executable:
+If we want, we can make `H2` operate on the object, itself, by creating a new fractal executable:
 
 ```
     final_H = fee([H, H2])
@@ -168,7 +168,7 @@ If we want, we can make `H2` operate on the object, itself, by createing a new f
 
 which will create the following image:
 
-ADD IMAGE
+![a swirled square (again)](res/swirled_square_3.png)
 
 Here, again, is the full code:
 
@@ -204,7 +204,7 @@ function main(num_particles, num_iterations, AT; dark = true)
     H2 = Hutchinson([Flames.swirl],
                     [Fae.Colors.previous],
                     (1.0,);
-                    final = true, diagnostic = true, AT = AT, name = "2")
+                    diagnostic = true, AT = AT, name = "2")
     final_H = fee([H, H2])
 
     pix = Fae.fractal_flame(final_H, num_particles, num_iterations,

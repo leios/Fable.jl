@@ -34,13 +34,12 @@ function main(num_particles, num_iterations, AT; dark = true)
     H2 = Hutchinson([Flames.swirl],
                     [Fae.Colors.previous],
                     (1.0,);
-                    final = true, diagnostic = true, AT = AT, name = "2")
+                    diagnostic = true, AT = AT, name = "2")
     final_H = fee([H, H2])
 
     pix = Fae.fractal_flame(final_H, num_particles, num_iterations,
                             bounds, res; AT = AT, FT = FT)
 
     filename = "out.png"
-    write_image([pix], filename;
-                img = fill(RGBA(0,0,0,0), size(pix.values)))
+    write_image([pix], filename)
 end
