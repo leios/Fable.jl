@@ -1,13 +1,17 @@
 # fee = Fractal Executable
 export Hutchinson, update_fis!, update_colors!, new_color_array, fee
 
-fee(args...;kwargs...) = Hutchinson(args...;kwargs...)
+fee(args...; kwargs...) = Hutchinson(args...; kwargs...)
 
-function previous(_clr, _p, tid, symbols, choice)
+function color_null(_clr, _p, tid, symbols, choice)
     _clr[tid,1] += _clr[tid,1]
     _clr[tid,2] += _clr[tid,2]
     _clr[tid,3] += _clr[tid,3]
     _clr[tid,4] += _clr[tid,4]
+    _clr[tid,1] *= 0.5
+    _clr[tid,2] *= 0.5
+    _clr[tid,3] *= 0.5
+    _clr[tid,4] *= 0.5
 end
 
 function null(_p, tid, symbols, choice)
@@ -84,7 +88,7 @@ function Hutchinson(Hs::HT; diagnostic = false, name = "",
                                  name = name, diagnostic = diagnostic,
                                  final = final)
     new_colors = configure_colors(color_set, fi_set, fnums; name = name,
-                                  diagnostic = diagnostic)
+                                  diagnostic = diagnostic, final = final)
 
     if diagnostic
         println("combined color set:\n", color_set)
@@ -104,7 +108,7 @@ function Hutchinson(Hs::HT; diagnostic = false, name = "",
 end
 
 function Hutchinson()
-    return Hutchinson(Fae.null, Colors.previous, [Colors.previous],
+    return Hutchinson(null, color_null, [Colors.previous],
                       [Flames.identity],
                       Vector{FractalInput}(), Vector{String}(),
                       Tuple(0), Tuple(0), Tuple(1))
@@ -265,6 +269,12 @@ function configure_colors(fums::Vector{FractalUserMethod},
         fx_string *= "_clr[tid, 2] += green \n"
         fx_string *= "_clr[tid, 3] += blue \n"
         fx_string *= "_clr[tid, 4] += alpha \n"
+        if final
+            fx_string *= "_clr[tid, 1] *= 0.5 \n"
+            fx_string *= "_clr[tid, 2] *= 0.5 \n"
+            fx_string *= "_clr[tid, 3] *= 0.5 \n"
+            fx_string *= "_clr[tid, 4] *= 0.5 \n"
+        end
         fx_string *= "end"
     end
 
@@ -311,17 +321,24 @@ function configure_colors(fums::Vector{FractalUserMethod},
         fx_string *= "choice = UInt((fid & bitmask) >> bit_offset) + 1\n"
 
         temp_string = configure_colors(fums[f_range], fis;
-                                       evaluate = false)
+                                       evaluate = false, final = final)
         fx_string *= temp_string
         fx_string *= "fx_count += 1\n"
         fx_offset += fnums[i]
         bit_offset += ceil(UInt,log2(fnums[i]))
     end
 
-    fx_string *= "_clr[tid, 1] += red / fx_count \n"
-    fx_string *= "_clr[tid, 2] += green / fx_count \n"
-    fx_string *= "_clr[tid, 3] += blue / fx_count \n"
-    fx_string *= "_clr[tid, 4] += alpha / fx_count \n"
+    fx_string *= "_clr[tid, 1] += (red / fx_count) \n"
+    fx_string *= "_clr[tid, 2] += (green / fx_count) \n"
+    fx_string *= "_clr[tid, 3] += (blue / fx_count) \n"
+    fx_string *= "_clr[tid, 4] += (alpha / fx_count) \n"
+
+    if final
+        fx_string *= "_clr[tid, 1] *= 0.5 \n"
+        fx_string *= "_clr[tid, 2] *= 0.5 \n"
+        fx_string *= "_clr[tid, 3] *= 0.5 \n"
+        fx_string *= "_clr[tid, 4] *= 0.5 \n"
+    end
     fx_string *= "end"
 
     if evaluate
@@ -338,17 +355,17 @@ function configure_colors(fums::Vector{FractalUserMethod},
 end
 
 function Hutchinson(fums::Array{FractalUserMethod},
-                    color_set::Union{Array{A}, Array, RGB, RGBA}, prob_set;
+                    color_set, prob_set;
                     AT = Array, FT = Float64, name = "",
                     diagnostic = false, final = false) where A <: Array
-    Hutchinson(fums, [], color_set, prob_set, (length(fums)); final = final,
+    Hutchinson(fums, [], color_set, prob_set; final = final,
                diagnostic = diagnostic, AT = AT, FT = FT, name = name)
 end
 
 # This is a constructor for when people read in an array of arrays for colors
 function Hutchinson(fums::Array{FractalUserMethod},
                     fis::Vector,
-                    color_set::Union{Array{A}, Array, RGB, RGBA}, prob_set;
+                    color_set, prob_set;
                     AT = Array, FT = Float64, name = "",
                     diagnostic = false, final = false) where A <: Array
 
@@ -367,7 +384,7 @@ function Hutchinson(fums::Array{FractalUserMethod},
     H = configure_hutchinson(fums, fis; name = name, diagnostic = diagnostic,
                              final = final)
     colors = configure_colors(temp_colors, fis; name = name,
-                              diagnostic = diagnostic)
+                              diagnostic = diagnostic, final = final)
     return Hutchinson(H, colors, temp_colors, fums, fis, [name], prob_set,
                       symbols, Tuple(length(fums)))
 end
@@ -396,7 +413,7 @@ function Hutchinson(fos::Vector{FractalOperator}, fis::Vector;
     H = configure_hutchinson(fos, fis; name = name, diagnostic = diagnostic,
                              final = final)
     colors = configure_colors(color_array, fis; name = name,
-                              diagnostic = diagnostic)
+                              diagnostic = diagnostic, final = final)
 
     fums = FractalUserMethod.(fos)
     return Hutchinson(H, colors, color_array, fums, fis, [name], prob_set,
@@ -426,5 +443,6 @@ function update_colors!(H::Hutchinson, fx_id, h_id,
     
     H.color_set[fx_id + offset] = create_color(new_color)
     H.cop[h_id] = configure_colors(H.color_set[offset:offset + H.fnums[h_id]],
-                                   H.fi_set, name = H.name_set[h_id])
+                                   H.fi_set; name = H.name_set[h_id], 
+                                   final = final)
 end
