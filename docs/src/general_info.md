@@ -11,6 +11,11 @@ There is one caveat here in that we currently do not have a way to express restr
 That is to say we do not have a way to syntactically express equation dependencies.
 For example, we cannot allow one function will act differently depending on the last function chosen.
 
+#### Limited AMD GPU support
+
+In principle, Fae can somewhat easily support AMD GPUs.
+It should be as simple as providing support for ROCMArrays like we do for CuArrays, but I have not been able to test this.
+
 Ok, with that out of the way, let's talk about the general structure of Fae.jl
 
 ## General Fae.jl workflow

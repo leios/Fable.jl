@@ -61,8 +61,11 @@ function define_circle(pos::Vector{FT}, radius::FT, color;
                                         bounds = bounds)
     if length(color) == 1 || eltype(color) <: Number
         color_set = [create_color(color) for i = 1:2]
-    else
+    elseif length(color) == 2
         color_set = [create_color(color[i]) for i = 1:2]
+    else
+        error("cannot convert colors for circle, "*
+              "maybe improper number of functions?")
     end
     fos = [FractalOperator(fums[i], color_set[i], 0.5) for i = 1:2]
     return Hutchinson(fos, fis; AT = AT, FT = FT,

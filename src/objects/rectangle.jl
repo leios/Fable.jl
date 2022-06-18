@@ -8,8 +8,11 @@ function define_rectangle(pos::Vector{FT}, theta::FT, scale_x::FT, scale_y,
     fums, fis = define_rectangle_operators(pos, theta, scale_x, scale_y)
     if length(color) == 1 || eltype(color) <: Number
         color_set = [create_color(color) for i = 1:4]
-    else
+    elseif length(color) == 4
         color_set = [create_color(color[i]) for i = 1:4]
+    else
+        error("cannot convert colors for rectangle, "*
+              "maybe improper number of functions?")
     end
     fos = [FractalOperator(fums[i], color_set[i], 0.25) for i = 1:4]
     return Hutchinson(fos, fis; AT = AT, FT = FT,

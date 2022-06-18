@@ -6,7 +6,7 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "Examples" => Any[
-            "Logo" => "examples/logo.md",
+            "Rotating Square" => "examples/swirled_square.md",
         ],
         "Research Directions" => "research_directions.md",
     ],

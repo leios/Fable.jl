@@ -1,9 +1,9 @@
 # fee = Fractal Executable
 export Hutchinson, update_fis!, update_colors!, new_color_array, fee
 
-fee(args...;kwargs...) = Hutchinson(args...;kwargs...)
+fee(args...; kwargs...) = Hutchinson(args...; kwargs...)
 
-function previous(_clr, _p, tid, symbols, choice)
+function color_null(_clr, _p, tid, symbols, choice)
     _clr[tid,1] += _clr[tid,1]
     _clr[tid,2] += _clr[tid,2]
     _clr[tid,3] += _clr[tid,3]
@@ -104,7 +104,7 @@ function Hutchinson(Hs::HT; diagnostic = false, name = "",
 end
 
 function Hutchinson()
-    return Hutchinson(Fae.null, Colors.previous, [Colors.previous],
+    return Hutchinson(null, color_null, [Colors.previous],
                       [Flames.identity],
                       Vector{FractalInput}(), Vector{String}(),
                       Tuple(0), Tuple(0), Tuple(1))
@@ -338,17 +338,17 @@ function configure_colors(fums::Vector{FractalUserMethod},
 end
 
 function Hutchinson(fums::Array{FractalUserMethod},
-                    color_set::Union{Array{A}, Array, RGB, RGBA}, prob_set;
+                    color_set, prob_set;
                     AT = Array, FT = Float64, name = "",
                     diagnostic = false, final = false) where A <: Array
-    Hutchinson(fums, [], color_set, prob_set, (length(fums)); final = final,
+    Hutchinson(fums, [], color_set, prob_set; final = final,
                diagnostic = diagnostic, AT = AT, FT = FT, name = name)
 end
 
 # This is a constructor for when people read in an array of arrays for colors
 function Hutchinson(fums::Array{FractalUserMethod},
                     fis::Vector,
-                    color_set::Union{Array{A}, Array, RGB, RGBA}, prob_set;
+                    color_set, prob_set;
                     AT = Array, FT = Float64, name = "",
                     diagnostic = false, final = false) where A <: Array
 
