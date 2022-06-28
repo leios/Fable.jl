@@ -78,44 +78,40 @@ end
 
 function add_layer!(img, layer::Pixels; diagnostic = false)
 
-    println("Initialization:")
-    @time begin
-        pix = layer
+    pix = layer
 
-        if !isa(layer.values, Array)
-            pix = Pixels(Array(layer.values), Array(layer.reds),
-                         Array(layer.greens), Array(layer.blues))
+    if !isa(layer.values, Array)
+        pix = Pixels(Array(layer.values), Array(layer.reds),
+                     Array(layer.greens), Array(layer.blues))
+    end
+
+    if pix.calc_max_value != 0
+        pix.max_value = maximum(pix.values)
+    end
+    if diagnostic
+        println("sum of all pixel values: ", sum(pix.values))
+        println("max red is: ", maximum(layer.reds))
+        println("max green is: ", maximum(layer.greens))
+        println("max blue is: ", maximum(layer.blues))
+    end
+
+    # naive normalization
+    pix.reds[:] .= pix.reds[:] ./ max.(1, pix.values[:])
+    pix.greens[:] .= pix.greens[:] ./ max.(1, pix.values[:])
+    pix.blues[:] .= pix.blues[:] ./ max.(1, pix.values[:])
+
+    for i = 1:length(pix.reds)
+        if pix.reds[i] > 1
+            pix.reds[i] = 1
         end
-
-        if pix.calc_max_value != 0
-            pix.max_value = maximum(pix.values)
+        if pix.greens[i] > 1
+            pix.greens[i] = 1
         end
-        if diagnostic
-            println("sum of all pixel values: ", sum(pix.values))
-            println("max red is: ", maximum(layer.reds))
-            println("max green is: ", maximum(layer.greens))
-            println("max blue is: ", maximum(layer.blues))
-        end
-
-        # naive normalization
-        pix.reds[:] .= pix.reds[:] ./ max.(1, pix.values[:])
-        pix.greens[:] .= pix.greens[:] ./ max.(1, pix.values[:])
-        pix.blues[:] .= pix.blues[:] ./ max.(1, pix.values[:])
-
-        for i = 1:length(pix.reds)
-            if pix.reds[i] > 1
-                pix.reds[i] = 1
-            end
-            if pix.greens[i] > 1
-                pix.greens[i] = 1
-            end
-            if pix.blues[i] > 1
-                pix.blues[i] = 1
-            end
+        if pix.blues[i] > 1
+            pix.blues[i] = 1
         end
     end
 
-    println("writing to layer")
-    @time to_logscale!(img, pix)
+    to_logscale!(img, pix)
 
 end
