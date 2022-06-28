@@ -122,12 +122,16 @@ function configure_hutchinson(fos::Vector{FractalOperator},
 end
 
 function new_color_array(color_array; diagnostic = false)
-    temp_array = [Colors.previous for i = 1:length(color_array)]
-    for i = 1:length(color_array)
-        temp_array[i] = create_color(color_array[i])
+    if eltype(color_array) <: Number
+       return [create_color(color_array)]
+    else
+        temp_array = [Colors.previous for i = 1:length(color_array)]
+        for i = 1:length(color_array)
+            temp_array[i] = create_color(color_array[i])
+        end
+        return temp_array
     end
 
-    return temp_array
 end
 
 function configure_hutchinson(fums::Vector{FractalUserMethod},
