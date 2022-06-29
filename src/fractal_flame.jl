@@ -98,7 +98,7 @@ end
             end
 
             H2(shared_tile, lid, H2_symbols, fid_2)
-            #H2_clrs(shared_colors, shared_tile, lid, H2_symbols, fid_2)
+            H2_clrs(shared_colors, shared_tile, lid, H2_symbols, fid_2)
 
             @inbounds on_img_flag = on_image(shared_tile[lid,3],
                                              shared_tile[lid,4],
