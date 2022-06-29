@@ -6,6 +6,25 @@ import Fae.@fum
 identity = @fum function identity(x, y)
 end
 
+scale_and_translate = @fum function scale_and_translate(x, y;
+                                                       translation = (0,0),
+                                                       scale = (1, 1))
+    x = scale[2]*x + translation[2]
+    y = scale[1]*y + translation[1]
+end
+
+
+perspective = @fum function perspective(x, y; theta = 0.5*pi, dist = 1)
+    C = dist/(dist - y*sin(theta))
+    x *= C
+    y *= C*cos(theta)
+end
+
+cloud = @fum function cloud(x, y)
+    x *= 2
+    y = -(y+exp(-abs(y+2)^2/2))
+end
+
 waves = @fum function waves(x, y; c = 1, f = 1, b = 1, e = 1)
     x_temp = x
 

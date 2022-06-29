@@ -78,7 +78,7 @@ end
         end
 
         if sketchy_sum < max_range
-            if H1_fnums[1] > 1
+            if length(H1_fnums) > 1 || H1_fnums[1] > 1
                 seed = simple_rand(seed)
                 fid = create_fid(H1_probs, H1_fnums, seed)
             else
@@ -89,7 +89,7 @@ end
             H1_clrs(shared_colors, shared_tile, lid, H1_symbols, fid)
 
             if H2 != Fae.null
-                if H2_fnums[1] > 1
+                if length(H2_fnums) > 1 || H2_fnums[1] > 1
                     seed = simple_rand(seed)
                     fid_2 = create_fid(H2_probs, H2_fnums, seed)
                 else
