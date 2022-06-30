@@ -76,8 +76,7 @@ function create_aisle!(pix, num_particles, num_iterations;
     scale_y = (bounds[1,2] - bounds[1,1])*0.4
 
     aisle_color = (1,1,1)
-    #bench_color = (0.7, 0.35, 0.1)
-    bench_color = (1, 0, 0)
+    bench_color = (0.7-1, 0.35-1, 0.1-1)
 
     aislebox = Fae.define_rectangle(pos, rotation, scale_x, scale_y,
                                     aisle_color; AT = AT, name = "aisle")
@@ -99,18 +98,17 @@ function main(num_particles, num_iterations; AT = Array, FT = Float32)
 
     res = (1080, 1920)
 
-    #sky_pix = Pixels(res; AT = AT, FT = FT, logscale = true)
+    #sky_pix = Pixels(res; AT = AT, FT = FT, logscale = false)
     #create_sky!(sky_pix, num_particles, num_iterations; AT = AT)
 
-    #grass_pix = Pixels(res; AT = AT, FT = FT, logscale = true)
+    #grass_pix = Pixels(res; AT = AT, FT = FT, logscale = false)
     #create_grass!(grass_pix, num_particles, num_iterations; AT = AT)
 
     #cloud_pix = Pixels(res; AT = AT, FT = FT, logscale = true)
     #create_clouds!(cloud_pix, num_particles, num_iterations; AT = AT)
 
-    aisle_pix = Pixels(res; AT = AT, FT = FT, logscale = true)
-    create_aisle!(aisle_pix, num_particles, num_iterations;
-                  AT = AT)
+    aisle_pix = Pixels(res; AT = AT, FT = FT, logscale = false)
+    create_aisle!(aisle_pix, num_particles, num_iterations; AT = AT)
 
     filename = "check.png"
 
@@ -119,5 +117,6 @@ function main(num_particles, num_iterations; AT = Array, FT = Float32)
 
     println("Time to write to image:")
     @time Fae.write_image([aisle_pix], filename; img = bg_img)
-    #@time Fae.write_image([sky_pix, grass_pix], filename; img = bg_img)
+    #@time Fae.write_image([sky_pix, grass_pix, cloud_pix, aisle_pix],
+    #                      filename; img = bg_img)
 end
