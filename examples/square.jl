@@ -42,7 +42,6 @@ function main(num_particles, num_iterations, AT; dark = true)
     Fae.fractal_flame!(pix, H, H2, num_particles, num_iterations,
                        bounds, res; AT = AT, FT = FT)
 
-    return pix
     filename = "out.png"
     write_image([pix], filename)
 end

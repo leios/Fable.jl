@@ -5,7 +5,7 @@ function to_rgb(r,g,b)
 end
 
 function to_rgb(r,g,b,a)
-    return RGB(r,g,b,a)
+    return RGBA(r,g,b,a)
 end
 
 function to_rgb(pix::Pixels)
@@ -31,13 +31,16 @@ function to_cpu!(cpu_pix, pix)
 end
 
 function to_rgb!(canvas, pix)
+    if !isa(pix.reds, Array)
+        pix = to_cpu(pix)
+    end
     canvas .= to_rgb.(pix.reds, pix.greens, pix.blues, pix.alphas)
 end
 
-function coalesce(pix, layer)
-    pix.reds .= (1-layer.alphas) .* pix.reds .+ layer.alphas .* layer.reds
-    pix.greens .= (1-layer.alphas) .* pix.greens .+ layer.alphas .* layer.greens
-    pix.blues .= (1-layer.alphas) .* pix.blues .+ layer.alphas .* layer.blues
+function coalesce!(pix, layer)
+    pix.reds .= (1 .- layer.alphas) .* pix.reds .+ layer.alphas .* layer.reds
+    pix.greens .= (1 .- layer.alphas) .* pix.greens .+ layer.alphas .* layer.greens
+    pix.blues .= (1 .- layer.alphas) .* pix.blues .+ layer.alphas .* layer.blues
     pix.alphas .= max.(pix.alphas, layer.alphas)
 end
 
@@ -64,10 +67,10 @@ end
 
     alpha = log10((9*layer_values[tid]/layer_max_value)+1)
 
-    new_red = layer_reds[tid]^(1/layer_gamma)
-    new_green = layer_greens[tid]^(1/layer_gamma)
-    new_blue = layer_blues[tid]^(1/layer_gamma)
-    new_alpha = layer_alphas[tid]^(1/layer_gamma)
+    new_red = layer_reds[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
+    new_green = layer_greens[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
+    new_blue = layer_blues[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
+    new_alpha = layer_alphas[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
 
     pix_reds[tid] = pix_reds[tid]*(1-alpha^(1/layer_gamma)) + new_red
     pix_greens[tid] = pix_greens[tid]*(1-alpha^(1/layer_gamma)) + new_green
@@ -77,7 +80,7 @@ end
 end
 
 function norm_pixel(color, value)
-    if isnan(value)
+    if value == 0 || isnan(value)
         return color
     else
         return color / value
@@ -88,7 +91,7 @@ function add_layer!(pix::Pixels, layer::Pixels)
 
     # naive normalization
     layer.reds .= norm_pixel.(layer.reds, layer.values)
-    layer.green .= norm_pixel.(layer.greens, layer.values)
+    layer.greens .= norm_pixel.(layer.greens, layer.values)
     layer.blues .= norm_pixel.(layer.blues, layer.values)
     layer.alphas .= norm_pixel.(layer.alphas, layer.values)
 
@@ -107,9 +110,15 @@ end
 
 function write_image(pixels::Vector{Pixels}, filename;
                      img = fill(RGB(0,0,0), size(pixels[1].values)),
-                     diagnostic = false, numcores = 4, numthreads = 256)
+                     numcores = 4, numthreads = 256)
+    # naive normalization
+    pixels[1].reds .= norm_pixel.(pixels[1].reds, pixels[1].values)
+    pixels[1].greens .= norm_pixel.(pixels[1].greens, pixels[1].values)
+    pixels[1].blues .= norm_pixel.(pixels[1].blues, pixels[1].values)
+    pixels[1].alphas .= norm_pixel.(pixels[1].alphas, pixels[1].values)
+
     for i = 2:length(pixels)
-        add_layer!(pixels[1], pixels[i]; diagnostic = diagnostic)
+        add_layer!(pixels[1], pixels[i])
     end
 
     to_rgb!(img, pixels[1])
@@ -119,9 +128,9 @@ function write_image(pixels::Vector{Pixels}, filename;
 end
 
 function write_video!(v::VideoParams, pixels::Vector{Pixels};
-                      diagnostic = false, numcores = 4, numthreads = 256)
+                      numcores = 4, numthreads = 256)
     for i = 2:length(pixels)
-        add_layer!(pixels[1], pixels[i]; diagnostic = diagnostic)
+        add_layer!(pixels[1], pixels[i])
     end
 
     to_rgb!(v.frame, pixels[1])
