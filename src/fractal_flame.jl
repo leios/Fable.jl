@@ -33,7 +33,7 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
 
     kernel!(ps.positions, n, H.op, H.cop, H.prob_set, H.symbols, H.fnums,
             H2.op, H2.cop, H2.symbols, H2.prob_set, H2.fnums,
-            pxs.values, pxs.reds, pxs.greens, pxs.blues,
+            pxs.values, pxs.reds, pxs.greens, pxs.blues, pxs.alphas, 
             Tuple(bounds), Tuple(bin_widths), num_ignore, max_range,
             ndrange=size(ps.positions)[1])
 end
@@ -42,8 +42,8 @@ end
                                      H1_symbols, H1_fnums, H2, H2_clrs,
                                      H2_symbols, H2_probs, H2_fnums,
                                      pixel_values, pixel_reds, pixel_greens,
-                                     pixel_blues, bounds, bin_widths,
-                                     num_ignore, max_range)
+                                     pixel_blues, pixel_alphas, bounds,
+                                     bin_widths, num_ignore, max_range)
 
     tid = @index(Global,Linear)
     lid = @index(Local, Linear)
@@ -120,6 +120,7 @@ end
                     @inbounds @atomic pixel_blues[bin] +=
                                   shared_colors[lid, 3] *
                                   shared_colors[lid, 4]
+                    @inbounds @atomic pixel_alphas[bin] += shared_colors[lid, 4]
                 end
             end
         end

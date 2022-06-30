@@ -1,117 +1,133 @@
 export write_image, write_video!
 
-#TODO: maybe normalize channels altogether, not separate?
-function normalize!(img::Array{C,2}) where {C <: Union{RGB, RGBA}}
-
-    # finding the max of each color channel
-    max_red = 0
-    max_green = 0
-    max_blue = 0
-
-    for i = 1:length(img)
-        if img[i].r > max_red
-            max_red = img[i].r
-        end
-
-        if img[i].g > max_green
-            max_green = img[i].g
-        end
-
-        if img[i].b > max_blue
-            max_blue = img[i].b
-        end
-    end
-
-    for i = 1:length(img)
-        color = RGB(img[i].r / max_red,
-                    img[i].g / max_green,
-                    img[i].b / max_blue)
-        img[i] = color
-    end
-    
-end
-
 function to_rgb(r,g,b)
     return RGB(r,g,b)
 end
 
-function to_logscale!(img, pix)
-    for i = 1:length(img)
-        if pix.values[i] != 0
-            if pix.logscale
-                alpha = log10((9*pix.values[i]/pix.max_value)+1)
-            else
-                alpha = pix.values[i]/pix.max_value
-            end
+function to_rgb(r,g,b,a)
+    return RGB(r,g,b,a)
+end
 
-            new_color = RGB(pix.reds[i]^(1/pix.gamma),
-                            pix.greens[i]^(1/pix.gamma),
-                            pix.blues[i]^(1/pix.gamma)) * alpha^(1/pix.gamma)
-
-            img[i] = img[i]*(1-alpha^(1/pix.gamma)) + new_color
-        end
+function to_rgb(pix::Pixels)
+    if typeof(pix.reds) != Array
+        pix = to_cpu(pix)
     end
+    a = [RGBA(pix.reds[i], pix.greens[i], pix.blues[i], pix.alphas[i])
+         for i = 1:length(pix)]
+    return a
+end
+
+function to_cpu(pix::Pixels)
+    return Pixels(Array(pix.values), Array(pix.reds), Array(pix.greens),
+                  Array(pix.blues), Array(pix.alphas), pix.gamma,
+                  pix.logscale, pix.calc_max_value, pix.max_value)
+end
+
+function to_cpu!(cpu_pix, pix)
+    cpu_pix.reds = Array(pix.reds)
+    cpu_pix.greens = Array(pix.greens)
+    cpu_pix.blues = Array(pix.blues)
+    cpu_pix.alphas = Array(pix.alphas)
+end
+
+function to_rgb!(canvas, pix)
+    canvas .= to_rgb.(pix.reds, pix.greens, pix.blues, pix.alphas)
+end
+
+function coalesce(pix, layer)
+    pix.reds .= (1-layer.alphas) .* pix.reds .+ layer.alphas .* layer.reds
+    pix.greens .= (1-layer.alphas) .* pix.greens .+ layer.alphas .* layer.greens
+    pix.blues .= (1-layer.alphas) .* pix.blues .+ layer.alphas .* layer.blues
+    pix.alphas .= max.(pix.alphas, layer.alphas)
+end
+
+function logscale_coalesce!(pix, layer; numcores = 4, numthreads = 256)
+    if isa(pix.reds, Array)
+        kernel! = logscale_coalesce_kernel!(CPU(), numcores)
+    else
+        kernel! = logscale_coalesce_kernel!(CUDADevice(), numthreads)
+    end
+
+    kernel!(pix.reds, pix.blues, pix.greens, pix.alphas, pix.values,
+            layer.reds, layer.greens, layer.blues, layer.alphas, layer.values,
+            layer.gamma, layer.max_value, ndrange=length(pix.reds))
+
+end
+
+@kernel function logscale_coalesce_kernel!(
+    pix_reds, pix_greens, pix_blues, pix_alphas,
+    pix_values, layer_reds, layer_greens,
+    layer_blues, layer_alphas, layer_values,
+    layer_gamma, layer_max_value)
+
+    tid = @index(Global, Linear)
+
+    alpha = log10((9*layer_values[tid]/layer_max_value)+1)
+
+    new_red = layer_reds[tid]^(1/layer_gamma)
+    new_green = layer_greens[tid]^(1/layer_gamma)
+    new_blue = layer_blues[tid]^(1/layer_gamma)
+    new_alpha = layer_alphas[tid]^(1/layer_gamma)
+
+    pix_reds[tid] = pix_reds[tid]*(1-alpha^(1/layer_gamma)) + new_red
+    pix_greens[tid] = pix_greens[tid]*(1-alpha^(1/layer_gamma)) + new_green
+    pix_blues[tid] = pix_blues[tid]*(1-alpha^(1/layer_gamma)) + new_blue
+    pix_alphas[tid] = pix_alphas[tid]*(1-alpha^(1/layer_gamma)) + new_alpha
+    
+end
+
+function norm_pixel(color, value)
+    if isnan(value)
+        return color
+    else
+        return color / value
+    end
+end
+
+function add_layer!(pix::Pixels, layer::Pixels)
+
+    # naive normalization
+    layer.reds .= norm_pixel.(layer.reds, layer.values)
+    layer.green .= norm_pixel.(layer.greens, layer.values)
+    layer.blues .= norm_pixel.(layer.blues, layer.values)
+    layer.alphas .= norm_pixel.(layer.alphas, layer.values)
+
+    if pix.logscale
+        # This means the max_value is manually set
+        if pix.calc_max_value != 0
+            pix.max_value = maximum(pix.values)
+        end
+        logscale_coalesce!(pix, layer,
+                           numcores = numcores, numthreads = numthreads)
+    else
+        coalesce!(pix, layer)
+    end
+
 end
 
 function write_image(pixels::Vector{Pixels}, filename;
                      img = fill(RGB(0,0,0), size(pixels[1].values)),
-                     diagnostic = false)
-    for i = 1:length(pixels)
-        add_layer!(img, pixels[i]; diagnostic = diagnostic)
+                     diagnostic = false, numcores = 4, numthreads = 256)
+    for i = 2:length(pixels)
+        add_layer!(pixels[1], pixels[i]; diagnostic = diagnostic)
     end
+
+    to_rgb!(img, pixels[1])
 
     save(filename, img)
     println(filename)
 end
 
 function write_video!(v::VideoParams, pixels::Vector{Pixels};
-                      diagnostic = false)
-    for i = 1:length(pixels)
-        add_layer!(v.frame, pixels[i]; diagnostic = diagnostic)
+                      diagnostic = false, numcores = 4, numthreads = 256)
+    for i = 2:length(pixels)
+        add_layer!(pixels[1], pixels[i]; diagnostic = diagnostic)
     end
 
+    to_rgb!(v.frame, pixels[1])
     write(v.writer, v.frame)
     zero!(v.frame)
     println(v.frame_count)
     v.frame_count += 1
 end
 
-function add_layer!(img, layer::Pixels; diagnostic = false)
-
-    pix = layer
-
-    if !isa(layer.values, Array)
-        pix = Pixels(Array(layer.values), Array(layer.reds),
-                     Array(layer.greens), Array(layer.blues))
-    end
-
-    if pix.calc_max_value != 0
-        pix.max_value = maximum(pix.values)
-    end
-    if diagnostic
-        println("sum of all pixel values: ", sum(pix.values))
-        println("max red is: ", maximum(layer.reds))
-        println("max green is: ", maximum(layer.greens))
-        println("max blue is: ", maximum(layer.blues))
-    end
-
-    # naive normalization
-    pix.reds[:] .= pix.reds[:] ./ max.(1, pix.values[:])
-    pix.greens[:] .= pix.greens[:] ./ max.(1, pix.values[:])
-    pix.blues[:] .= pix.blues[:] ./ max.(1, pix.values[:])
-
-    for i = 1:length(pix.reds)
-        if pix.reds[i] > 1
-            pix.reds[i] = 1
-        end
-        if pix.greens[i] > 1
-            pix.greens[i] = 1
-        end
-        if pix.blues[i] > 1
-            pix.blues[i] = 1
-        end
-    end
-
-    to_logscale!(img, pix)
-
-end

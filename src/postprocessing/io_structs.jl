@@ -7,6 +7,7 @@ mutable struct Pixels
     reds::Union{Array{T}, CuArray{T}} where T <: AbstractFloat
     greens::Union{Array{T}, CuArray{T}} where T <: AbstractFloat
     blues::Union{Array{T}, CuArray{T}} where T <: AbstractFloat
+    alphas::Union{Array{T}, CuArray{T}} where T <: AbstractFloat
     gamma::Number
     logscale::Bool
     calc_max_value::Bool
@@ -14,16 +15,16 @@ mutable struct Pixels
 end
 
 # Creating a default call
-function Pixels(v, r, g, b; gamma = 2.2, logscale = true,
+function Pixels(v, r, g, b, a; gamma = 2.2, logscale = true,
                 calc_max_value = true, max_value = 0)
-    return Pixels(v, r, g, b, gamma, logscale, calc_max_value, max_value)
+    return Pixels(v, r, g, b, a, gamma, logscale, calc_max_value, max_value)
 end
 
 # Create a blank, black image of size s
 function Pixels(s; AT=Array, FT = Float64, gamma = 2.2, logscale = true,
                 calc_max_value = true, max_value = 0)
     return Pixels(AT(zeros(Int,s)), AT(zeros(FT, s)),
-                  AT(zeros(FT, s)), AT(zeros(FT, s)),
+                  AT(zeros(FT, s)), AT(zeros(FT, s)), AT(zeros(FT, s)),
                   gamma, logscale, calc_max_value, max_value)
 end
 
