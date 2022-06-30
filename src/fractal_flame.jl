@@ -134,10 +134,10 @@ end
 function fractal_flame(H1::Hutchinson, H2::Hutchinson, num_particles::Int,
                        num_iterations::Int, bounds, res;
                        dims = 2, AT = Array, FT = Float32, diagnostic = false,
-                       num_ignore = 20, numthreads = 256,
+                       num_ignore = 20, numthreads = 256, logscale = true, 
                        numcores = 4)
 
-    pix = Pixels(res; AT = AT, FT = FT)
+    pix = Pixels(res; AT = AT, FT = FT, logscale = logscale)
 
     fractal_flame!(pix, H1, num_particles, num_iterations, bounds, res;
                    dims = dims, AT = AT, FT = FT, H2 = H2,
@@ -161,7 +161,7 @@ end
 function fractal_flame(H::Hutchinson, num_particles::Int,
                        num_iterations::Int, bounds, res;
                        dims = 2, AT = Array, FT = Float32, H2 = Hutchinson(),
-                       num_ignore = 20, diagnostic = false,
+                       num_ignore = 20, diagnostic = false, logscale = true, 
                        numthreads = 256, numcores = 4)
 
     pix = Pixels(res; AT = AT, FT = FT)
