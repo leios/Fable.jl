@@ -51,7 +51,7 @@ function logscale_coalesce!(pix, layer; numcores = 4, numthreads = 256)
         kernel! = logscale_coalesce_kernel!(CUDADevice(), numthreads)
     end
 
-    kernel!(pix.reds, pix.blues, pix.greens, pix.alphas, pix.values,
+    kernel!(pix.reds, pix.greens, pix.blues, pix.alphas, pix.values,
             layer.reds, layer.greens, layer.blues, layer.alphas, layer.values,
             layer.gamma, layer.max_value, ndrange=length(pix.reds))
 
@@ -87,7 +87,7 @@ function norm_pixel(color, value)
     end
 end
 
-function add_layer!(pix::Pixels, layer::Pixels)
+function add_layer!(pix::Pixels, layer::Pixels; numcores = 4, numthreads = 256)
 
     # naive normalization
     layer.reds .= norm_pixel.(layer.reds, layer.values)
@@ -111,13 +111,8 @@ end
 function write_image(pixels::Vector{Pixels}, filename;
                      img = fill(RGB(0,0,0), size(pixels[1].values)),
                      numcores = 4, numthreads = 256)
-    # naive normalization
-    pixels[1].reds .= norm_pixel.(pixels[1].reds, pixels[1].values)
-    pixels[1].greens .= norm_pixel.(pixels[1].greens, pixels[1].values)
-    pixels[1].blues .= norm_pixel.(pixels[1].blues, pixels[1].values)
-    pixels[1].alphas .= norm_pixel.(pixels[1].alphas, pixels[1].values)
 
-    for i = 2:length(pixels)
+    for i = 1:length(pixels)
         add_layer!(pixels[1], pixels[i])
     end
 
@@ -129,7 +124,7 @@ end
 
 function write_video!(v::VideoParams, pixels::Vector{Pixels};
                       numcores = 4, numthreads = 256)
-    for i = 2:length(pixels)
+    for i = 1:length(pixels)
         add_layer!(pixels[1], pixels[i])
     end
 
