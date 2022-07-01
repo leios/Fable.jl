@@ -21,12 +21,11 @@ To do this, we need to set up Fae with the right parameters:
     scale_y = 1.0
 ```
 
-Note that the `bounds` can be anything with a 16:9 ratio.
-These are the physical units of the visualization and dictate how zoomed in the camera is.
-This is separate from the spatial discretization, `res`.
+Note that this sets up an image resolution, `res`, and a separate camera with physical units, `bounds`, so if we are using a 1920 by 1080 image, the `bounds` can be anything with a 16:9 ratio.
+Here, we also set the position, `pos`, the `rotation`, and scaling factors in x and y, `scale_x` and `scale_y`.
 
-After these parameters are set, we need to choose a color.
-This can be done as a single color (such as `color = [1.0, 0, 0, 1]` for red), or as an array, like:
+Now we need to define a color.
+This can be done by passing in an array or tuple (such as `color = [1.0, 0, 0, 1]` for red), or as an array of arrays or tuples, like:
 
 ```
     colors = [[1.0, 0.25, 0.25,1],
@@ -36,17 +35,19 @@ This can be done as a single color (such as `color = [1.0, 0, 0, 1]` for red), o
 
 ```
 
+In this case, each row of the array will define the color of a different quadrant of the square.
 Now we can define our fractal executable...
 
 ```
 H = Fae.define_rectangle(pos, rotation, scale_x, scale_y, colors; AT = AT)
 ```
 
-Here, `AT` can be either an `Array` or `CuArray` depending whether you would like to run the code on the CPU or GPU.
+Here, `AT` can be either an `Array` or `CuArray` depending whether you would like to run the code on the CPU or (CUDA) GPU.
 `num_particles` and `num_iterations` are the number of points we are solving with for the chaos game and the number of iterations for each point.
+The higher these numbers are, the better resolved our final image will be.
 Notationally, we are using the variable `H` to designate a Hutchinson operator, which is the mathematical name for a function set.
 
-Finally, we solve the function system with
+Finally, we solve the function system with the `fractal_flame(...)` function and write it to an image:
 
 ```
     pix = Fae.fractal_flame(H, num_particles, num_iterations,
@@ -103,7 +104,6 @@ end
 
 ```
 
-
 ## Step 2: swirl the square
 
 Next, we will try to "swirl the square" by also adding another fractal executable to the mix, the swirl operator (defined already in Fae.jl):
@@ -141,7 +141,7 @@ There are a few nuances to point out:
 
 1. We are using `Fae.Colors.previous`, which simply means that the swirl will use whatever colors were specified in `H1`.
 2. Fractal operators can be called with `fee` or `Hutchinson` and require `Array` or `Tuple` inputs.
-3. `final = true`, means that this is a post processing operations. In other words, `H1` creates the object primitive (square), and `H2` always operates on that square.
+3. `final = true`, means that this is a post processing operation. In other words, `H1` creates the object primitive (square), and `H2` always operates on that square.
 4. We are specifying the Floating Type, `FT`, as `Float32`, but that is not necessary.
 
 Once this is run, it should provide the following image:

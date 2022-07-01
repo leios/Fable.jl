@@ -31,7 +31,6 @@ f_3(P,C) &= \frac{P+C}{2}.
 \end{aligned}
 ```
 
-
 Here, $P$ is some point location and $A$, $B$, and $C$ are all vertices of the triangle.
 For Fae.jl, each function is called a Fractal Operator (`fo`) and the input variables are Fractal Inputs (`fi`s).
 Finally, each function should have some sort of color (or shader) associated with it.
