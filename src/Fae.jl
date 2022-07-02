@@ -26,12 +26,14 @@ include("structs/fractal_executable.jl")
 # Operations
 include("math/simple_rng.jl")
 include("fums/flames.jl")
+include("fums/smears.jl")
 
 # Objects
 include("objects/rectangle.jl")
 include("objects/circle.jl")
 include("objects/sierpinski.jl")
 include("objects/barnsley.jl")
+include("objects/lollipeople.jl")
 
 # Postprocessing
 include("postprocessing/io_structs.jl")
