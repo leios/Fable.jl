@@ -13,20 +13,19 @@ using VideoIO
 
 
 # KA kernels
-include("histogram.jl")
+include("math/histogram.jl")
 
 # Fractal flame structures
 include("structs/fractal_input.jl")
 include("structs/fractal_user_methods.jl")
-include("colors.jl")
+include("fums/colors.jl")
 include("structs/fractal_operators.jl")
 include("structs/flame_structs.jl")
 include("structs/fractal_executable.jl")
 
 # Operations
-include("simple_rng.jl")
-include("transformations.jl")
-include("flames.jl")
+include("math/simple_rng.jl")
+include("fums/flames.jl")
 
 # Objects
 include("objects/rectangle.jl")
