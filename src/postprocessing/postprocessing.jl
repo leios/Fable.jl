@@ -1,3 +1,5 @@
+export zero!
+
 @kernel function zero_kernel!(pix_values, pix_reds, pix_greens, pix_blues)
     tid = @index(Global, Cartesian)
     pix_values[tid] = 0

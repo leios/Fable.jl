@@ -5,7 +5,8 @@ function define_rectangle(pos::Vector{FT}, theta::FT, scale_x::FT, scale_y,
                           name = "rectangle",
                           diagnostic = false) where FT <: AbstractFloat
 
-    fums, fis = define_rectangle_operators(pos, theta, scale_x, scale_y)
+    fums, fis = define_rectangle_operators(pos, theta, scale_x, scale_y;
+                                           name = name)
     if length(color) == 1 || eltype(color) <: Number
         color_set = [create_color(color) for i = 1:4]
     elseif length(color) == 4
@@ -31,7 +32,8 @@ end
 
 # This specifically returns the fums for a square
 function define_rectangle_operators(pos::Vector{FT}, theta::FT,
-                                    scale_x, scale_y) where FT <: AbstractFloat
+                                    scale_x, scale_y;
+                                    name="rectangle") where FT <: AbstractFloat
 
 
     scale_x *= 0.5
@@ -39,19 +41,19 @@ function define_rectangle_operators(pos::Vector{FT}, theta::FT,
 
     p1_x = scale_x*cos(theta) - scale_y*sin(theta) + pos[2]
     p1_y = scale_x*sin(theta) + scale_y*cos(theta) + pos[1]
-    p1 = fi("p1", (p1_x, p1_y))
+    p1 = fi("p1_"*name, (p1_x, p1_y))
 
     p2_x = scale_x*cos(theta) + scale_y*sin(theta) + pos[2]
     p2_y = scale_x*sin(theta) - scale_y*cos(theta) + pos[1]
-    p2 = fi("p2", (p2_x, p2_y))
+    p2 = fi("p2_"*name, (p2_x, p2_y))
 
     p3_x = - scale_x*cos(theta) + scale_y*sin(theta) + pos[2]
     p3_y = - scale_x*sin(theta) - scale_y*cos(theta) + pos[1]
-    p3 = fi("p3", (p3_x, p3_y))
+    p3 = fi("p3_"*name, (p3_x, p3_y))
 
     p4_x = - scale_x*cos(theta) - scale_y*sin(theta) + pos[2]
     p4_y = - scale_x*sin(theta) + scale_y*cos(theta) + pos[1]
-    p4 = fi("p4", (p4_x, p4_y))
+    p4 = fi("p4_"*name, (p4_x, p4_y))
 
     square_1 = Flames.halfway(loc = p1)
     square_2 = Flames.halfway(loc = p2)
@@ -100,7 +102,7 @@ function update_rectangle!(H::Hutchinson, pos::Vector{F}, theta::F,
 
     H.symbols = configure_fis!([p1, p2, p3, p4])
     if color != nothing
-        H.color_set = new_color_array([color for i = 1:5], fnum;
+        H.color_set = new_color_array([color for i = 1:4], fnum;
                                       FT = FT, AT = AT)
     end
 
