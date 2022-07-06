@@ -9,8 +9,8 @@ end
 FractalOperator() = FractalOperator(FractalUserMethod(), FractalUserMethod(), 0)
 
 FractalOperator(f::FractalUserMethod) = FractalOperator(f,
-                                                        FractalUserMethod(),
-                                                        0)
+                                                        Colors.previous,
+                                                        1)
 FractalUserMethod(f::FractalOperator) = f.op
 
 # Note: this operator currently works like this:
