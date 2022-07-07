@@ -4,18 +4,20 @@ module Smears
 
 import Fae.@fum
 
-stretch_and_rotate = @fum stretch_and_rotate(x,y;
-                                             object_position = (0,0),
-                                             scale = (1,1),
-                                             theta = 0)
+stretch_and_rotate = @fum function stretch_and_rotate(
+    x,y;
+    object_position = (0,0),
+    scale = (1,1),
+    theta = 0)
+
     y = (y - object_position[1])*scale[1]
     x = (x - object_position[2])*scale[2]
 
     temp_x = x*cos(theta) - y*sin(theta)
     temp_y = x*sin(theta) + y*cos(theta)
 
-    x += object_position[2]
-    y += object_position[1]
+    x = temp_x + object_position[2]
+    y = temp_y + object_position[1]
 end
 
 simple_smear = @fum function simple_smear(x,y;

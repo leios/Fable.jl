@@ -33,3 +33,4 @@ notes
 output/*
 video_ideas/*
 docs/build/
+*.bak
