@@ -1,4 +1,4 @@
-export define_circle, update_circle
+export define_circle, update_circle!
 
 # TODO:
 #     1. Use Box--Muller so we don't need polar input
@@ -6,8 +6,7 @@ export define_circle, update_circle
 # Code examples modified from: https://www.math.uwaterloo.ca/~wgilbert/FractalGallery/IFS/IFS.html
 
 naive_disk = Fae.@fum function naive_disk(x, y; radius = 1, pos = (0,0),
-                                         function_index = 0,
-                                         bounds = (0, 0, 1, 1))
+                                         function_index = 0)
     x_temp = (x-pos[2])/radius
     y_temp = (y-pos[1])/radius
     r = sqrt(x_temp*x_temp + y_temp*y_temp)
@@ -28,8 +27,7 @@ naive_disk = Fae.@fum function naive_disk(x, y; radius = 1, pos = (0,0),
 end
 
 constant_disk = Fae.@fum function constant_disk(x, y; radius = 1, pos = (0,0),
-                                               function_index = 0,
-                                               bounds = (0, 0, 1, 1))
+                                               function_index = 0)
 
     x_temp = (x-pos[2])/radius
     y_temp = (y-pos[1])/radius
@@ -54,11 +52,11 @@ end
 # Returns back H, colors, and probs for a circle
 function define_circle(pos::Vector{FT}, radius::FT, color;
                        AT = Array, name = "circle",
-                       chosen_fx = :constant_disk, diagnostic = false,
-                       bounds = [0 1; 0 1]) where FT <: AbstractFloat
+                       chosen_fx = :constant_disk,
+                       diagnostic = false) where FT <: AbstractFloat
 
     fums, fis = define_circle_operators(pos, radius; chosen_fx = chosen_fx,
-                                        bounds = bounds)
+                                        name = name)
     if length(color) == 1 || eltype(color) <: Number
         color_set = [create_color(color) for i = 1:2]
     elseif length(color) == 2
@@ -75,13 +73,12 @@ end
 # This specifically returns the fums for a circle
 function define_circle_operators(pos::Union{Vector{FT}, Tuple}, radius;
                                  chosen_fx = :constant_disk,
-                                 bounds = (0,0,1,1)) where FT <: AbstractFloat
+                                 name = "circle") where FT <: AbstractFloat
 
-    f_0 = fi("f_0", 0)
-    f_1 = fi("f_1", 1)
-    pos = fi("pos", Tuple(pos))
-    radius = fi("radius", radius)
-    bounds = fi("bounds", bounds)
+    f_0 = fi("f_0_"*name, 0)
+    f_1 = fi("f_1_"*name, 1)
+    pos = fi("pos_"*name, Tuple(pos))
+    radius = fi("radius_"*name, radius)
     if chosen_fx == :naive_disk
         d_0 = naive_disk(function_index = f_0, pos = pos, radius = radius)
         d_1 = naive_disk(function_index = f_1, pos = pos, radius = radius)
@@ -100,12 +97,16 @@ function update_circle!(H, pos, radius)
 end
 
 function update_circle!(H::Hutchinson, pos::Vector{F},
-                       radius, color::Union{Array{F}, Nothing};
-                       FT = Float64, AT = Array) where F <: AbstractFloat
+                        radius, color::Union{Array{F}, Nothing};
+                        FT = Float64, AT = Array) where F <: AbstractFloat
 
-    H.symbols = configure_fis!([p1, p2, p3, p4])
+    
+    H.fi_set[3] = FractalInput(H.fi_set[3].index, H.fi_set[3].name, Tuple(pos))
+    H.fi_set[4] = FractalInput(H.fi_set[4].index, H.fi_set[4].name, radius)
+    
+    H.symbols = configure_fis!(H.fi_set)
     if color != nothing
-        H.color_set = new_color_array([color for i = 1:4], 4; FT = FT, AT = AT)
+        H.color_set = new_color_array([color for i = 1:2], 4; FT = FT, AT = AT)
     end
 
 end

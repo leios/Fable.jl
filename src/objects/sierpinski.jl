@@ -3,7 +3,7 @@ function define_sierpinski(A::Vector{FT}, B::Vector{FT}, C::Vector{FT},
                            color; AT = Array,
                            name = "sierpinski",
                            diagnostic = false) where FT <: AbstractFloat
-    fums, fis = define_sierpinski_operators(A, B, C)
+    fums, fis = define_sierpinski_operators(A, B, C; name = name)
     if length(color) == 1 || eltype(color) <: Number
         color_set = [create_color(color) for i = 1:3]
     elseif length(color) == 3
@@ -20,11 +20,12 @@ end
 
 # This specifically returns the fums for a sierpinski triangle
 function define_sierpinski_operators(A::Vector{FT}, B::Vector{FT},
-                                     C::Vector{FT}) where FT <: AbstractFloat
+                                     C::Vector{FT};
+                                     name="sirpinski") where FT <: AbstractFloat
 
-    f_A = fi("A",A)
-    f_B = fi("B",B)
-    f_C = fi("C",C)
+    f_A = fi("A_"*name,A)
+    f_B = fi("B_"*name,B)
+    f_C = fi("C_"*name,C)
 
     s_1 = Flames.halfway(loc = f_A)
     s_2 = Flames.halfway(loc = f_B)
