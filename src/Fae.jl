@@ -31,7 +31,7 @@ include("fums/smears.jl")
 # Objects
 include("objects/rectangle.jl")
 include("objects/circle.jl")
-include("objects/sierpinski.jl")
+include("objects/triangle.jl")
 include("objects/barnsley.jl")
 include("objects/lollipeople.jl")
 

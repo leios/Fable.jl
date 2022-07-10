@@ -1,5 +1,5 @@
 # fee = Fractal Executable
-export Hutchinson, update_fis!, update_colors!, new_color_array, fee
+export Hutchinson, update_fis!, update_colors!, new_color_array, fee, update!
 
 fee(args...; kwargs...) = Hutchinson(args...; kwargs...)
 
@@ -31,6 +31,37 @@ mutable struct Hutchinson
     fnums::Union{NTuple, Tuple}
 end
 
+# This will update the symbols and prob set for combined fees
+function update!(final_H::Hutchinson, Hs::HT; diagnostic = false, name = "",
+                 final = false) where HT <: Union{Vector{Hutchinson},
+                                                  Tuple{Hutchinson}}
+
+    symbols = [Hs[1].symbols[i] for i = 1:length(Hs[1].symbols)]
+    prob_set = [Hs[1].prob_set[i] for i = 1:length(Hs[1].prob_set)]
+
+    for j = 2:length(Hs)
+        temp_prob = [Hs[j].prob_set[i] for i = 1:length(Hs[j].prob_set)]
+        temp_symbols = [Hs[j].symbols[i] for i = 1:length(Hs[j].symbols)]
+
+        prob_set = vcat(prob_set, temp_prob)
+        symbols = vcat(symbols, temp_symbols)
+    end
+
+    final_H.symbols = Tuple(symbols)
+    final_H.prob_set = Tuple(prob_set)
+
+    if diagnostic
+        println("combined color set:\n", final_H.color_set)
+        println("combined fractal User Methods:\n", final_H.fum_set)
+        println("combined fractal inputs:\n", final_H.fi_set)
+        println("combined names:\n", final_H.name_set)
+        println("combined probabilities:\n", final_H.prob_set)
+        println("combined symbols:\n", final_H.symbols)
+        println("combined function numbers:\n", final_H.fnums)
+    end
+
+end
+
 function Hutchinson(Hs::HT; diagnostic = false, name = "",
                     final = false) where HT <: Union{Vector{Hutchinson},
                                                      Tuple{Hutchinson}}
@@ -42,7 +73,7 @@ function Hutchinson(Hs::HT; diagnostic = false, name = "",
     symbols = [Hs[1].symbols[i] for i = 1:length(Hs[1].symbols)]
     fnums = [Hs[1].fnums[i] for i = 1:length(Hs[1].fnums)]
 
-    fsum = sum(Hs[1].fnums)-1
+    fsum = length(Hs[1].symbols)
 
     for j = 2:length(Hs)
         if length(Hs[j].color_set) > 0
@@ -69,7 +100,7 @@ function Hutchinson(Hs::HT; diagnostic = false, name = "",
         symbols = vcat(symbols, temp_symbols)
         fnums = vcat(fnums, temp_fnums)
 
-        fsum += sum(Hs[j].fnums)-1
+        fsum += length(Hs[j].symbols)
     end
 
     if length(fi_set) == 0
@@ -91,7 +122,6 @@ function Hutchinson(Hs::HT; diagnostic = false, name = "",
                                   diagnostic = diagnostic, final = final)
 
     if diagnostic
-        println("combined color set:\n", color_set)
         println("combined fractal User Methods:\n", fum_set)
         println("combined fractal inputs:\n", fi_set)
         println("combined names:\n", name_set)
@@ -143,6 +173,7 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
         fx_string = "@inline function H_"*name*"(_p, tid, symbols, choice)\n"
         fx_string *= "x = _p[tid, 2] \n y = _p[tid, 1] \n"
     end
+
     for i = 1:length(fis)
         fx_string *= fis[i].name*" = symbols["*string(fis[i].index)*"]\n"
     end

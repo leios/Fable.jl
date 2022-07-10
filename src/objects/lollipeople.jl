@@ -1,3 +1,9 @@
+export Lolli
+
+module Lolli
+
+import Fae: @fum, FractalUserMethod, FractalInput
+
 mutable struct LolliPerson
     head::FractalUserMethod
     eyes::FractalUserMethod
@@ -12,6 +18,9 @@ mutable struct LolliPerson
     transform::Union{Nothing, FractalUserMethod}
     head_transform::Union{Nothing, FractalUserMethod}
     body_transform::Union{Nothing, FractalUserMethod}
+end
+
+function LolliPerson(size)
 end
 
 # This brings a lolli from loc 1 to loc 2
@@ -44,4 +53,5 @@ end
 
 # This causes a LolliPerson to blink. Should be used on a regular interval
 function blink!(lolli::LolliPerson, time)
+end
 end

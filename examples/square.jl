@@ -35,7 +35,9 @@ function main(num_particles, num_iterations, AT; dark = true)
                     [Fae.Colors.previous],
                     (1.0,);
                     diagnostic = true, AT = AT, name = "2", final = true)
-    #final_H = fee([H, H2])
+
+    # To combine a different way, use the final_H defined here
+    # final_H = fee([H, H2])
 
     pix = Pixels(res; AT = AT, logscale = false, FT = FT)
 

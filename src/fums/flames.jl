@@ -80,8 +80,8 @@ bubble = @fum function bubble(x, y)
 end
 
 halfway = @fum function halfway(x, y; loc=(0,0))
-    x = 0.5*(loc[1] + x)
-    y = 0.5*(loc[2] + y)
+    x = 0.5*(loc[2] + x)
+    y = 0.5*(loc[1] + y)
 end
 
 sinusoidal = @fum function sinusoidal(x, y)

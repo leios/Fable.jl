@@ -18,6 +18,8 @@ function add(fis::Vector{FractalInput}, a::Int)
     for i = 1:length(fis)
         fis[i] = add(fis[i],a)
     end
+
+    return fis
 end
 
 function add(fi::FractalInput, a::Int)
@@ -25,7 +27,7 @@ function add(fi::FractalInput, a::Int)
     if isa(index, Number)
         index += a
     else
-        index .+= a
+        index = index[1]+a:index[end]+a
     end
 
     return FractalInput(index, fi.name, fi.val)

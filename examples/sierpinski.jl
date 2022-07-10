@@ -5,15 +5,13 @@ if has_cuda_gpu()
     CUDA.allowscalar(false)
 end
 
-function main()
-    AT = CuArray
+function main(num_particles, num_iterations, num_frames, AT)
     FT = Float32
 
-    num_particles = 10000
-    num_iterations = 10000
     bounds = [-1.125 1.125; -2 2]
     res = (1080, 1920)
-    frames = 300
+
+    pix = Pixels(res; AT = AT, logscale = false, FT = FT)
 
     theta = 0
     r = 1
@@ -25,23 +23,22 @@ function main()
     B_2 = [r*cos(-theta + 2*pi/3), r*sin(-theta + 2*pi/3)]
     C_2 = [r*cos(-theta + 4*pi/3), r*sin(-theta + 4*pi/3)]
 
-    H = Fae.define_sierpinski(A_1, B_1, C_1,
-                              [1.0, 0.0, 0.0, 1.0],
-                              [0.0, 1.0, 0.0, 1.0],
-                              [0.0, 0.0, 1.0, 1.0]; AT = AT,
-                              name = "s1")
-    H_2 = Fae.define_sierpinski(A_2, B_2, C_2,
-                                [0.0, 1.0, 1.0, 1.0],
-                                [1.0, 0.0, 1.0, 1.0],
-                                [1.0, 1.0, 0.0, 1.0]; AT = AT,
-                                name = "s2")
+    H = Fae.define_triangle(A_1, B_1, C_1,
+                            [[1.0, 0.0, 0.0, 1.0],
+                            [0.0, 1.0, 0.0, 1.0],
+                            [0.0, 0.0, 1.0, 1.0]]; AT = AT,
+                            name = "s1", chosen_fx = :sierpinski)
+    H_2 = Fae.define_triangle(A_2, B_2, C_2,
+                              [[0.0, 1.0, 1.0, 1.0],
+                              [1.0, 0.0, 1.0, 1.0],
+                              [1.0, 1.0, 0.0, 1.0]]; AT = AT,
+                              name = "s2", chosen_fx = :sierpinski)
 
-    println("colors 1: ", H.color_set)
-    println("colors 2: ", H_2.color_set)
+    final_H = fee([H, H_2]; diagnostic = true)
 
-    for i = 1:frames
+    for i = 1:num_frames
 
-        theta = 2*pi*(i-1)/frames
+        theta = 2*pi*(i-1)/num_frames
         A_1 = [r*cos(theta), r*sin(theta)]
         B_1 = [r*cos(theta + 2*pi/3), r*sin(theta + 2*pi/3)]
         C_1 = [r*cos(theta + 4*pi/3), r*sin(theta + 4*pi/3)]
@@ -50,16 +47,19 @@ function main()
         B_2 = [r*cos(-theta + 2*pi/3), r*sin(-theta + 2*pi/3)]
         C_2 = [r*cos(-theta + 4*pi/3), r*sin(-theta + 4*pi/3)]
 
-        Fae.update_sierpinski!(H, A_1, B_1, C_1; FT = FT, AT = AT)
-        Fae.update_sierpinski!(H_2, A_2, B_2, C_2; FT = FT, AT = AT)
+        Fae.update_triangle!(H, A_1, B_1, C_1; FT = FT, AT = AT)
+        Fae.update_triangle!(H_2, A_2, B_2, C_2; FT = FT, AT = AT)
 
-        pix = Fae.fractal_flame(H, num_particles, num_iterations,
-                                bounds, res; AT = AT, FT = FT)
+        update!(final_H, [H, H_2])
+
+        Fae.fractal_flame!(pix, final_H, num_particles, num_iterations,
+                           bounds, res; AT = AT, FT = FT)
+
 
         filename = "check"*lpad(i-1,5,"0")*".png"
 
         @time Fae.write_image([pix], filename)
+
+        zero!(pix)
     end
 end
-
-main()
