@@ -53,7 +53,6 @@ include("objects/rectangle.jl")
 include("objects/circle.jl")
 include("objects/triangle.jl")
 include("objects/barnsley.jl")
-include("objects/lollipeople.jl")
 
 # IO
 include("structs/layers/layers.jl")
@@ -76,5 +75,8 @@ include("run/run.jl")
 include("run/fractal_flame.jl")
 include("run/shader.jl")
 include("run/color.jl")
+
+# Lollipeople
+include("objects/lollipeople.jl")
 
 end # module

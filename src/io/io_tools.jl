@@ -200,7 +200,7 @@ function write_video!(v::VideoParams,
  
     postprocess!(layers[1])
     for i = 2:length(layers)
-        post_process!(layers[i])
+        postprocess!(layers[i])
         mix_layers!(layers[1], layers[i]; mode = :simple)
     end
 
@@ -222,7 +222,7 @@ function write_video!(n::Nothing, layers::Vector{AL};
                       reset = true) where AL <: AbstractLayer
     postprocess!(layers[1])
     for i = 2:length(layers)
-        post_process!(layers[i])
+        postprocess!(layers[i])
         mix_layers!(layers[1], layers[i]; mode = :simple)
     end
 

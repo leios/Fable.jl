@@ -60,6 +60,13 @@ magenta = @fum function magenta()
     alpha = 1
 end
 
+white = @fum function white()
+    red = 1
+    green = 1
+    blue = 1
+    alpha = 1
+end
+
 black = @fum function black()
     red = 0
     green = 0
@@ -67,12 +74,6 @@ black = @fum function black()
     alpha = 1
 end
 
-white = @fum function white()
-    red = 1
-    green = 1
-    blue = 1
-    alpha = 1
-end
 end
 
 create_color(a::FractalUserMethod) = a

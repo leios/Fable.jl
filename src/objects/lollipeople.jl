@@ -1,57 +1,274 @@
-export Lolli
+export LolliLayer, LolliPerson, run!, postprocess!, simple_eyes, update_fis!
 
-module Lolli
+#------------------------------------------------------------------------------#
+# Struct Definition
+#------------------------------------------------------------------------------#
 
-import Fae: @fum, FractalUserMethod, FractalInput
+mutable struct LolliLayer <: AbstractLayer
+    head::FractalLayer
+    eyes::Union{Nothing, FractalUserMethod}
+    body::FractalLayer
 
-mutable struct LolliPerson
-    head::FractalUserMethod
-    eyes::FractalUserMethod
-    body::FractalUserMethod
-    angle::Union{Float32, Float64, FractalInput}
-    foot_pos::Union{Tuple{FT}, FractalInput} where FT <: Union{Float32, Float64}
-    head_height::Union{Float32, Float64, FractalInput}
+    angle::Union{FT, FractalInput} where FT <: Number
+    foot_position::Union{Tuple, FractalInput}
+    head_height::Union{FT, FractalInput} where FT <: Number
 
-    eye_color::FractalUserMethod
     body_color::FractalUserMethod
 
     transform::Union{Nothing, FractalUserMethod}
     head_transform::Union{Nothing, FractalUserMethod}
     body_transform::Union{Nothing, FractalUserMethod}
+
+    canvas::Union{Array{C}, CuArray{C}, ROCArray{C}} where C <: RGBA
+    position::Tuple
+    world_size::Tuple
+    ppu::Number
+    params::NamedTuple
+    postprocessing_steps::Vector{APP} where APP <: AbstractPostProcess
 end
 
-function LolliPerson(size)
+LolliPerson(args...; kwargs...) = LolliLayer(args...; kwargs...)
+
+#------------------------------------------------------------------------------#
+# Helper Functions / PostProcessing steps
+#------------------------------------------------------------------------------#
+function dump(lolli::LolliLayer)
+    println(lolli)
 end
+
+function run!(layer::LolliLayer; diagnostic = false, frame = 0)
+    run!(layer.head; diagnostic = diagnostic, frame = frame)
+    run!(layer.body; diagnostic = diagnostic, frame = frame)
+end
+
+function postprocess!(layer::LolliLayer)
+    postprocess!(layer.head)
+    postprocess!(layer.body)
+
+    for i = 1:length(layer.postprocessing_steps)
+        if !layer.postprocessing_steps[i].initialized
+            @info("initializing " *
+                  string(typeof(layer.postprocessing_steps[i])) * "!")
+            initialize!(layer.postprocessing_steps[i], layer)
+        end
+        layer.postprocessing_steps[i].op(layer, layer.postprocessing_steps[i])
+    end
+end
+
+function to_canvas!(layer::LolliLayer, canvas_params::CopyToCanvas)
+    to_canvas!(layer)
+end
+
+function to_canvas!(layer::LolliLayer)
+
+    if layer.params.ArrayType <: Array
+        kernel! = lolli_copy_kernel!(CPU(), layer.params.numcores)
+    elseif has_cuda_gpu() && layer.params.ArrayType <: CuArray
+        kernel! = lolli_copy_kernel!(CUDADevice(), layer.params.numthreads)
+    elseif has_rocm_gpu() && layer.params.ArrayType <: ROCArray
+        kernel! = lolli_copy_kernel!(ROCDevice(), layer.params.numthreads)
+    end
+
+    wait(kernel!(layer.canvas, layer.head.canvas, layer.body.canvas;
+                 ndrange = size(layer.canvas)))
+    
+    return nothing
+end
+
+@kernel function lolli_copy_kernel!(canvas_out, head_canvas, body_canvas)
+
+    tid = @index(Global, Linear)
+
+    if head_canvas[tid].alpha == 0
+        canvas_out[tid] = body_canvas[tid]
+    else
+        canvas_out[tid] = head_canvas[tid]
+    end
+end
+
+function update_fis!(layer::LolliLayer;
+                     fis::Vector{FractalInput} = [],
+                     head_fis::Vector{FractalInput} = [],
+                     body_fis::Vector{FractalInput} = [])
+    if length(fis) + length(head_fis) > 1
+        update_fis!(layer.head, vcat(fis, head_fis))
+    end
+
+    if length(fis) + length(body_fis) > 1
+        update_fis!(layer.body, vcat(fis, body_fis))
+    end
+end
+
+#------------------------------------------------------------------------------#
+# LolliPerson Specifics
+#------------------------------------------------------------------------------#
+
+simple_eyes = @fum function simple_eyes(x, y;
+                                        height = 1.0,
+                                        ellipticity = 2.5,
+                                        location = (0.0, 0.0),
+                                        inter_eye_distance = height*0.075,
+                                        color = (1,1,1,1),
+                                        size = height*0.04,
+                                        show_brows = false,
+                                        brow_angle = 0.0,
+                                        brow_ratio = 1.0,
+                                        brow_size = 1.0)
+    head_position = (-height*1/8, 0.0)
+    location = location .+ head_position
+    r2 = size*0.5
+    r1 = ellipticity*r2
+    if in_ellipse(x,y,location.+(0, 0.5*inter_eye_distance),0.0,r1,r2) ||
+       in_ellipse(x,y,location.-(0, 0.5*inter_eye_distance),0.0,r1,r2)
+        red = color[1]
+        green = color[2]
+        blue = color[3]
+        alpha = color[4]
+    end
+end
+
+place_eyes = @fum function place_eyes(x, y;
+                                      eye_radius = 0,
+                                      eye_angle = 0,
+                                      head_position = (0,0),
+                                      head_radius = 1,
+                                      eye_height = 2.5,
+                                      eye_width = 1,
+                                      eyelid_position = 1,
+                                      right_eye = 0)
+
+    y = (y - head_position[1]) * eye_height * head_radius * 0.15 +
+        head_position[1] + eye_radius * sin(eye_angle)
+    x = (x - head_position[2]) * eye_width* head_radius * 0.15 -
+        head_position[2] + eye_radius * cos(eye_angle) -
+        head_radius * (0.25 - 0.5 * right_eye)
+
+    # reflecting and shrinking an eyelid in the case of blinking
+    # we are essentially flipping along y = slope*x + b, where...
+    #     slope = 1 if right eye; -1 if left eye
+    #     b = eyelid position relative to the top of the eye
+    #     x,y are the Cartesian coordinates (as always)
+    if eyelid_position < 1
+        if right_eye == 0
+            slope = -1
+        elseif right_eye == 1
+            slope = 1
+        end
+
+        if val > slope*x + eye_position*eyelid_position
+            
+        end
+    end
+
+end
+
+function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
+                    body_multiplier = min(1, height),
+                    eye_color = Shaders.white, body_color = Shaders.black,
+                    head_position = (-height*1/4, 0.0),
+                    head_radius = height*0.25,
+                    eye_radius = 0.0, eye_angle = 0.0,
+                    eye_height = 2.5, eye_width = 1,
+                    name = "", ArrayType = Array, diagnostic = true,
+                    known_operations = [],
+                    ppu = 1200, world_size = (0.9, 1.6),
+                    num_particles = 1000, num_iterations = 1000,
+                    postprocessing_steps = Vector{AbstractPostProcess}([]),
+                    eye_fum = simple_eyes,
+                    fis::Vector{FractalInput} = [],
+                    head_fis::Vector{FractalInput} = [],
+                    body_fis::Vector{FractalInput} = [])
+
+    head_fis = vcat(head_fis, fis)
+    body_fis = vcat(body_fis, fis)
+
+    postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
+    offset = 0.1*body_multiplier
+    layer_position = (foot_position[1] - height*0.5, foot_position[2])
+    body = define_rectangle(; position = foot_position .- (height*0.25, 0),
+                              rotation = 0.0,
+                              scale_x = 0.1*body_multiplier,
+                              scale_y = 0.5*height-offset,
+                              color = body_color,
+                              name = "body"*name,
+                              diagnostic = diagnostic,
+                              additional_fis = body_fis)
+
+    body_layer = FractalLayer(num_particles = num_particles,
+                              num_iterations = num_iterations,
+                              ppu = ppu, world_size = world_size,
+                              position = layer_position, ArrayType = ArrayType,
+                              H1 = body)
+
+    head_tuple = head_position
+    if isa(head_position, FractalInput)
+        head_tuple = head_position.val
+    end
+
+    head = define_circle(; position = head_tuple,
+                           radius = head_radius,
+                           color = overlay(body_color, eye_fum),
+                           name = "head"*name,
+                           diagnostic = diagnostic,
+                           additional_fis = head_fis)
+
+    head_layer = FractalLayer(num_particles = num_particles,
+                              num_iterations = num_iterations,
+                              ppu = ppu, world_size = world_size,
+                              position = layer_position, ArrayType = ArrayType,
+                              H1 = head)
+
+    canvas = copy(head_layer.canvas)
+    return LolliLayer(head_layer, eye_fum, body_layer, angle, foot_position,
+                      height, body_color, nothing, nothing, nothing,
+                      canvas, layer_position, world_size, ppu,
+                      params(LolliLayer; ArrayType = ArrayType),
+                      postprocessing_steps)
+    
+end
+
+#------------------------------------------------------------------------------#
+# LolliPerson Animations
+#------------------------------------------------------------------------------#
 
 # This brings a lolli from loc 1 to loc 2
 # 1. Changes fis
 # 2. adds smears for body / head
-function step!(lolli::LolliPerson, loc1, loc2, time)
+function step!(lolli::LolliLayer, loc1, loc2, time)
 end
 
 # This adds quotes above a lolli head and bounces them up and down
 # 1. we need some way of syncing the end of a bounce to the end "time"
 #    IE, if the bounce is 2pi, but a T is 3.5 periods, we need to round
-function speak!(lolli::LolliPerson, head_angle, time)
+function speak!(lolli::LolliLayer, head_angle, time)
 end
 
 # This creates an exclamation mark over a lolli head
-function exclaim!(lolli::LolliPerson, head_angle, time)
+function exclaim!(lolli::LolliLayer, head_angle, time)
 end
 
 # This creates a question mark over a lolli head
-function question!(lolli::LolliPerson, head_angle, time)
+function question!(lolli::LolliLayer, head_angle, time)
 end
 
 # This creates a heart over the lollihead
-function love!(lolli::LolliPerson, head_angle, time)
+function love!(lolli::LolliLayer, head_angle, time)
 end
 
 # This makes a lolliperson seem drowsy
-function nod_off!(lolli::LolliPerson, time)
+function nod_off!(lolli::LolliLayer, time)
 end
 
-# This causes a LolliPerson to blink. Should be used on a regular interval
-function blink!(lolli::LolliPerson, time)
+# This causes a LolliPerson to blink.
+function blink!(lolli::LolliLayer, num_frames)
+
+    idx = find_fi(lolli.eyes.fi_set, "eye_height")
+
+    # change eye height over a particular period
+
 end
+
+# This function will check how much time is in `num_frames` and how many frames
+# it takes to blink (`blink_frames`) and then blink randomly within the time
+function intermittent_blinking(lolli::LolliLayer, num_frames, blink_frames)
 end

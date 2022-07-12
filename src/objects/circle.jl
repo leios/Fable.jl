@@ -98,10 +98,6 @@ function define_circle_operators(position::Union{Vector, Tuple, FractalInput},
 
 end
 
-function update_circle!(H, position, radius)
-    update_circle!(H, position, radius, nothing)
-end
-
 function update_circle!(H::Hutchinson;
                         position::Union{Vector, Tuple,
                                         FractalInput, Nothing} = nothing,
