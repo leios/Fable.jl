@@ -1,6 +1,7 @@
 export define_rectangle, update_rectangle!
 # Returns back H, colors, and probs for a square
-function define_rectangle(pos::Vector{FT}, theta::FT, scale_x::FT, scale_y,
+function define_rectangle(pos::Union{Vector{FT}, Tuple},
+                          theta::FT, scale_x::FT, scale_y,
                           color; AT = Array,
                           name = "rectangle",
                           diagnostic = false) where FT <: AbstractFloat
@@ -21,7 +22,7 @@ function define_rectangle(pos::Vector{FT}, theta::FT, scale_x::FT, scale_y,
 end
 
 # Returns back H, colors, and probs for a square
-function define_square(pos::Vector{FT}, theta::FT, scale::FT,
+function define_square(pos::Union{Vector{FT}, Tuple}, theta::FT, scale::FT,
                        color; AT = Array,
                        name = "square",
                        diagnostic = false) where FT <: AbstractFloat
@@ -31,7 +32,8 @@ function define_square(pos::Vector{FT}, theta::FT, scale::FT,
 end
 
 # This specifically returns the fums for a square
-function define_rectangle_operators(pos::Vector{FT}, theta::FT,
+function define_rectangle_operators(pos::Union{Vector{FT}, Tuple},
+                                    theta::FT,
                                     scale_x, scale_y;
                                     name="rectangle") where FT <: AbstractFloat
 
@@ -41,19 +43,19 @@ function define_rectangle_operators(pos::Vector{FT}, theta::FT,
 
     p1_x = scale_x*cos(theta) - scale_y*sin(theta) + pos[2]
     p1_y = scale_x*sin(theta) + scale_y*cos(theta) + pos[1]
-    p1 = fi("p1_"*name, (p1_x, p1_y))
+    p1 = fi("p1_"*name, (p1_y, p1_x))
 
     p2_x = scale_x*cos(theta) + scale_y*sin(theta) + pos[2]
     p2_y = scale_x*sin(theta) - scale_y*cos(theta) + pos[1]
-    p2 = fi("p2_"*name, (p2_x, p2_y))
+    p2 = fi("p2_"*name, (p2_y, p2_x))
 
     p3_x = - scale_x*cos(theta) + scale_y*sin(theta) + pos[2]
     p3_y = - scale_x*sin(theta) - scale_y*cos(theta) + pos[1]
-    p3 = fi("p3_"*name, (p3_x, p3_y))
+    p3 = fi("p3_"*name, (p3_y, p3_x))
 
     p4_x = - scale_x*cos(theta) - scale_y*sin(theta) + pos[2]
     p4_y = - scale_x*sin(theta) + scale_y*cos(theta) + pos[1]
-    p4 = fi("p4_"*name, (p4_x, p4_y))
+    p4 = fi("p4_"*name, (p4_y, p4_x))
 
     square_1 = Flames.halfway(loc = p1)
     square_2 = Flames.halfway(loc = p2)
@@ -71,39 +73,39 @@ function update_square!(H, pos, theta, scale; fnum = 4)
     update_rectangle!(H, pos, theta, scale, scale, nothing; fnum = fnum)
 end
 
-function update_square!(H::Hutchinson, pos::Vector{F}, theta::F,
-                        scale, color::Union{Array{F}, Nothing};
+function update_square!(H::Hutchinson, pos::Union{Vector{F}, Tuple},
+                        theta::F, scale, color::Union{Array{F}, Nothing};
                         FT = Float64, AT = Array,
                         fnum = 4) where F <: AbstractFloat
     update_rectangle!(H, pos, theta, scale, scale, color; FT = FT, AT = AT,
                       fnum = fnum)
 end
 
-function update_rectangle!(H::Hutchinson, pos::Vector{F}, theta::F,
-                           scale_x, scale_y, color::Union{Array{F}, Nothing};
+function update_rectangle!(H::Hutchinson, pos::Union{Vector{F}, Tuple},
+                           theta::F, scale_x, scale_y,
+                           color::Union{Array{F}, Nothing};
                            FT = Float64, AT = Array,
                            fnum = 4) where F <: AbstractFloat
 
     p1_x = scale_x*cos(theta) - scale_y*sin(theta) + pos[1]
     p1_y = scale_x*sin(theta) + scale_y*cos(theta) + pos[2]
-    p1 = fi("p1", (p1_x, p1_y))
+    p1 = fi("p1", (p1_y, p1_x))
 
     p2_x = scale_x*cos(theta) + scale_y*sin(theta) + pos[1]
     p2_y = scale_x*sin(theta) - scale_y*cos(theta) + pos[2]
-    p2 = fi("p2", (p2_x, p2_y))
+    p2 = fi("p2", (p2_y, p2_x))
 
     p3_x = - scale_x*cos(theta) + scale_y*sin(theta) + pos[1]
     p3_y = - scale_x*sin(theta) - scale_y*cos(theta) + pos[2]
-    p3 = fi("p3", (p3_x, p3_y))
+    p3 = fi("p3", (p3_y, p3_x))
 
     p4_x = - scale_x*cos(theta) - scale_y*sin(theta) + pos[1]
     p4_y = - scale_x*sin(theta) + scale_y*cos(theta) + pos[2]
-    p4 = fi("p4", (p4_x, p4_y))
+    p4 = fi("p4", (p4_y, p4_x))
 
     H.symbols = configure_fis!([p1, p2, p3, p4])
     if color != nothing
-        H.color_set = new_color_array([color for i = 1:4], fnum;
-                                      FT = FT, AT = AT)
+        H.color_set = new_color_array([color for i = 1:4])
     end
 
 end

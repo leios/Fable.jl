@@ -25,6 +25,8 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
         kernel! = naive_chaos_kernel!(CPU(), numcores)
     else
         kernel! = naive_chaos_kernel!(CUDADevice(), numthreads)
+    elseif has_rocm_gpu() && isa(ps.positions, ROCArray)
+        kernel! = naive_chaos_kernel!(AMDGPU.default_device(), numthreads)
     end
 
     if diagnostic
@@ -145,6 +147,20 @@ function fractal_flame(H1::Hutchinson, H2::Hutchinson, num_particles::Int,
                    numthreads = numthreads, numcores = numcores)
 end
 
+function fractal_flame(H::Hutchinson, num_particles::Int,
+                       num_iterations::Int, bounds, res;
+                       dims = 2, AT = Array, FT = Float32, H2 = Hutchinson(),
+                       num_ignore = 20, diagnostic = false, logscale = true, 
+                       numthreads = 256, numcores = 4)
+
+    pix = Pixels(res; AT = AT, FT = FT, logscale = logscale)
+
+    fractal_flame!(pix, H, num_particles, num_iterations, bounds, res;
+                   dims = dims, AT = AT, FT = FT, H2 = H2,
+                   num_ignore = num_ignore, diagnostic = diagnostic,
+                   numthreads = numthreads, numcores = numcores)
+end
+
 function fractal_flame!(pix::Pixels, H1::Hutchinson, H2::Hutchinson,
                         num_particles::Int, num_iterations::Int, bounds, res;
                         dims = 2, AT = Array, FT = Float32, diagnostic = false, 
@@ -157,21 +173,6 @@ function fractal_flame!(pix::Pixels, H1::Hutchinson, H2::Hutchinson,
                    numthreads = numthreads, numcores = numcores)
 
 end
-
-function fractal_flame(H::Hutchinson, num_particles::Int,
-                       num_iterations::Int, bounds, res;
-                       dims = 2, AT = Array, FT = Float32, H2 = Hutchinson(),
-                       num_ignore = 20, diagnostic = false, logscale = true, 
-                       numthreads = 256, numcores = 4)
-
-    pix = Pixels(res; AT = AT, FT = FT)
-
-    fractal_flame!(pix, H, num_particles, num_iterations, bounds, res;
-                   dims = dims, AT = AT, FT = FT, H2 = H2,
-                   num_ignore = num_ignore, diagnostic = diagnostic,
-                   numthreads = numthreads, numcores = numcores)
-end
-
 
 #TODO: 1. Super sampling must be implemented by increasing the number of bins 
 #         before sampling down. Gamma correction at that stage

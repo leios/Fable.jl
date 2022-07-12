@@ -33,7 +33,6 @@ include("objects/rectangle.jl")
 include("objects/circle.jl")
 include("objects/triangle.jl")
 include("objects/barnsley.jl")
-include("objects/lollipeople.jl")
 
 # Postprocessing
 include("postprocessing/io_structs.jl")
@@ -42,5 +41,8 @@ include("postprocessing/io_tools.jl")
 
 # Main file
 include("fractal_flame.jl")
+
+# Lollipeople
+include("objects/lollipeople.jl")
 
 end # module

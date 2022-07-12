@@ -16,7 +16,9 @@ bounds = [-2 2; -2 2]
 res = (1000, 1000)
 
 video_out = open_video((1000,1000); framerate = 30, filename = "out.mp4",
-                       encoder_options = (crf=23, preset="medium"))
+                       encoder_options = (crf=23,
+                                          preset="medium",
+                                          pix_fmt="yuv420p"))
 
 H = Hutchinson([Flames.swirl,
                 Flames.polar,

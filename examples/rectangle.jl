@@ -5,17 +5,13 @@ if has_cuda_gpu()
     CUDA.allowscalar(false)
 end
 
-function main()
-    AT = CuArray
+function main(num_particles, num_iterations, total_frames, AT)
     FT = Float32
 
-    num_particles = 10000
-    num_iterations = 10000
     bounds = [-1.125 1.125; -2 2]
     res = (1080, 1920)
-    scene_1_frames = 5
-    scene_2_frames = 5
-    total_frames = scene_1_frames + scene_2_frames
+    scene_1_frames = total_frames / 2
+    scene_2_frames = total_frames / 2
 
     pos = [0.0, 0.0]
     color = [0.5, 0.25, 0.75, 1]
@@ -43,11 +39,8 @@ function main()
                      1 - 0.75*scene_frame / scene_2_frames, 1]
         end
 
-        println(color)
-
         Fae.update_rectangle!(H, pos, rotation, scale_x, scale_y, color;
                               FT = FT, AT = AT)
-        println(H.color_set)
 
         pix = Fae.fractal_flame(H, num_particles, num_iterations,
                                 bounds, res; AT = AT, FT = FT)
@@ -58,5 +51,3 @@ function main()
         @time Fae.write_image([pix], filename)
     end
 end
-
-main()

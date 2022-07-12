@@ -18,6 +18,8 @@ function zero!(pix; numthreads = 256, numcores = 4)
         kernel! = zero_kernel!(CPU(), numcores)
     else
         kernel! = zero_kernel!(CUDADevice(), numthreads)
+    elseif has_rocm_device() && isa(pix.reds, ROCArray)
+        kernel! = zero_kernel!(AMDGPU.default_device(), numthreads)
     end
 
     kernel!(pix.values, pix.reds, pix.greens, pix.blues,

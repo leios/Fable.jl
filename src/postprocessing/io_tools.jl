@@ -49,6 +49,8 @@ function logscale_coalesce!(pix, layer; numcores = 4, numthreads = 256)
         kernel! = logscale_coalesce_kernel!(CPU(), numcores)
     else
         kernel! = logscale_coalesce_kernel!(CUDADevice(), numthreads)
+    elseif has_rocm_gpu() && isa(pix.reds, ROCArray)
+        kernel! = logscale_coalesce_kernel!(AMDGPU.default_device(), numthreads)
     end
 
     kernel!(pix.reds, pix.greens, pix.blues, pix.alphas, pix.values,

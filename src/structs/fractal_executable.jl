@@ -65,6 +65,10 @@ end
 function Hutchinson(Hs::HT; diagnostic = false, name = "",
                     final = false) where HT <: Union{Vector{Hutchinson},
                                                      Tuple{Hutchinson}}
+    if length(Hs) == 1
+        return Hs[1]
+    end
+
     color_set = Hs[1].color_set
     fum_set = Hs[1].fum_set
     fi_set = Hs[1].fi_set

@@ -28,6 +28,23 @@ function Pixels(s; AT=Array, FT = Float64, gamma = 2.2, logscale = true,
                   gamma, logscale, calc_max_value, max_value)
 end
 
+function Pixels(s, c; AT=Array, FT = Float64, gamma = 2.2, logscale = true,
+                calc_max_value = true, max_value = 0)
+    if length(c) == 3
+        return Pixels(AT(zeros(Int, s)), AT(fill(FT(c[1]), s)),
+                      AT(fill(FT(c[2]), s)), AT(fill(FT(c[3]), s)),
+                      AT(zeros(FT, s)),
+                      gamma, logscale, calc_max_value, max_value)
+    elseif length(c) == 4
+        return Pixels(AT(zeros(Int, s)), AT(fill(FT(c[1]), s)),
+                      AT(fill(FT(c[2]), s)), AT(fill(FT(c[3]), s)),
+                      AT(fill(FT(c[4]), s)),
+                      gamma, logscale, calc_max_value, max_value)
+    else
+        error("cannot fil pixel canvas with color ", c)
+    end
+end
+
 # frame is an intermediate frame before being written to the writer
 mutable struct VideoParams
     writer::VideoIO.VideoWriter

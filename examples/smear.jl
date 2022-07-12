@@ -12,7 +12,9 @@ function main(num_particles, num_iterations, total_frames, AT;
     # defining video parameters
     if output_type == :video
         video_out = open_video(res; framerate = 30, filename = "out.mp4",
-                               encoder_options = (crf=23, preset="medium"))
+                               encoder_options = (crf=23,
+                                                  preset="medium",
+                                                  pix_fmt="yuv420p"))
     end
 
     # define ball parameters
@@ -55,8 +57,8 @@ function main(num_particles, num_iterations, total_frames, AT;
         theta = set(theta, pi/4)
 
         update_fis!(smear_transform, [object_position, scale, theta])
-        #fractal_flame!(pix, ball, smear_transform, num_particles,
-        fractal_flame!(pix, ball, num_particles,
+        fractal_flame!(pix, ball, smear_transform, num_particles,
+        #fractal_flame!(pix, ball, num_particles,
                        num_iterations, bounds, res;
                        AT = AT, FT = FT)
 

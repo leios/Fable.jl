@@ -6,6 +6,11 @@ import Fae.@fum
 identity = @fum function identity(x, y)
 end
 
+scale = @fum function scale(x, y; scale = (1,1))
+    x = scale[2]*x
+    y = scale[1]*y
+end
+
 scale_and_translate = @fum function scale_and_translate(x, y;
                                                        translation = (0,0),
                                                        scale = (1, 1))

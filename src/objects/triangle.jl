@@ -10,7 +10,9 @@ triangle_fill = @fum function triangle_fill(x,y;
     y = midpoint[1] - (y - midpoint[1]) * 0.5
 end
 
-function define_triangle(A::Vector{FT}, B::Vector{FT}, C::Vector{FT},
+function define_triangle(A::Union{Tuple, Vector{FT}},
+                         B::Union{Tuple, Vector{FT}},
+                         C::Union{Tuple, Vector{FT}},
                          color; AT = Array, name = "triangle",
                          chosen_fx = :fill,
                          diagnostic = false) where FT <: AbstractFloat
@@ -36,8 +38,10 @@ function define_triangle(A::Vector{FT}, B::Vector{FT}, C::Vector{FT},
 end
 
 # This specifically returns the fums for a triangle triangle
-function define_triangle_operators(A::Vector{FT}, B::Vector{FT},
-                                   C::Vector{FT}; chosen_fx = :fill,
+function define_triangle_operators(A::Union{Tuple, Vector{FT}},
+                                   B::Union{Tuple, Vector{FT}},
+                                   C::Union{Tuple, Vector{FT}};
+                                   chosen_fx = :fill,
                                    name="triangle") where FT <: AbstractFloat
 
     if chosen_fx != :sierpinski && chosen_fx != :fill
@@ -60,15 +64,20 @@ function define_triangle_operators(A::Vector{FT}, B::Vector{FT},
     end
 end
 
-function update_triangle!(H::Hutchinson, A::Vector{F}, B::Vector{F},
-                          C::Vector{F};
+function update_triangle!(H::Hutchinson,
+                          A::Union{Tuple, Vector{F}},
+                          B::Union{Tuple, Vector{F}},
+                          C::Union{Tuple, Vector{F}};
                           FT = Float64, AT = Array) where F <: AbstractFloat
 
     update_triangle!(H, A, B, C, nothing, nothing, nothing)
 end
 
-function update_triangle!(H::Hutchinson, A::Vector{F}, B::Vector{F},
-                          C::Vector{F}, color::Union{Array{F}, Nothing},
+function update_triangle!(H::Hutchinson,
+                          A::Union{Tuple, Vector{F}},
+                          B::Union{Tuple, Vector{F}},
+                          C::Union{Tuple, Vector{F}},
+                          color::Union{Array{F}, Nothing},
                           FT = Float64, AT = Array) where F <: AbstractFloat
 
     f_A = fi("A",A)

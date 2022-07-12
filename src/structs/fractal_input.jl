@@ -10,6 +10,16 @@ end
 
 FractalInput() = FractalInput(0,"",0)
 
+function find_fi(fis, str)
+    for i = 1:length(fis)
+        if fis[i].name == str
+            return i
+        end
+    end
+
+    return nothing
+end
+
 function set(fi::FractalInput, val)
     return FractalInput(fi.index, fi.name, val)
 end

@@ -50,7 +50,7 @@ constant_disk = Fae.@fum function constant_disk(x, y; radius = 1, pos = (0,0),
 end
 
 # Returns back H, colors, and probs for a circle
-function define_circle(pos::Vector{FT}, radius::FT, color;
+function define_circle(pos::Union{Vector{FT}, Tuple}, radius::FT, color;
                        AT = Array, name = "circle",
                        chosen_fx = :constant_disk,
                        diagnostic = false) where FT <: AbstractFloat
@@ -92,11 +92,12 @@ function define_circle_operators(pos::Union{Vector{FT}, Tuple}, radius;
 
 end
 
-function update_circle!(H, pos, radius)
+function update_circle!(H::Hutchinson, pos::Union{Vector{FT}, Tuple},
+                        radius::FT) where FT <: AbstractFloat
     update_circle!(H, pos, radius, nothing)
 end
 
-function update_circle!(H::Hutchinson, pos::Vector{F},
+function update_circle!(H::Hutchinson, pos::Union{Vector{F}, Tuple},
                         radius, color::Union{Array{F}, Nothing};
                         FT = Float64, AT = Array) where F <: AbstractFloat
 
