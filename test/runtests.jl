@@ -6,4 +6,4 @@ using KernelAbstractions
 using Fae
 
 include("histogram_tests.jl")
-include("affine_tests.jl")
+include("random_tests.jl")
