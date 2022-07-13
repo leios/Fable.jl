@@ -1,6 +1,6 @@
 # General Information
 
-The current Fae.jl API is designed such that the use can write down any set of equations to be dispatched onto either their GPU or CPU depending on available hardware.
+The current Fae.jl API is designed such that the user can write down any set of equations to be dispatched onto either their GPU or CPU depending on available hardware.
 Note that the API is still unstable and subject to change, but there are several general guiding principles we follow that should not be changing in the near future.
 There are (of course) a few caveats:
 
