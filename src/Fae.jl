@@ -3,7 +3,15 @@ module Fae
 using KernelAbstractions
 using KernelAbstractions: @atomic
 using CUDA
-using CUDAKernels
+if has_cuda_gpu()
+    using CUDAKernels
+end
+
+using AMDGPU
+if has_rocm_gpu()
+    using ROCKernels
+end
+
 using MacroTools
 using DataStructures
 using LinearAlgebra
