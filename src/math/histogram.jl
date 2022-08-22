@@ -100,9 +100,12 @@ function histogram!(histogram_output, input; dims = ndims(histogram_output),
     AT = Array
     if isa(input, Array)
         kernel! = naive_histogram_kernel!(CPU(), numcores)
-    else
+    elseif has_cuda_gpu() && isa(input, CuArray)
         AT = CuArray
         kernel! = naive_histogram_kernel!(CUDADevice(), numthreads)
+    elseif has_rocm_gpu() && isa(input, ROCArray)
+        AT = ROCArray
+        kernel! = naive_histogram_kernel!(ROCDevice(), numthreads)
     end
     kernel!(histogram_output, input, AT(bounds), AT(bin_widths), dims,
             ndrange=size(input)[1])
