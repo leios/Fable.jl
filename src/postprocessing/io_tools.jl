@@ -47,10 +47,8 @@ end
 function logscale_coalesce!(pix, layer; numcores = 4, numthreads = 256)
     if isa(pix.reds, Array)
         kernel! = logscale_coalesce_kernel!(CPU(), numcores)
-    elseif has_cuda_gpu() && isa(pix.reds, CuArray)
+    else
         kernel! = logscale_coalesce_kernel!(CUDADevice(), numthreads)
-    elseif has_rocm_gpu() && isa(pix.reds, ROCArray)
-        kernel! = logscale_coalesce_kernel!(ROCDevice(), numthreads)
     end
 
     kernel!(pix.reds, pix.greens, pix.blues, pix.alphas, pix.values,

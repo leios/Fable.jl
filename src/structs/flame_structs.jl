@@ -1,6 +1,6 @@
 # Right now, points just holds positions... Probably can remove this abstraction
 mutable struct Points
-    positions::Union{Array{}, CuArray{}, ROCArray{}} where T <: AbstractFloat
+    positions::Union{Array{}, CuArray{}} where T <: AbstractFloat
 
 end
 

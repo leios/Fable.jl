@@ -23,10 +23,8 @@ function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
     max_range = maximum(bounds)*10
     if isa(ps.positions, Array)
         kernel! = naive_chaos_kernel!(CPU(), numcores)
-    elseif has_cuda_gpu() && isa(ps.positions, CuArray)
+    else
         kernel! = naive_chaos_kernel!(CUDADevice(), numthreads)
-    elseif has_rocm_gpu() && isa(ps.positions, ROCArray)
-        kernel! = naive_chaos_kernel!(ROCDevice(), numthreads)
     end
 
     if diagnostic
@@ -203,10 +201,10 @@ function fractal_flame!(pix::Pixels, H::Hutchinson, num_particles::Int,
     end
 
     println("kernel time:")
-    @time wait(iterate!(pts, pix, H, num_iterations,
-                        bounds, bin_widths, H2,
-                        numcores=numcores, numthreads=numthreads,
-                        num_ignore=num_ignore, diagnostic = diagnostic))
+    CUDA.@time wait(iterate!(pts, pix, H, num_iterations,
+                             bounds, bin_widths, H2,
+                             numcores=numcores, numthreads=numthreads,
+                             num_ignore=num_ignore, diagnostic = diagnostic))
 
     return pix
 

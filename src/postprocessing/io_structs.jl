@@ -3,11 +3,11 @@ export Pixels, open_video, close_video
 # Note: the rgb components needed to be spread into separate arrays for indexing
 #       reasons in the KA kernels
 mutable struct Pixels
-    values::Union{Array{I}, CuArray{I}, ROCArray{I}} where I <: Integer
-    reds::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
-    greens::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
-    blues::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
-    alphas::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
+    values::Union{Array{I}, CuArray{I}} where I <: Integer
+    reds::Union{Array{T}, CuArray{T}} where T <: AbstractFloat
+    greens::Union{Array{T}, CuArray{T}} where T <: AbstractFloat
+    blues::Union{Array{T}, CuArray{T}} where T <: AbstractFloat
+    alphas::Union{Array{T}, CuArray{T}} where T <: AbstractFloat
     gamma::Number
     logscale::Bool
     calc_max_value::Bool
