@@ -33,4 +33,6 @@ notes
 output/*
 video_ideas/*
 docs/build/
+
+LocalPreferences.toml
 *.bak

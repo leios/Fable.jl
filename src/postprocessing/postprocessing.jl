@@ -16,9 +16,9 @@ function zero!(pix; numthreads = 256, numcores = 4)
     
     if isa(pix.reds, Array)
         kernel! = zero_kernel!(CPU(), numcores)
-    elseif has_cuda_device() && isa(pix.reds, CuArray)
+    elseif has_cuda_gpu() && isa(pix.reds, CuArray)
         kernel! = zero_kernel!(CUDADevice(), numthreads)
-    elseif has_rocm_device() && isa(pix.reds, ROCArray)
+    elseif has_rocm_gpu() && isa(pix.reds, ROCArray)
         kernel! = zero_kernel!(ROCDevice(), numthreads)
     end
 

@@ -55,8 +55,7 @@ function main(num_particles, num_iterations, total_frames, AT;
         theta = set(theta, pi/4)
 
         update_fis!(smear_transform, [object_position, scale, theta])
-        #fractal_flame!(pix, ball, smear_transform, num_particles,
-        fractal_flame!(pix, ball, num_particles,
+        fractal_flame!(pix, ball, smear_transform, num_particles,
                        num_iterations, bounds, res;
                        AT = AT, FT = FT)
 
