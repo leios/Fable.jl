@@ -1,8 +1,10 @@
 export Pixels, open_video, close_video
 
+abstract type AbstractLayer end;
+
 # Note: the rgb components needed to be spread into separate arrays for indexing
 #       reasons in the KA kernels
-mutable struct Pixels
+mutable struct Pixels <: AbstractLayer
     values::Union{Array{I}, CuArray{I}, ROCArray{I}} where I <: Integer
     reds::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
     greens::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
@@ -12,6 +14,10 @@ mutable struct Pixels
     logscale::Bool
     calc_max_value::Bool
     max_value::Number
+end
+
+mutable struct Background <: AbstractLayer
+    color::Union{RGB, RGBA}
 end
 
 # Creating a default call

@@ -1,4 +1,31 @@
-export write_image, write_video!
+export write_image, write_video!, zero!
+
+@kernel function zero_kernel!(pix_values, pix_reds, pix_greens, pix_blues)
+    tid = @index(Global, Cartesian)
+    pix_values[tid] = 0
+    pix_reds[tid] = 0
+    pix_greens[tid] = 0
+    pix_blues[tid] = 0
+end
+
+function zero!(a::Array{T}) where T <: Union{RGB, RGB{N0f8}}
+    a[:] .= RGB(0)
+end
+
+function zero!(pix; numthreads = 256, numcores = 4)
+    
+    if isa(pix.reds, Array)
+        kernel! = zero_kernel!(CPU(), numcores)
+    elseif has_cuda_gpu() && isa(pix.reds, CuArray)
+        kernel! = zero_kernel!(CUDADevice(), numthreads)
+    elseif has_rocm_gpu() && isa(pix.reds, ROCArray)
+        kernel! = zero_kernel!(ROCDevice(), numthreads)
+    end
+
+    kernel!(pix.values, pix.reds, pix.greens, pix.blues,
+            ndrange = size(pix.values))
+
+end
 
 function to_rgb(r,g,b)
     return RGB(r,g,b)
@@ -37,14 +64,14 @@ function to_rgb!(canvas, pix)
     canvas .= to_rgb.(pix.reds, pix.greens, pix.blues, pix.alphas)
 end
 
-function coalesce!(pix, layer)
+function coalesce!(pix, layer::Pixels)
     pix.reds .= (1 .- layer.alphas) .* pix.reds .+ layer.alphas .* layer.reds
     pix.greens .= (1 .- layer.alphas) .* pix.greens .+ layer.alphas .* layer.greens
     pix.blues .= (1 .- layer.alphas) .* pix.blues .+ layer.alphas .* layer.blues
     pix.alphas .= max.(pix.alphas, layer.alphas)
 end
 
-function logscale_coalesce!(pix, layer; numcores = 4, numthreads = 256)
+function logscale_coalesce!(pix, layer::Pixels; numcores = 4, numthreads = 256)
     if isa(pix.reds, Array)
         kernel! = logscale_coalesce_kernel!(CPU(), numcores)
     elseif has_cuda_gpu() && isa(pix.reds, CuArray)
@@ -110,9 +137,9 @@ function add_layer!(pix::Pixels, layer::Pixels; numcores = 4, numthreads = 256)
 
 end
 
-function write_image(pixels::Vector{Pixels}, filename;
+function write_image(pixels::Vector{AL}, filename;
                      img = fill(RGB(0,0,0), size(pixels[1].values)),
-                     numcores = 4, numthreads = 256)
+                     numcores = 4, numthreads = 256) where AL <: AbstractLayer
 
     for i = 1:length(pixels)
         add_layer!(pixels[1], pixels[i])
@@ -136,4 +163,3 @@ function write_video!(v::VideoParams, pixels::Vector{Pixels};
     println(v.frame_count)
     v.frame_count += 1
 end
-
