@@ -49,13 +49,13 @@ function main()
                               FT = FT, AT = AT)
         println(H.color_set)
 
-        pix = Fae.fractal_flame(H, num_particles, num_iterations,
+        layer = Fae.fractal_flame(H, num_particles, num_iterations,
                                 bounds, res; AT = AT, FT = FT)
 
         filename = "check"*lpad(i-1,5,"0")*".png"
 
         println("image time:")
-        @time Fae.write_image([pix], filename)
+        @time Fae.write_image([layer], filename)
     end
 end
 

@@ -43,10 +43,9 @@ include("objects/triangle.jl")
 include("objects/barnsley.jl")
 include("objects/lollipeople.jl")
 
-# Postprocessing
-include("postprocessing/io_structs.jl")
-include("postprocessing/postprocessing.jl")
-include("postprocessing/io_tools.jl")
+# 
+include("io/io_structs.jl")
+include("io/io_tools.jl")
 
 # Main file
 include("fractal_flame.jl")

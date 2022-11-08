@@ -1,7 +1,7 @@
 using Fae, CUDA
 using Fae: Colors
 
-function create_sky!(pix, num_particles, num_iterations, reflect_operation;
+function create_sky!(layer, num_particles, num_iterations, reflect_operation;
                      AT = Array, FT = Float32,
                      bounds = [-1.125 1.125; -2 2], res = (1080, 1920))
     sky_color = @fum function sky_color(; bound = 1.125)
@@ -21,12 +21,12 @@ function create_sky!(pix, num_particles, num_iterations, reflect_operation;
 
     skybox = Fae.define_rectangle(pos, rotation, scale_x, scale_y, sky_color;
                                   AT = AT, name = "sky")
-    fractal_flame!(pix, skybox, reflect_operation,
+    fractal_flame!(layer, skybox, reflect_operation,
                    num_particles, num_iterations, bounds, res;
                    AT = AT, FT = FT)
 end
 
-function create_stars!(pix, num_stars, num_iterations, reflect_operation;
+function create_stars!(layer, num_stars, num_iterations, reflect_operation;
                      AT = Array, FT = Float32,
                      bounds = [-1.125 1.125; -2 2], res = (1080, 1920))
 
@@ -37,13 +37,13 @@ function create_stars!(pix, num_stars, num_iterations, reflect_operation;
 
     skybox = Fae.define_rectangle(pos, rotation, scale_x, scale_y, (1,1,1,1);
                                   AT = AT, name = "stars")
-    fractal_flame!(pix, skybox, reflect_operation,
+    fractal_flame!(layer, skybox, reflect_operation,
                    num_stars, num_iterations, bounds, res;
                    AT = AT, FT = FT)
 
 end
 
-function create_moon!(pix, num_particles, num_iterations, reflect_operation;
+function create_moon!(layer, num_particles, num_iterations, reflect_operation;
                      AT = Array, FT = Float32,
                      bounds = [-1.125 1.125; -2 2], res = (1080, 1920))
 
@@ -58,7 +58,7 @@ function create_moon!(pix, num_particles, num_iterations, reflect_operation;
     radius = 0.4
 
     moon = define_circle(pos, radius, moon_color; AT = AT, name = "moon")
-    fractal_flame!(pix, moon, reflect_operation,
+    fractal_flame!(layer, moon, reflect_operation,
                    num_particles, num_iterations, bounds, res;
                    AT = AT, FT = FT)
 
@@ -72,7 +72,7 @@ scale_and_translate = @fo function scale_and_translate(x, y;
     y = scale_y*y + translation[1]
 end
 
-function create_forest!(pix, num_trees, num_particles, num_iterations,
+function create_forest!(layer, num_trees, num_particles, num_iterations,
                         reflect_operation; AT = Array, FT = Float32,
                         bounds = [-1.125 1.125; -2 2], res = (1080, 1920),
                         diagnostic = false)
@@ -107,7 +107,7 @@ function create_forest!(pix, num_trees, num_particles, num_iterations,
     H_2 = Hutchinson([tree_2, reflect_operation]; diagnostic = diagnostic,
                      final = true)
 
-    fractal_flame!(pix, tree, H_2,
+    fractal_flame!(layer, tree, H_2,
                    num_particles, num_iterations,
                    bounds, res; AT = AT, FT = FT)
 
@@ -121,24 +121,24 @@ function main(num_particles, num_iterations; AT = Array, FT = Float32)
     fo_2 = FractalOperator(Flames.identity, Colors.previous, 0.5)
     reflect_operation = fee([fo_1, fo_2]; name = "reflect", final = true)
 
-    sky_pix = Pixels((1080,1920); AT = AT, FT = FT, logscale = false)
-    create_sky!(sky_pix, num_particles, num_iterations, reflect_operation;
+    sky_layer = FractalLayer((1080,1920); AT = AT, FT = FT, logscale = false)
+    create_sky!(sky_layer, num_particles, num_iterations, reflect_operation;
                 AT = AT)
 
-    star_pix = Pixels((1080,1920); AT = AT, FT = FT, logscale = false)
-    create_stars!(star_pix, 10, 100, reflect_operation; AT = AT)
+    star_layer = FractalLayer((1080,1920); AT = AT, FT = FT, logscale = false)
+    create_stars!(star_layer, 10, 100, reflect_operation; AT = AT)
 
-    moon_pix = Pixels((1080,1920); AT = AT, FT = FT, logscale = false)
-    create_moon!(moon_pix, Int(0.5*num_particles), Int(0.5*num_iterations),
+    moon_layer = FractalLayer((1080,1920); AT = AT, FT = FT, logscale = false)
+    create_moon!(moon_layer, Int(0.5*num_particles), Int(0.5*num_iterations),
                  reflect_operation; AT = AT)
 
-    #forest_pix = Pixels((1080,1920); AT = AT, FT = FT, logscale = false)
-    #create_forest!(forest_pix, 10, 10*num_particles, 10*num_iterations,
+    #forest_layer = FractalLayer((1080,1920); AT = AT, FT = FT, logscale = false)
+    #create_forest!(forest_layer, 10, 10*num_particles, 10*num_iterations,
     #               reflect_operation; AT = AT)
 
     filename = "check.png"
 
-    @time Fae.write_image([sky_pix, star_pix, moon_pix], filename)
-    #@time Fae.write_image([sky_pix, star_pix, moon_pix, forest_pix], filename)
-    #@time Fae.write_image([forest_pix], filename)
+    @time Fae.write_image([sky_layer, star_layer, moon_layer], filename)
+    #@time Fae.write_image([sky_layer, star_layer, moon_layer, forest_layer], filename)
+    #@time Fae.write_image([forest_layer], filename)
 end

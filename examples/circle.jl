@@ -32,12 +32,12 @@ function main()
                         [[1.0, 0, 1.0, 1.0],[0,1.0, 0, 1.0]], (0.75, 0.25);
                         final = true, diagnostic = true, AT = AT)
 
-    pix = Fae.fractal_flame(H, H2, num_particles, num_iterations,
+    layer = Fae.fractal_flame(H, H2, num_particles, num_iterations,
                             bounds, res; AT = AT, FT = FT)
 
     filename = "check.png"
 
-    @time Fae.write_image([pix], filename)
+    @time Fae.write_image([layer], filename)
 end
 
 main()

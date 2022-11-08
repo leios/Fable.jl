@@ -20,11 +20,11 @@ function main()
 
     filename = "check.png"
 
-    pix = Fae.fractal_flame(H, num_particles, num_iterations, bounds,
+    layer = Fae.fractal_flame(H, num_particles, num_iterations, bounds,
                             res; AT = AT, FT = FT)
 
     println("Image generation time:")
-    @time Fae.write_image([pix], filename)
+    @time Fae.write_image([layer], filename)
 
 end
 

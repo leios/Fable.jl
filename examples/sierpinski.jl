@@ -11,7 +11,7 @@ function main(num_particles, num_iterations, num_frames, AT)
     bounds = [-1.125 1.125; -2 2]
     res = (1080, 1920)
 
-    pix = Pixels(res; AT = AT, logscale = false, FT = FT)
+    layer = FractalLayer(res; AT = AT, logscale = false, FT = FT)
 
     theta = 0
     r = 1
@@ -52,14 +52,14 @@ function main(num_particles, num_iterations, num_frames, AT)
 
         update!(final_H, [H, H_2])
 
-        Fae.fractal_flame!(pix, final_H, num_particles, num_iterations,
+        Fae.fractal_flame!(layer, final_H, num_particles, num_iterations,
                            bounds, res; AT = AT, FT = FT)
 
 
         filename = "check"*lpad(i-1,5,"0")*".png"
 
-        @time Fae.write_image([pix], filename)
+        @time Fae.write_image([layer], filename)
 
-        zero!(pix)
+        zero!(layer)
     end
 end

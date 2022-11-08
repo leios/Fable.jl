@@ -40,11 +40,11 @@ println(H2)
 for i = 1:frames
     t = 1.5*(i-1)/frames
 
-    pix = fractal_flame(H, H2, num_particles, num_iterations,
+    layer = fractal_flame(H, H2, num_particles, num_iterations,
                         bounds, res; AT = AT, FT = FT)
 
     println("appending to video:")
-    @time write_video!(video_out, [pix])
+    @time write_video!(video_out, [layer])
 
 end
 

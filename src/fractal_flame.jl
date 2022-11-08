@@ -15,7 +15,7 @@ export fractal_flame, fractal_flame!
     return flag
 end
 
-function iterate!(ps::Points, pxs::Pixels, H::Hutchinson, n,
+function iterate!(ps::Points, pxs::FractalLayer, H::Hutchinson, n,
                   bounds, bin_widths, H2::Hutchinson;
                   diagnostic = false, numcores = 4, numthreads=256,
                   num_ignore = 20)
@@ -43,8 +43,8 @@ end
 @kernel function naive_chaos_kernel!(points, n, H1, H1_clrs, H1_probs,
                                      H1_symbols, H1_fnums, H2, H2_clrs,
                                      H2_symbols, H2_probs, H2_fnums,
-                                     pixel_values, pixel_reds, pixel_greens,
-                                     pixel_blues, pixel_alphas, bounds,
+                                     layer_values, layer_reds, layer_greens,
+                                     layer_blues, layer_alphas, bounds,
                                      bin_widths, num_ignore, max_range)
 
     tid = @index(Global,Linear)
@@ -52,7 +52,7 @@ end
 
     @uniform dims = size(points)[2]
 
-    @uniform FT = eltype(pixel_reds)
+    @uniform FT = eltype(layer_reds)
 
     @uniform gs = @groupsize()[1]
     shared_tile = @localmem FT (gs, 4)
@@ -107,22 +107,22 @@ end
                                              bounds, dims)
             if i > num_ignore && on_img_flag
 
-                @inbounds bin = find_bin(pixel_values, shared_tile[lid,3],
+                @inbounds bin = find_bin(layer_values, shared_tile[lid,3],
                                          shared_tile[lid,4], bounds,
                                          bin_widths)
-                if bin > 0 && bin < length(pixel_values)
+                if bin > 0 && bin < length(layer_values)
 
-                    @inbounds @atomic pixel_values[bin] += 1
-                    @inbounds @atomic pixel_reds[bin] +=
+                    @inbounds @atomic layer_values[bin] += 1
+                    @inbounds @atomic layer_reds[bin] +=
                                   shared_colors[lid, 1] *
                                   shared_colors[lid, 4]
-                    @inbounds @atomic pixel_greens[bin] +=
+                    @inbounds @atomic layer_greens[bin] +=
                                   shared_colors[lid, 2] *
                                   shared_colors[lid, 4]
-                    @inbounds @atomic pixel_blues[bin] +=
+                    @inbounds @atomic layer_blues[bin] +=
                                   shared_colors[lid, 3] *
                                   shared_colors[lid, 4]
-                    @inbounds @atomic pixel_alphas[bin] += shared_colors[lid, 4]
+                    @inbounds @atomic layer_alphas[bin] += shared_colors[lid, 4]
                 end
             end
         end
@@ -139,21 +139,21 @@ function fractal_flame(H1::Hutchinson, H2::Hutchinson, num_particles::Int,
                        num_ignore = 20, numthreads = 256, logscale = true, 
                        numcores = 4)
 
-    pix = Pixels(res; AT = AT, FT = FT, logscale = logscale)
+    layer = FractalLayer(res; AT = AT, FT = FT, logscale = logscale)
 
-    fractal_flame!(pix, H1, num_particles, num_iterations, bounds, res;
+    fractal_flame!(layer, H1, num_particles, num_iterations, bounds, res;
                    dims = dims, AT = AT, FT = FT, H2 = H2,
                    num_ignore = num_ignore, diagnostic = diagnostic,
                    numthreads = numthreads, numcores = numcores)
 end
 
-function fractal_flame!(pix::Pixels, H1::Hutchinson, H2::Hutchinson,
+function fractal_flame!(layer::FractalLayer, H1::Hutchinson, H2::Hutchinson,
                         num_particles::Int, num_iterations::Int, bounds, res;
                         dims = 2, AT = Array, FT = Float32, diagnostic = false, 
                         num_ignore = 20, numthreads = 256,
                         numcores = 4)
 
-    fractal_flame!(pix, H1, num_particles, num_iterations, bounds, res;
+    fractal_flame!(layer, H1, num_particles, num_iterations, bounds, res;
                    dims = dims, AT = AT, FT = FT, H2 = H2,
                    num_ignore = num_ignore, diagnostic = diagnostic,
                    numthreads = numthreads, numcores = numcores)
@@ -166,9 +166,9 @@ function fractal_flame(H::Hutchinson, num_particles::Int,
                        num_ignore = 20, diagnostic = false, logscale = true, 
                        numthreads = 256, numcores = 4)
 
-    pix = Pixels(res; AT = AT, FT = FT)
+    layer = FractalLayer(res; AT = AT, FT = FT)
 
-    fractal_flame!(pix, H, num_particles, num_iterations, bounds, res;
+    fractal_flame!(layer, H, num_particles, num_iterations, bounds, res;
                    dims = dims, AT = AT, FT = FT, H2 = H2,
                    num_ignore = num_ignore, diagnostic = diagnostic,
                    numthreads = numthreads, numcores = numcores)
@@ -188,7 +188,7 @@ end
 #   (Fae.swirl, Fae.heart, Fae.polar, Fae.horseshoe),
 #   [RGB(0,1,0), RGB(0,0,1), RGB(1,0,1), RGB(1,0,0)],
 #   [0.25, 0.25, 0.25, 0.25])
-function fractal_flame!(pix::Pixels, H::Hutchinson, num_particles::Int,
+function fractal_flame!(layer::FractalLayer, H::Hutchinson, num_particles::Int,
                         num_iterations::Int, bounds, res;
                         dims = 2, AT = Array, FT = Float32,
                         H2 = Hutchinson(), num_ignore = 20, diagnostic = false,
@@ -203,12 +203,12 @@ function fractal_flame!(pix::Pixels, H::Hutchinson, num_particles::Int,
     end
 
     println("kernel time:")
-    @time wait(iterate!(pts, pix, H, num_iterations,
+    @time wait(iterate!(pts, layer, H, num_iterations,
                         bounds, bin_widths, H2,
                         numcores=numcores, numthreads=numthreads,
                         num_ignore=num_ignore, diagnostic = diagnostic))
 
-    return pix
+    return layer
 
 end
 

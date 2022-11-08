@@ -32,13 +32,13 @@ function main()
     #H = Fae.define_barnsley(gradient; AT = AT)
     #H = Fae.define_sierpinski([-1.,-1], [-1.,1], [0.,0], gradient; AT = AT)
 
-    pix = Fae.fractal_flame(H, num_particles, num_iterations,
+    layer = Fae.fractal_flame(H, num_particles, num_iterations,
                             bounds, res; AT = AT, FT = FT)
 
     filename = "check.png"
 
     println("image time:")
-    @time Fae.write_image([pix], filename)
+    @time Fae.write_image([layer], filename)
 end
 
 main()

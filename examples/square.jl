@@ -1,4 +1,4 @@
-using Fae, Images, CUDA
+using Fae, Images
 
 # num_particles is the number of points being tracked by the chaos game
 # num_iterations is the number of times each point moves in space
@@ -39,11 +39,11 @@ function main(num_particles, num_iterations, AT; dark = true)
     # To combine a different way, use the final_H defined here
     # final_H = fee([H, H2])
 
-    pix = Pixels(res; AT = AT, logscale = false, FT = FT)
+    layer = FractalLayer(res; AT = AT, logscale = false, FT = FT)
 
-    Fae.fractal_flame!(pix, H, H2, num_particles, num_iterations,
+    Fae.fractal_flame!(layer, H, H2, num_particles, num_iterations,
                        bounds, res; AT = AT, FT = FT)
 
     filename = "out.png"
-    write_image([pix], filename)
+    write_image([layer], filename)
 end
