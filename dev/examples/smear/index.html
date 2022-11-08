@@ -6,14 +6,14 @@ function main(num_particles, num_iterations, total_frames, AT;
 </code></pre><p>Now I will define the image and video parameters:</p><pre><code class="nohighlight hljs">    # define image domain
     res = (1080, 1920)
     bounds = [-4.5 4.5; -8 8]
-    pix = Pixels(res; AT = AT, logscale = false, FT = FT)
+    layer = FractalLayer(res; AT = AT, logscale = false, FT = FT)
 
     # defining video parameters
     if output_type == :video
         video_out = open_video(res; framerate = 30, filename = &quot;out.mp4&quot;,
                                encoder_options = (crf=23, preset=&quot;medium&quot;))
     end
-</code></pre><p>Note that the video will stitch together a series of frames, so we still need the pixels from <code>pix</code> hanging around. Now we define the ball:</p><pre><code class="nohighlight hljs">    # define ball parameters
+</code></pre><p>Note that the video will stitch together a series of frames, so we still need the pixels from <code>layer</code> hanging around. Now we define the ball:</p><pre><code class="nohighlight hljs">    # define ball parameters
     radius = 1.0
     pos = [-2.0, -2.0]
 
@@ -64,19 +64,19 @@ end
         theta = set(theta, pi/4)
 
         update_fis!(smear_transform, [object_position, scale, theta])
-        fractal_flame!(pix, ball, smear_transform, num_particles,
+        fractal_flame!(layer, ball, smear_transform, num_particles,
                        num_iterations, bounds, res;
                        AT = AT, FT = FT)
 
         if output_type == :video
-            write_video!(video_out, [pix])
+            write_video!(video_out, [layer])
         elseif output_type == :image
             filename = &quot;check&quot;*lpad(i,5,&quot;0&quot;)*&quot;.png&quot;
-            write_image([pix], filename)
+            write_image([layer], filename)
         end
 
         # clearing frame
-        zero!(pix)
+        zero!(layer)
     end
 </code></pre><p>This does 4 things:</p><ol><li>It updates the circle at every step.</li><li>It re<code>set</code>s the <code>object_position</code>, <code>scale</code>, and <code>theta</code> for the <code>smear_trasnform</code>.</li><li>It outputs to either video or image.</li><li>It sets the canvas values back to 0 for the next frame</li></ol><p>Once this is done, all we need to do is close the video (if we were outputting to video at all:</p><pre><code class="nohighlight hljs">    if (output_type == :video)
         close_video(video_out)
@@ -90,7 +90,7 @@ function main(num_particles, num_iterations, total_frames, AT;
     # define image domain
     res = (1080, 1920)
     bounds = [-4.5 4.5; -8 8]
-    pix = Pixels(res; AT = AT, logscale = false, FT = FT)
+    layer = FractalLayer(res; AT = AT, logscale = false, FT = FT)
 
     # defining video parameters
     if output_type == :video
@@ -138,24 +138,24 @@ function main(num_particles, num_iterations, total_frames, AT;
         theta = set(theta, pi/4)
 
         update_fis!(smear_transform, [object_position, scale, theta])
-        #fractal_flame!(pix, ball, smear_transform, num_particles,
-        fractal_flame!(pix, ball, num_particles,
+        #fractal_flame!(layer, ball, smear_transform, num_particles,
+        fractal_flame!(layer, ball, num_particles,
                        num_iterations, bounds, res;
                        AT = AT, FT = FT)
 
         if output_type == :video
-            write_video!(video_out, [pix])
+            write_video!(video_out, [layer])
         elseif output_type == :image
             filename = &quot;check&quot;*lpad(i,5,&quot;0&quot;)*&quot;.png&quot;
-            write_image([pix], filename)
+            write_image([layer], filename)
         end
 
         # clearing frame
-        zero!(pix)
+        zero!(layer)
     end
 
     if (output_type == :video)
         close_video(video_out)
     end
 
-end</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../swirled_square/">« Rotating Square</a><a class="docs-footer-nextpage" href="../../research_directions/">Research Directions »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Wednesday 2 November 2022 16:22">Wednesday 2 November 2022</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../swirled_square/">« Rotating Square</a><a class="docs-footer-nextpage" href="../../research_directions/">Research Directions »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Tuesday 8 November 2022 16:04">Tuesday 8 November 2022</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
