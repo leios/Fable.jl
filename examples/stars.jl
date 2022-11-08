@@ -38,7 +38,7 @@ function main()
     bounds = [-1.125 1.125; -2 2]
     res = (1080, 1920)
 
-    pix = Pixels(res; AT = AT, FT = FT)
+    layer = FractalLayer(res; AT = AT, FT = FT)
 
     pos = [0, 0.]
     color = [1., 1, 1, 1]
@@ -49,12 +49,12 @@ function main()
 
     H2 = create_stars(1000; max_range = 1, scale_factor = 0.1)
 
-    fractal_flame!(pix, H, H2, num_particles, num_iterations,
+    fractal_flame!(layer, H, H2, num_particles, num_iterations,
                    bounds, res; AT = AT, FT = FT)
 
     filename = "check.png"
 
-    @time write_image([pix], filename)
+    @time write_image([layer], filename)
 end
 
 main()

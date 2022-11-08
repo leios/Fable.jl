@@ -33,9 +33,9 @@ function main()
         filename = "check"*lpad(curr_frame,5,"0")*".png"
         curr_frame += 1
  
-        pix = Fae.fractal_flame(H, num_particles, num_iterations,
+        layer = Fae.fractal_flame(H, num_particles, num_iterations,
                                 bounds, res; AT = AT, FT = FT)
-        @time Fae.write_image([pix], filename)
+        @time Fae.write_image([layer], filename)
     end
 
     offset_array = zeros(6).+3.05
@@ -74,14 +74,14 @@ function main()
                                 final = true, diagnostic = true, AT = AT)
 
 
-            pix = Fae.fractal_flame(H, H2, num_particles, num_iterations,
+            layer = Fae.fractal_flame(H, H2, num_particles, num_iterations,
                                     bounds, res; AT = AT, FT = FT)
 
             filename = "check"*lpad(curr_frame,5,"0")*".png"
             curr_frame += 1
 
             println("image time:")
-            @time Fae.write_image([pix], filename)
+            @time Fae.write_image([layer], filename)
         end
     end
 
@@ -124,13 +124,13 @@ function main()
                             final = true, diagnostic = true, AT = AT)
 
 
-        pix = Fae.fractal_flame(H, H2, num_particles, num_iterations,
+        layer = Fae.fractal_flame(H, H2, num_particles, num_iterations,
                                 bounds, res; AT = AT, FT = FT)
 
         filename = "check"*lpad(curr_frame,5,"0")*".png"
         curr_frame += 1
  
-        @time Fae.write_image([pix], filename)
+        @time Fae.write_image([layer], filename)
     end
 
     offset_array[:] .-= 3.05
@@ -169,14 +169,14 @@ function main()
                                 final = true, diagnostic = true, AT = AT)
 
 
-            pix = Fae.fractal_flame(H, H2, num_particles, num_iterations,
+            layer = Fae.fractal_flame(H, H2, num_particles, num_iterations,
                                     bounds, res; AT = AT, FT = FT)
 
             filename = "check"*lpad(curr_frame,5,"0")*".png"
             curr_frame += 1
 
             println("image time:")
-            @time Fae.write_image([pix], filename)
+            @time Fae.write_image([layer], filename)
         end
     end
 

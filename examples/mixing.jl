@@ -33,10 +33,10 @@ function main()
         Fae.update_fis!(H_2, [factor])
         filename = "check"*lpad(i-1,5,"0")*".png"
 
-        pix = Fae.fractal_flame(H, H_2, num_particles, num_iterations, bounds,
+        layers = Fae.fractal_flame(H, H_2, num_particles, num_iterations, bounds,
                                 res; AT = AT, FT = FT)
 
-        Fae.write_image([pix], filename)
+        Fae.write_image([layers], filename)
     end
 
 end

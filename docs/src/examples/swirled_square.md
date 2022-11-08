@@ -50,11 +50,11 @@ Notationally, we are using the variable `H` to designate a Hutchinson operator, 
 Finally, we solve the function system with the `fractal_flame(...)` function and write it to an image:
 
 ```
-    pix = Fae.fractal_flame(H, num_particles, num_iterations,
+    layer = Fae.fractal_flame(H, num_particles, num_iterations,
                             bounds, res; AT = AT, FT = FT)
 
     filename = "out.png"
-    write_image([pix], filename)
+    write_image([layer], filename)
 
 ```
 
@@ -94,12 +94,12 @@ function main(num_particles, num_iterations, AT; dark = true)
 
     H = Fae.define_rectangle(pos, rotation, scale_x, scale_y, colors; AT = AT)
 
-    pix = Fae.fractal_flame(H, num_particles, num_iterations,
+    layer = Fae.fractal_flame(H, num_particles, num_iterations,
                             bounds, res; AT = AT, FT = FT)
 
     filename = "out.png"
-    write_image([pix], filename;
-                img = fill(RGBA(0,0,0,0), size(pix.values)))
+    write_image([layer], filename;
+                img = fill(RGBA(0,0,0,0), size(layer.values)))
 end
 
 ```
@@ -132,7 +132,7 @@ The code here does not change significantly, except that we create a `H2` and ad
                     (1.0,);
                     final = true, diagnostic = true, AT = AT, name = "2")
 
-    pix = Fae.fractal_flame(H1, H2, num_particles, num_iterations,
+    layer = Fae.fractal_flame(H1, H2, num_particles, num_iterations,
                             bounds, res; AT = AT, FT = FT)
 ...
 ```
@@ -162,7 +162,7 @@ If we want, we can make `H2` operate on the object, itself, by creating a new fr
 ```
     final_H = fee([H, H2])
 
-    pix = Fae.fractal_flame(final_H, num_particles, num_iterations,
+    layer = Fae.fractal_flame(final_H, num_particles, num_iterations,
                             bounds, res; AT = AT, FT = FT)
 ```
 
@@ -207,11 +207,11 @@ function main(num_particles, num_iterations, AT; dark = true)
                     diagnostic = true, AT = AT, name = "2")
     final_H = fee([H, H2])
 
-    pix = Fae.fractal_flame(final_H, num_particles, num_iterations,
+    layer = Fae.fractal_flame(final_H, num_particles, num_iterations,
                             bounds, res; AT = AT, FT = FT)
 
     filename = "out.png"
-    write_image([pix], filename)
+    write_image([layer], filename)
 end
 
 ```

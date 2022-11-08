@@ -22,7 +22,7 @@ function main()
     bounds = [0 10; -8 8]
     res = (1080, 1920)
 
-    pix = Pixels(res; AT = AT, FT = FT)
+    layer = FractalLayer(res; AT = AT, FT = FT)
 
     pos = [0, 0.]
     color = [1., 1, 1, 1]
@@ -45,12 +45,12 @@ function main()
 
     #println(fo_1, '\n', fo_2)
 
-    fractal_flame!(pix, H, H2, num_particles, num_iterations,
+    fractal_flame!(layer, H, H2, num_particles, num_iterations,
                    bounds, res; AT = AT, FT = FT)
 
     filename = "check.png"
 
-    @time write_image([pix], filename)
+    @time write_image([layer], filename)
 end
 
 main()

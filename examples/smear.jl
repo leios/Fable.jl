@@ -7,7 +7,7 @@ function main(num_particles, num_iterations, total_frames, AT;
     # define image domain
     res = (1080, 1920)
     bounds = [-4.5 4.5; -8 8]
-    pix = Pixels(res; AT = AT, logscale = false, FT = FT)
+    layer = FractalLayer(res; AT = AT, logscale = false, FT = FT)
 
     # defining video parameters
     if output_type == :video
@@ -55,19 +55,19 @@ function main(num_particles, num_iterations, total_frames, AT;
         theta = set(theta, pi/4)
 
         update_fis!(smear_transform, [object_position, scale, theta])
-        fractal_flame!(pix, ball, smear_transform, num_particles,
+        fractal_flame!(layer, ball, smear_transform, num_particles,
                        num_iterations, bounds, res;
                        AT = AT, FT = FT)
 
         if output_type == :video
-            write_video!(video_out, [pix])
+            write_video!(video_out, [layer])
         elseif output_type == :image
             filename = "check"*lpad(i,5,"0")*".png"
-            write_image([pix], filename)
+            write_image([layer], filename)
         end
 
         # clearing frame
-        zero!(pix)
+        zero!(layer)
     end
 
     if (output_type == :video)
