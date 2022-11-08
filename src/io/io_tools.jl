@@ -69,6 +69,11 @@ function to_rgb(layer::FractalLayer)
     return a
 end
 
+function to_cpu(layer::ColorLayer)
+    return ColorLayer(layer.color, Array(layer.reds), Array(layer.greens),
+                      Array(layer.blues), Array(layer.alphas))
+end
+
 function to_cpu(layer::FractalLayer)
     return FractalLayer(Array(layer.values), Array(layer.reds), Array(layer.greens),
                   Array(layer.blues), Array(layer.alphas), layer.gamma,
@@ -82,25 +87,26 @@ function to_cpu!(cpu_layer, layer)
     cpu_layer.alphas = Array(layer.alphas)
 end
 
-function to_rgb!(canvas, layer::FractalLayer)
+function to_rgb!(canvas, layer::AL) where AL <: AbstractLayer
     if !isa(layer.reds, Array)
         layer = to_cpu(layer)
     end
     canvas .= to_rgb.(layer.reds, layer.greens, layer.blues, layer.alphas)
 end
 
-function to_rgb!(canvas, bg::ColorLayer)
-    canvas .= bg.color
+function coalesce!(canvas::AL1, layer::AL2) where {AL1 <: AbstractLayer,
+                                                   AL2 <: AbstractLayer}
+
+    canvas.reds .= (1 .- layer.alphas) .* canvas.reds .+
+                   layer.alphas .* layer.reds
+    canvas.greens .= (1 .- layer.alphas) .* canvas.greens .+
+                     layer.alphas .* layer.greens
+    canvas.blues .= (1 .- layer.alphas) .* canvas.blues .+
+                    layer.alphas .* layer.blues
+    canvas.alphas .= max.(canvas.alphas, layer.alphas)
 end
 
-function coalesce!(canvas::AL, in::AL) where AL <: AbstractLayer
-    canvas.reds .= (1 .- in.alphas) .* canvas.reds .+ in.alphas .* in.reds
-    canvas.greens .= (1 .- in.alphas) .* canvas.greens .+ in.alphas .* in.greens
-    canvas.blues .= (1 .- in.alphas) .* canvas.blues .+ in.alphas .* in.blues
-    canvas.alphas .= max.(canvas.alphas, in.alphas)
-end
-
-function logscale_coalesce!(canvas::AL, in::FractalLayer; numcores = 4,
+function logscale_coalesce!(canvas::AL, layer::FractalLayer; numcores = 4,
                             numthreads = 256) where AL <: AbstractLayer
     if isa(layer.reds, Array)
         kernel! = logscale_coalesce_kernel!(CPU(), numcores)
@@ -111,34 +117,45 @@ function logscale_coalesce!(canvas::AL, in::FractalLayer; numcores = 4,
     end
 
     kernel!(canvas.reds, canvas.greens, canvas.blues, canvas.alphas, canvas.values,
-            in.reds, in.greens, in.blues, in.alphas, in.values,
-            in.gamma, in.max_value, ndrange=length(layer.reds))
+            layer.reds, layer.greens, layer.blues, layer.alphas, layer.values,
+            layer.gamma, layer.max_value, ndrange=length(layer.reds))
 
 end
 
 @kernel function logscale_coalesce_kernel!(
     canvas_reds, canvas_greens, canvas_blues, canvas_alphas,
-    canvas_values, in_reds, in_greens,
-    in_blues, in_alphas, in_values,
-    in_gamma, in_max_value)
+    canvas_values, layer_reds, layer_greens,
+    layer_blues, layer_alphas, layer_values,
+    layer_gamma, layer_max_value)
 
     tid = @index(Global, Linear)
 
-    alpha = log10((9*in_values[tid]/in_max_value)+1)
+    alpha = log10((9*layer_values[tid]/layer_max_value)+1)
 
-    new_red = in_reds[tid]^(1/in_gamma) * alpha^(1/in_gamma)
-    new_green = in_greens[tid]^(1/in_gamma) * alpha^(1/in_gamma)
-    new_blue = in_blues[tid]^(1/in_gamma) * alpha^(1/in_gamma)
-    new_alpha = in_alphas[tid]^(1/in_gamma) * alpha^(1/in_gamma)
+    new_red = layer_reds[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
+    new_green = layer_greens[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
+    new_blue = layer_blues[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
+    new_alpha = layer_alphas[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
 
-    layer_reds[tid] = layer_reds[tid]*(1-alpha^(1/in_gamma)) + new_red
-    layer_greens[tid] = layer_greens[tid]*(1-alpha^(1/in_gamma)) + new_green
-    layer_blues[tid] = layer_blues[tid]*(1-alpha^(1/in_gamma)) + new_blue
-    layer_alphas[tid] = layer_alphas[tid]*(1-alpha^(1/in_gamma)) + new_alpha
+    layer_reds[tid] = layer_reds[tid]*(1-alpha^(1/layer_gamma)) + new_red
+    layer_greens[tid] = layer_greens[tid]*(1-alpha^(1/layer_gamma)) + new_green
+    layer_blues[tid] = layer_blues[tid]*(1-alpha^(1/layer_gamma)) + new_blue
+    layer_alphas[tid] = layer_alphas[tid]*(1-alpha^(1/layer_gamma)) + new_alpha
     
 end
 
-function norm_layer(color, value)
+function norm_layer!(layer::AL) where AL <: AbstractLayer
+    return layer
+end
+
+function norm_layer!(layer::FractalLayer)
+    layer.reds .= norm_component.(layer.reds, layer.values)
+    layer.greens .= norm_component.(layer.greens, layer.values)
+    layer.blues .= norm_component.(layer.blues, layer.values)
+    layer.alphas .= norm_component.(layer.alphas, layer.values)
+end
+
+function norm_component(color, value)
     if value == 0 || isnan(value)
         return color
     else
@@ -150,10 +167,7 @@ function add_layer!(canvas::AL, layer::FractalLayer;
                     numcores = 4, numthreads = 256) where AL <: AbstractLayer
 
     # naive normalization
-    layer.reds .= norm_layer.(layer.reds, layer.values)
-    layer.greens .= norm_layer.(layer.greens, layer.values)
-    layer.blues .= norm_layer.(layer.blues, layer.values)
-    layer.alphas .= norm_layer.(layer.alphas, layer.values)
+    norm_layer!(layer)
 
     if layer.logscale
         # This means the max_value is manually set
@@ -167,23 +181,22 @@ function add_layer!(canvas::AL, layer::FractalLayer;
     end
 end
 
-function add_layer!(canvas::AL, layer::AL;
-                    numcores = 4, numthreads = 256) where AL <: AbstractLayer
+function add_layer!(canvas::AL1, layer::AL2;
+                    numcores = 4, numthreads = 256) where {AL1 <: AbstractLayer,
+                                                           AL2 <: AbstractLayer}
 
     # naive normalization
-    layer.reds .= norm_layer.(layer.reds, layer.values)
-    layer.greens .= norm_layer.(layer.greens, layer.values)
-    layer.blues .= norm_layer.(layer.blues, layer.values)
-    layer.alphas .= norm_layer.(layer.alphas, layer.values)
+    norm_layer!(layer)
 
     coalesce!(canvas, layer)
 end
 
 function write_image(layers::Vector{AL}, filename;
-                     img = fill(RGB(0,0,0), size(layers[1].values)),
+                     img = fill(RGB(0,0,0), size(layers[1].reds)),
                      numcores = 4, numthreads = 256) where AL <: AbstractLayer
 
-    for i = 1:length(layers)
+    norm_layer!(layers[1])
+    for i = 2:length(layers)
         add_layer!(layers[1], layers[i])
     end
 
@@ -195,7 +208,9 @@ end
 
 function write_video!(v::VideoParams, layers::Vector{AL};
                       numcores = 4, numthreads = 256) where AL <: AbstractLayer
-    for i = 1:length(layers)
+ 
+    norm_layer!(layers[1])
+    for i = 2:length(layers)
         add_layer!(layers[1], layers[i])
     end
 

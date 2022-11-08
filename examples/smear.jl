@@ -1,4 +1,4 @@
-using Fae, CUDA
+using Fae
 
 function main(num_particles, num_iterations, total_frames, AT;
               output_type = :video)
