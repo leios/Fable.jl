@@ -17,5 +17,4 @@ function main(num_particles, num_iterations; AT = Array, FT = Float32)
     filename = "out.png"
 
     write_image([clayer, flayer], filename)
-    #write_image([flayer], filename)
 end

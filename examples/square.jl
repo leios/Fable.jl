@@ -41,8 +41,8 @@ function main(num_particles, num_iterations, AT; dark = true)
 
     layer = FractalLayer(res; AT = AT, logscale = false, FT = FT)
 
-    Fae.fractal_flame!(layer, H, H2, num_particles, num_iterations,
-                       bounds, res; AT = AT, FT = FT)
+    run!(layer, H, H2, num_particles, num_iterations, bounds, res;
+         AT = AT, FT = FT)
 
     filename = "out.png"
     write_image([layer], filename)

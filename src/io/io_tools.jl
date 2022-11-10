@@ -33,15 +33,17 @@ function reset!(layers::Vector{AL}) where AL <: AbstractLayer
     end
 end
 
-function reset!(a::Array{T}) where T <: Union{RGB, RGB{N0f8}}
-    zero!(a)
+function reset!(a::Array{T};
+                numthreads = 256, numcores = 4) where T <: Union{RGB, RGB{N0f8}}
+    zero!(a; numthreads = numthreads, numcores = numcores)
 end
 
-function reset!(layer::FractalLayer; numthreads = 256, numcores = 4)
-    zero!(layer)    
+function reset!(layer::AL;
+                numthreads = 256, numcores = 4) where AL <: AbstractLayer
+    zero!(layer; numthreads = numthreads, numcores = numcores)
 end
 
-function reset!(layer::ColorLayer)
+function reset!(layer::ColorLayer; numthreads = 0, numcores = 0)
     layer.reds .= layer.color.r
     layer.blues .= layer.color.g
     layer.greens .= layer.color.b
@@ -217,7 +219,7 @@ function write_video!(v::VideoParams, layers::Vector{AL};
     to_rgb!(v.frame, layers[1])
     write(v.writer, v.frame)
     zero!(v.frame)
-    reset!(layers)
+    reset!(layers[1]; numthreads = 256, numcores = numcores)
     println(v.frame_count)
     v.frame_count += 1
 end

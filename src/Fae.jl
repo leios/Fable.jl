@@ -48,6 +48,7 @@ include("io/io_structs.jl")
 include("io/io_tools.jl")
 
 # Main file
-include("fractal_flame.jl")
+include("run/fractal_flame.jl")
+include("run/fum.jl")
 
 end # module

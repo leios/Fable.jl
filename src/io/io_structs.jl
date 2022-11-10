@@ -24,6 +24,14 @@ mutable struct ColorLayer <: AbstractLayer
     alphas::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
 end
 
+mutable struct FUMLayer <: AbstractLayer
+    fum::FractalUserMethod
+    reds::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
+    greens::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
+    blues::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
+    alphas::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
+end
+
 function ColorLayer(c::CT, s; AT = Array) where CT<:Union{RGB, RGBA}
     if isa(c, RGB)
         c = RGBA(c)
