@@ -16,5 +16,3 @@ Here is a quick list of various research directions for the project:
 3. **Synergy with other rendering methods**: There are still advantages to using raytracing, raymarching, or rasterization, but performing clear analyses between the methods and using them together to create a general-purpose rendering library would be an interesting direction.
 
 As it stands, the documentation will be a bit sparse until we hit v0.0.1, which should be in a few months, but if you have any questions, comments, or concerns, please create an issue or pull request!
-
-
