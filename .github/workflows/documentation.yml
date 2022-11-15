@@ -1,15 +1,23 @@
 name: Documentation
 
 on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
   push:
     branches:
       - main
     tags: '*'
-  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || !github.event.pull_request.draft }}
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@latest
