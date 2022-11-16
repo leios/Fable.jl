@@ -96,8 +96,10 @@ function find_fis(fum::FractalUserMethod, fis::Vector{FractalInput})
     return fi_indices[1:current_fi-1]
 end
 
-function configure_fum(fum::FractalUserMethod; name = "0", diagnostic = false)
-    configure_fum(fum, [FractalInput()]; name = name, diagnostic = diagnostic)
+function configure_fum(fum::FractalUserMethod; name = "0", diagnostic = false,
+                       fum_type = :color)
+    configure_fum(fum, [FractalInput()]; name = name, diagnostic = diagnostic,
+                  fum_type = fum_type)
 end
 
 function configure_fum(fum::FractalUserMethod, fis::Vector{FractalInput};

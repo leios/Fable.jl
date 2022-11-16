@@ -24,8 +24,8 @@ mutable struct ColorLayer <: AbstractLayer
     alphas::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
 end
 
-mutable struct FUMLayer <: AbstractLayer
-    fum::FractalUserMethod
+mutable struct ShaderLayer <: AbstractLayer
+    shader::Shader
     reds::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
     greens::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
     blues::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat

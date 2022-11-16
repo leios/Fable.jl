@@ -1,7 +1,7 @@
 export run!
 
-function run!(layer::FUMLayer, res, bounds; numcores = 4, numthreads = 256,
-              name = "FUMLayer", diagnostic = false) 
+function run!(layer::ShaderLayer, res, bounds; numcores = 4, numthreads = 256,
+              name = "ShaderLayer", diagnostic = false) 
 
     if !layer.configured
         fum = configure_fum(layer.fum, layer.fis; diagnostic = diagnostic,
@@ -19,15 +19,16 @@ function run!(layer::FUMLayer, res, bounds; numcores = 4, numthreads = 256,
     end
 
     kernel!(layer.symbols, layer.reds, layer.greens, layer.blues,
-            layer.alphas, bounds, res, layer.fum, ndrange = res)
+            layer.alphas, bounds, layer.fum, ndrange = res)
 end
 
 # ideally, I don't need to use `res` and can just read find the NDRange
 #     in the kernel...
 @kernel function fum_kernel!(symbols, layer_reds, layer_greens, layer_blues,
-                             layer_alphas, bounds, res, bounds)
+                             layer_alphas, bounds, bounds)
 
     i, j = @index(global, NTuple)
+    res = @ndrange()
 
     @inbounds y = bounds[1,2] + (i/res[1])*(bounds[1,2]-bounds[1,1])
     @inbounds x = bounds[2,2] + (j/res[2])*(bounds[2,2]-bounds[2,1])
