@@ -1,8 +1,6 @@
 # fee = Fractal Executable
 export fee, Shader
 
-fee(args...; kwargs...) = Shader(args...; kwargs...)
-
 mutable struct Shader <: FractalExecutable
     op
     fum::FractalUserMethod
@@ -10,6 +8,8 @@ mutable struct Shader <: FractalExecutable
     name::String
     symbols::Union{NTuple, Tuple}
 end
+
+fee(S::Type{Shader}, args...; kwargs...) = Shader(args...; kwargs...)
 
 function Shader(; name = "shader")
     return Shader(configure_fum(color_null; fum_type = :color),

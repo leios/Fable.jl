@@ -1,8 +1,6 @@
 # fee = Fractal Executable
 export fee, Hutchinson
 
-fee(args...; kwargs...) = Hutchinson(args...; kwargs...)
-
 mutable struct Hutchinson <: FractalExecutable
     op
     cop
@@ -14,6 +12,8 @@ mutable struct Hutchinson <: FractalExecutable
     symbols::Union{NTuple, Tuple}
     fnums::Union{NTuple, Tuple}
 end
+
+fee(H::Type{Hutchinson}, args...; kwargs...) = Hutchinson(args...; kwargs...)
 
 # This will update the symbols and prob set for combined fees
 function update!(final_H::Hutchinson, Hs::HT; diagnostic = false, name = "",
