@@ -39,7 +39,7 @@ In this case, each row of the array will define the color of a different quadran
 Now we can define our fractal executable...
 
 ```
-H = Fae.define_rectangle(pos, rotation, scale_x, scale_y, colors; AT = AT)
+H = define_rectangle(pos, rotation, scale_x, scale_y, colors; AT = AT)
 ```
 
 Here, `AT` can be either an `Array` or `CuArray` depending whether you would like to run the code on the CPU or (CUDA) GPU.
@@ -50,8 +50,8 @@ Notationally, we are using the variable `H` to designate a Hutchinson operator, 
 Finally, we solve the function system with the `fractal_flame(...)` function and write it to an image:
 
 ```
-    layer = Fae.fractal_flame(H, num_particles, num_iterations,
-                            bounds, res; AT = AT, FT = FT)
+    layer = fractal_flame(H, num_particles, num_iterations,
+                          bounds, res; AT = AT, FT = FT)
 
     filename = "out.png"
     write_image([layer], filename)
@@ -92,10 +92,10 @@ function main(num_particles, num_iterations, AT; dark = true)
                  [1.0, 0, 1.0, 1]]
     end
 
-    H = Fae.define_rectangle(pos, rotation, scale_x, scale_y, colors; AT = AT)
+    H = define_rectangle(pos, rotation, scale_x, scale_y, colors; AT = AT)
 
-    layer = Fae.fractal_flame(H, num_particles, num_iterations,
-                            bounds, res; AT = AT, FT = FT)
+    layer = fractal_flame(H, num_particles, num_iterations,
+                          bounds, res; AT = AT, FT = FT)
 
     filename = "out.png"
     write_image([layer], filename;
@@ -128,18 +128,18 @@ The code here does not change significantly, except that we create a `H2` and ad
 ```
 ...
     H2 = Hutchinson([Flames.swirl],
-                    [Fae.Colors.previous],
+                    [Colors.previous],
                     (1.0,);
                     final = true, diagnostic = true, AT = AT, name = "2")
 
-    layer = Fae.fractal_flame(H1, H2, num_particles, num_iterations,
-                            bounds, res; AT = AT, FT = FT)
+    layer = fractal_flame(H1, H2, num_particles, num_iterations,
+                          bounds, res; AT = AT, FT = FT)
 ...
 ```
 
 There are a few nuances to point out:
 
-1. We are using `Fae.Colors.previous`, which simply means that the swirl will use whatever colors were specified in `H1`.
+1. We are using `Colors.previous`, which simply means that the swirl will use whatever colors were specified in `H1`.
 2. Fractal operators can be called with `fee` or `Hutchinson` and require `Array` or `Tuple` inputs.
 3. `final = true`, means that this is a post processing operation. In other words, `H1` creates the object primitive (square), and `H2` always operates on that square.
 4. We are specifying the Floating Type, `FT`, as `Float32`, but that is not necessary.
@@ -162,8 +162,8 @@ If we want, we can make `H2` operate on the object, itself, by creating a new fr
 ```
     final_H = fee([H, H2])
 
-    layer = Fae.fractal_flame(final_H, num_particles, num_iterations,
-                              bounds, res; AT = AT, FT = FT)
+    layer = fractal_flame(final_H, num_particles, num_iterations,
+                          bounds, res; AT = AT, FT = FT)
 ```
 
 which will create the following image:
@@ -200,15 +200,15 @@ function main(num_particles, num_iterations, AT; dark = true)
                  [1.0, 0, 1.0, 1]]
     end
 
-    H = Fae.define_rectangle(pos, rotation, scale_x, scale_y, colors; AT = AT)
+    H = define_rectangle(pos, rotation, scale_x, scale_y, colors; AT = AT)
     H2 = Hutchinson([Flames.swirl],
-                    [Fae.Colors.previous],
+                    [Colors.previous],
                     (1.0,);
                     diagnostic = true, AT = AT, name = "2")
     final_H = fee([H, H2])
 
-    layer = Fae.fractal_flame(final_H, num_particles, num_iterations,
-                              bounds, res; AT = AT, FT = FT)
+    layer = fractal_flame(final_H, num_particles, num_iterations,
+                          bounds, res; AT = AT, FT = FT)
 
     filename = "out.png"
     write_image([layer], filename)
