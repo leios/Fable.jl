@@ -163,7 +163,7 @@ If we want, we can make `H2` operate on the object, itself, by creating a new fr
     final_H = fee([H, H2])
 
     layer = Fae.fractal_flame(final_H, num_particles, num_iterations,
-                            bounds, res; AT = AT, FT = FT)
+                              bounds, res; AT = AT, FT = FT)
 ```
 
 which will create the following image:
@@ -208,7 +208,7 @@ function main(num_particles, num_iterations, AT; dark = true)
     final_H = fee([H, H2])
 
     layer = Fae.fractal_flame(final_H, num_particles, num_iterations,
-                            bounds, res; AT = AT, FT = FT)
+                              bounds, res; AT = AT, FT = FT)
 
     filename = "out.png"
     write_image([layer], filename)

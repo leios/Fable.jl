@@ -21,9 +21,9 @@ function create_sky!(layer, num_particles, num_iterations, reflect_operation;
 
     skybox = Fae.define_rectangle(pos, rotation, scale_x, scale_y, sky_color;
                                   AT = AT, name = "sky")
-    fractal_flame!(layer, skybox, reflect_operation,
-                   num_particles, num_iterations, bounds, res;
-                   AT = AT, FT = FT)
+    run!(layer, skybox, reflect_operation,
+         num_particles, num_iterations, bounds, res;
+         AT = AT, FT = FT)
 end
 
 function create_stars!(layer, num_stars, num_iterations, reflect_operation;
@@ -37,9 +37,9 @@ function create_stars!(layer, num_stars, num_iterations, reflect_operation;
 
     skybox = Fae.define_rectangle(pos, rotation, scale_x, scale_y, (1,1,1,1);
                                   AT = AT, name = "stars")
-    fractal_flame!(layer, skybox, reflect_operation,
-                   num_stars, num_iterations, bounds, res;
-                   AT = AT, FT = FT)
+    run!(layer, skybox, reflect_operation,
+         num_stars, num_iterations, bounds, res;
+         AT = AT, FT = FT)
 
 end
 
@@ -58,9 +58,9 @@ function create_moon!(layer, num_particles, num_iterations, reflect_operation;
     radius = 0.4
 
     moon = define_circle(pos, radius, moon_color; AT = AT, name = "moon")
-    fractal_flame!(layer, moon, reflect_operation,
-                   num_particles, num_iterations, bounds, res;
-                   AT = AT, FT = FT)
+    run!(layer, moon, reflect_operation,
+         num_particles, num_iterations, bounds, res;
+         AT = AT, FT = FT)
 
 end
 
@@ -107,9 +107,9 @@ function create_forest!(layer, num_trees, num_particles, num_iterations,
     H_2 = Hutchinson([tree_2, reflect_operation]; diagnostic = diagnostic,
                      final = true)
 
-    fractal_flame!(layer, tree, H_2,
-                   num_particles, num_iterations,
-                   bounds, res; AT = AT, FT = FT)
+    run!(layer, tree, H_2,
+         num_particles, num_iterations,
+         bounds, res; AT = AT, FT = FT)
 
 
 end

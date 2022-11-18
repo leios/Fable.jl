@@ -35,8 +35,8 @@ function main(num_particles, num_iterations, num_frames, AT)
 
         Fae.update_triangle!(H, A, B, C; FT = FT, AT = AT)
 
-        Fae.fractal_flame!(layer, H, num_particles, num_iterations,
-                           bounds, res; AT = AT, FT = FT)
+        Fae.run!(layer, H, num_particles, num_iterations,
+                 bounds, res; AT = AT, FT = FT)
 
         filename = "check"*lpad(i-1,5,"0")*".png"
 

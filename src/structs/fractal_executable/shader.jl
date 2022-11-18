@@ -12,13 +12,13 @@ end
 fee(S::Type{Shader}, args...; kwargs...) = Shader(args...; kwargs...)
 
 function Shader(; name = "shader")
-    return Shader(configure_fum(color_null; fum_type = :color),
+    return Shader(configure_fum(color_null; fum_type = :shader),
                   color_null, Vector{FractalInput}(), name, Tuple(1))
 end
 
 function Shader(fum::FractalUserMethod, fis::Vector{FractalInput};
                 name = "shader")
-    return Shader(configure_fum(fum; fum_type = color), fum,
+    return Shader(configure_fum(fum; fum_type = :shader), fum,
                   fis, name, configure_fis!(fis))
 end
 

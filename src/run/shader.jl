@@ -28,11 +28,20 @@ end
                              layer_alphas, bounds, op)
 
     i, j = @index(Global, NTuple)
+    tid = @index(Global, Linear)
+    lid = @index(Local, Linear)
     res = @ndrange()
+
+    shared_colors = @localmem eltype(layer_reds) (@groupsize()[1], 4)
+
 
     @inbounds y = bounds[1,2] + (i/res[1])*(bounds[1,2]-bounds[1,1])
     @inbounds x = bounds[2,2] + (j/res[2])*(bounds[2,2]-bounds[2,1])
 
-    layer_reds[i, j], layer_greens[i, j],
-    layer_blues[i, j], layer_alphas[i, j] = op(x, y, symbols)
+    op(shared_colors, y, x, lid, symbols)
+
+    @inbounds layer_reds[tid] = shared_colors[lid, 1]
+    @inbounds layer_greens[tid] = shared_colors[lid, 2]
+    @inbounds layer_blues[tid] = shared_colors[lid, 3]
+    @inbounds layer_alphas[tid] = shared_colors[lid, 4]
 end
