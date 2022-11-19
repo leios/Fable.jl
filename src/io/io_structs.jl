@@ -1,4 +1,4 @@
-export FractalLayer, ColorLayer, open_video, close_video
+export FractalLayer, ColorLayer, ShaderLayer, open_video, close_video
 
 abstract type AbstractLayer end;
 
@@ -53,6 +53,16 @@ function FractalLayer(s; AT=Array, FT = Float64, gamma = 2.2, logscale = true,
     return FractalLayer(AT(zeros(Int,s)), AT(zeros(FT, s)),
                         AT(zeros(FT, s)), AT(zeros(FT, s)), AT(zeros(FT, s)),
                         gamma, logscale, calc_max_value, max_value)
+end
+
+function ShaderLayer(shader::Shader, s; AT = Array, FT = Float32)
+    return ShaderLayer(shader, AT(zeros(s)), AT(zeros(s)),
+                       AT(zeros(s)), AT(zeros(s)))
+end
+
+function ShaderLayer(fum::FractalUserMethod, s; AT = Array, FT = Float32)
+    return ShaderLayer(Shader(fum), AT(zeros(s)), AT(zeros(s)),
+                       AT(zeros(s)), AT(zeros(s)))
 end
 
 # frame is an intermediate frame before being written to the writer

@@ -3,29 +3,20 @@ export run!
 function run!(layer::ShaderLayer, res, bounds; numcores = 4, numthreads = 256,
               name = "ShaderLayer", diagnostic = false) 
 
-    if !layer.configured
-        fum = configure_fum(layer.fum, layer.fis; diagnostic = diagnostic,
-                            fum_type = :color, name = name)
-        layer.configured = true
-    end
-
-
     if isa(layer.reds, Array)
-        kernel! = naive_chaos_kernel!(CPU(), numcores)
+        kernel! = shader_kernel!(CPU(), numcores)
     elseif has_cuda_gpu() && isa(layer.reds, CuArray)
-        kernel! = naive_chaos_kernel!(CUDADevice(), numthreads)
+        kernel! = shader_kernel!(CUDADevice(), numthreads)
     elseif has_rocm_gpu() && isa(layer.reds, ROCArray)
-        kernel! = naive_chaos_kernel!(ROCDevice(), numthreads)
+        kernel! = shader_kernel!(ROCDevice(), numthreads)
     end
 
-    kernel!(layer.symbols, layer.reds, layer.greens, layer.blues,
-            layer.alphas, bounds, layer.op, ndrange = res)
+    wait(kernel!(layer.shader.symbols, layer.reds, layer.greens, layer.blues,
+                 layer.alphas, Tuple(bounds), layer.shader.op, ndrange = res))
 end
 
-# ideally, I don't need to use `res` and can just read find the NDRange
-#     in the kernel...
-@kernel function fum_kernel!(symbols, layer_reds, layer_greens, layer_blues,
-                             layer_alphas, bounds, op)
+@kernel function shader_kernel!(symbols, layer_reds, layer_greens, layer_blues,
+                                layer_alphas, bounds, op)
 
     i, j = @index(Global, NTuple)
     tid = @index(Global, Linear)
@@ -34,9 +25,8 @@ end
 
     shared_colors = @localmem eltype(layer_reds) (@groupsize()[1], 4)
 
-
-    @inbounds y = bounds[1,2] + (i/res[1])*(bounds[1,2]-bounds[1,1])
-    @inbounds x = bounds[2,2] + (j/res[2])*(bounds[2,2]-bounds[2,1])
+    @inbounds y = bounds[1] + (i/res[1])*(bounds[3]-bounds[1])
+    @inbounds x = bounds[2] + (j/res[2])*(bounds[4]-bounds[2])
 
     op(shared_colors, y, x, lid, symbols)
 

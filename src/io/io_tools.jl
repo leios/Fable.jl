@@ -71,6 +71,11 @@ function to_rgb(layer::FractalLayer)
     return a
 end
 
+function to_cpu(layer::ShaderLayer)
+    return ShaderLayer(layer.shader, Array(layer.reds), Array(layer.greens),
+                       Array(layer.blues), Array(layer.alphas))
+end
+
 function to_cpu(layer::ColorLayer)
     return ColorLayer(layer.color, Array(layer.reds), Array(layer.greens),
                       Array(layer.blues), Array(layer.alphas))
@@ -192,6 +197,19 @@ function add_layer!(canvas::AL1, layer::AL2;
 
     coalesce!(canvas, layer)
 end
+
+function write_image(layer, filename;
+                     img = fill(RGB(0,0,0), size(layer.reds)),
+                     numcores = 4, numthreads = 256) where AL <: AbstractLayer
+
+    norm_layer!(layer)
+
+    to_rgb!(img, layer)
+
+    save(filename, img)
+    println(filename)
+end
+
 
 function write_image(layers::Vector{AL}, filename;
                      img = fill(RGB(0,0,0), size(layers[1].reds)),
