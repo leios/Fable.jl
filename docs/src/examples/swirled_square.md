@@ -128,7 +128,7 @@ The code here does not change significantly, except that we create a `H2` and ad
 ```
 ...
     H2 = Hutchinson([Flames.swirl],
-                    [Colors.previous],
+                    [Fae.Colors.previous],
                     (1.0,);
                     final = true, diagnostic = true, AT = AT, name = "2")
 
@@ -139,7 +139,7 @@ The code here does not change significantly, except that we create a `H2` and ad
 
 There are a few nuances to point out:
 
-1. We are using `Colors.previous`, which simply means that the swirl will use whatever colors were specified in `H1`.
+1. We are using `Fae.Colors.previous`, which simply means that the swirl will use whatever colors were specified in `H1`.
 2. Fractal operators can be called with `fee` or `Hutchinson` and require `Array` or `Tuple` inputs.
 3. `final = true`, means that this is a post processing operation. In other words, `H1` creates the object primitive (square), and `H2` always operates on that square.
 4. We are specifying the Floating Type, `FT`, as `Float32`, but that is not necessary.
@@ -202,7 +202,7 @@ function main(num_particles, num_iterations, AT; dark = true)
 
     H = define_rectangle(pos, rotation, scale_x, scale_y, colors; AT = AT)
     H2 = Hutchinson([Flames.swirl],
-                    [Colors.previous],
+                    [Fae.Colors.previous],
                     (1.0,);
                     diagnostic = true, AT = AT, name = "2")
     final_H = fee([H, H2])

@@ -99,8 +99,8 @@ And now we start getting ready for the smear frame transformation:
                                       scale = scale, theta = theta)
 
     # now turning it into a fractal operator
-    smear_transform = fee([FractalOperator(smear)], fis; name = "smear",
-                          final = true, diagnostic = true)
+    smear_transform = fee(Hutchinson, [FractalOperator(smear)], fis;
+                          name = "smear", final = true, diagnostic = true)
 ```
 
 For this, we are creating fractal inputs (`object_position`, `scale`, and `theta`) for the `stretch_and_rotate` fractal user method. We then turn this into a fractal operator.
@@ -223,8 +223,8 @@ function main(num_particles, num_iterations, total_frames, AT;
                                       scale = scale, theta = theta)
 
     # now turning it into a fractal operator
-    smear_transform = fee([FractalOperator(smear)], fis; name = "smear",
-                          final = true, diagnostic = true)
+    smear_transform = fee(Hutchinson, [FractalOperator(smear)], fis;
+                          name = "smear", final = true, diagnostic = true)
 
     for i = 1:total_frames
 

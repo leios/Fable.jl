@@ -32,7 +32,7 @@ function main(num_particles, num_iterations, AT; dark = true)
 
     H = define_rectangle(pos, rotation, scale_x, scale_y, colors; AT = AT)
     H2 = Hutchinson([Flames.swirl],
-                    [Colors.previous],
+                    [Fae.Colors.previous],
                     (1.0,);
                     diagnostic = true, AT = AT, name = "2", final = true)
 

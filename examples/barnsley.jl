@@ -37,9 +37,9 @@ function main()
                         AT = AT, diagnostic=true, tilt = -0.04)
     H.prob_set = (0.01, 0.5, 0.245, 0.245)
 
-    fo_1 = scale_and_translate(prob = 0.5, color = Colors.previous,
+    fo_1 = scale_and_translate(prob = 0.5, color = Fae.Colors.previous,
                                translation = (0.5, 0.5), scale = 0.5)
-    fo_2 = FractalOperator(Flames.identity, Colors.magenta, 0.5)
+    fo_2 = FractalOperator(Flames.identity, Fae.Colors.magenta, 0.5)
 
     H2 = fee([fo_1, fo_2]; name = "2", final = true)
 
