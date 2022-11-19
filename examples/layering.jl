@@ -11,11 +11,10 @@ function main(num_particles, num_iterations; AT = Array, FT = Float32)
 
     square = define_rectangle([0.0,0.0], pi/4, 1.0, 1.0, RGB(1,0,1); AT = AT)
 
-    fractal_flame!(flayer, square, num_particles, num_iterations, bounds, res;
-                   AT = AT, FT = FT)
+    run!(flayer, square, num_particles, num_iterations, bounds, res;
+         AT = AT, FT = FT)
 
     filename = "out.png"
 
     write_image([clayer, flayer], filename)
-    #write_image([flayer], filename)
 end

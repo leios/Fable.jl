@@ -1,4 +1,6 @@
-export fractal_flame, fractal_flame!
+export fractal_flame, fractal_flame!, run!
+
+run!(layer::FractalLayer, args...; kwargs...) = fractal_flame!(layer, args...; kwargs...)
 
 # couldn't figure out how to get an n-dim version working for GPU
 @inline function on_image(p_y, p_x, bounds, dims)

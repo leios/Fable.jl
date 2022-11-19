@@ -45,8 +45,8 @@ function main()
 
     #println(fo_1, '\n', fo_2)
 
-    fractal_flame!(layer, H, H2, num_particles, num_iterations,
-                   bounds, res; AT = AT, FT = FT)
+    run!(layer, H, H2, num_particles, num_iterations,
+         bounds, res; AT = AT, FT = FT)
 
     filename = "check.png"
 

@@ -49,8 +49,8 @@ function main()
 
     H2 = create_stars(1000; max_range = 1, scale_factor = 0.1)
 
-    fractal_flame!(layer, H, H2, num_particles, num_iterations,
-                   bounds, res; AT = AT, FT = FT)
+    run!(layer, H, H2, num_particles, num_iterations,
+         bounds, res; AT = AT, FT = FT)
 
     filename = "check.png"
 

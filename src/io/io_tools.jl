@@ -33,15 +33,17 @@ function reset!(layers::Vector{AL}) where AL <: AbstractLayer
     end
 end
 
-function reset!(a::Array{T}) where T <: Union{RGB, RGB{N0f8}}
-    zero!(a)
+function reset!(a::Array{T};
+                numthreads = 256, numcores = 4) where T <: Union{RGB, RGB{N0f8}}
+    zero!(a; numthreads = numthreads, numcores = numcores)
 end
 
-function reset!(layer::FractalLayer; numthreads = 256, numcores = 4)
-    zero!(layer)    
+function reset!(layer::AL;
+                numthreads = 256, numcores = 4) where AL <: AbstractLayer
+    zero!(layer; numthreads = numthreads, numcores = numcores)
 end
 
-function reset!(layer::ColorLayer)
+function reset!(layer::ColorLayer; numthreads = 0, numcores = 0)
     layer.reds .= layer.color.r
     layer.blues .= layer.color.g
     layer.greens .= layer.color.b
@@ -67,6 +69,11 @@ function to_rgb(layer::FractalLayer)
     a = [RGBA(layer.reds[i], layer.greens[i], layer.blues[i], layer.alphas[i])
          for i = 1:length(layer)]
     return a
+end
+
+function to_cpu(layer::ShaderLayer)
+    return ShaderLayer(layer.shader, Array(layer.reds), Array(layer.greens),
+                       Array(layer.blues), Array(layer.alphas))
 end
 
 function to_cpu(layer::ColorLayer)
@@ -191,6 +198,19 @@ function add_layer!(canvas::AL1, layer::AL2;
     coalesce!(canvas, layer)
 end
 
+function write_image(layer, filename;
+                     img = fill(RGB(0,0,0), size(layer.reds)),
+                     numcores = 4, numthreads = 256) where AL <: AbstractLayer
+
+    norm_layer!(layer)
+
+    to_rgb!(img, layer)
+
+    save(filename, img)
+    println(filename)
+end
+
+
 function write_image(layers::Vector{AL}, filename;
                      img = fill(RGB(0,0,0), size(layers[1].reds)),
                      numcores = 4, numthreads = 256) where AL <: AbstractLayer
@@ -217,7 +237,7 @@ function write_video!(v::VideoParams, layers::Vector{AL};
     to_rgb!(v.frame, layers[1])
     write(v.writer, v.frame)
     zero!(v.frame)
-    reset!(layers)
+    reset!(layers[1]; numthreads = 256, numcores = numcores)
     println(v.frame_count)
     v.frame_count += 1
 end

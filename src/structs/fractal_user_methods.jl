@@ -96,8 +96,10 @@ function find_fis(fum::FractalUserMethod, fis::Vector{FractalInput})
     return fi_indices[1:current_fi-1]
 end
 
-function configure_fum(fum::FractalUserMethod; name = "0", diagnostic = false)
-    configure_fum(fum, [FractalInput()]; name = name, diagnostic = diagnostic)
+function configure_fum(fum::FractalUserMethod; name = "0", diagnostic = false,
+                       fum_type = :color)
+    configure_fum(fum, [FractalInput()]; name = name, diagnostic = diagnostic,
+                  fum_type = fum_type)
 end
 
 function configure_fum(fum::FractalUserMethod, fis::Vector{FractalInput};
@@ -107,12 +109,19 @@ function configure_fum(fum::FractalUserMethod, fis::Vector{FractalInput};
     if fum_type == :color
         fx_string = "function "*string(fum.name)*"_"*
                     name*"(_clr, _p, tid, symbols)\n"
+    elseif fum_type == :shader
+        fx_string = "function "*string(fum.name)*"_"*name*
+                    "(_clr,y,x,tid,symbols)\n"
+    elseif fum_type == :hutchinson
+        fx_string = "function "*string(fum.name)*"_"*name*"(_p,tid,symbols)\n"
     else
-        fx_string = "function "*string(fum.name)*"_"*name*"(p, tid, symbols)\n"
+        error("FUM type "*string(fum_type)*" not available!")
     end
-    fx_string *= "x = _p[tid, 2] \n"
-    fx_string *= "y = _p[tid, 1] \n"
-    if fum_type == :color
+    if fum_type == :color || fum_type == :hutchinson
+        fx_string *= "x = _p[tid, 2] \n"
+        fx_string *= "y = _p[tid, 1] \n"
+    end
+    if fum_type == :color || fum_type == :shader
         fx_string *= "red = _clr[tid, 1] \n"
         fx_string *= "green = _clr[tid, 2] \n"
         fx_string *= "blue = _clr[tid, 3] \n"
@@ -127,7 +136,7 @@ function configure_fum(fum::FractalUserMethod, fis::Vector{FractalInput};
     end
 
     fx_string *= create_header(fum) * string(fum.body)*"\n"
-    if fum_type == :color
+    if fum_type == :color || fum_type == :shader
         fx_string *= "_clr[tid, 1] = red \n"
         fx_string *= "_clr[tid, 2] = green \n"
         fx_string *= "_clr[tid, 3] = blue \n"

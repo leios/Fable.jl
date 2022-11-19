@@ -52,8 +52,8 @@ function main(num_particles, num_iterations, num_frames, AT)
 
         update!(final_H, [H, H_2])
 
-        Fae.fractal_flame!(layer, final_H, num_particles, num_iterations,
-                           bounds, res; AT = AT, FT = FT)
+        Fae.run!(layer, final_H, num_particles, num_iterations,
+                 bounds, res; AT = AT, FT = FT)
 
 
         filename = "check"*lpad(i-1,5,"0")*".png"

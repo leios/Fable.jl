@@ -29,7 +29,9 @@ include("structs/fractal_user_methods.jl")
 include("fums/colors.jl")
 include("structs/fractal_operators.jl")
 include("structs/flame_structs.jl")
-include("structs/fractal_executable.jl")
+include("structs/fractal_executable/fractal_executable.jl")
+include("structs/fractal_executable/hutchinson.jl")
+include("structs/fractal_executable/shader.jl")
 
 # Operations
 include("math/simple_rng.jl")
@@ -48,6 +50,7 @@ include("io/io_structs.jl")
 include("io/io_tools.jl")
 
 # Main file
-include("fractal_flame.jl")
+include("run/fractal_flame.jl")
+include("run/shader.jl")
 
 end # module

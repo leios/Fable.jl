@@ -55,9 +55,9 @@ function main(num_particles, num_iterations, total_frames, AT;
         theta = set(theta, pi/4)
 
         update_fis!(smear_transform, [object_position, scale, theta])
-        fractal_flame!(layer, ball, smear_transform, num_particles,
-                       num_iterations, bounds, res;
-                       AT = AT, FT = FT)
+        run!(layer, ball, smear_transform, num_particles,
+             num_iterations, bounds, res;
+             AT = AT, FT = FT)
 
         if output_type == :video
             write_video!(video_out, [layer])
