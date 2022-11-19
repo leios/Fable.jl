@@ -33,8 +33,8 @@ function main(num_particles, num_iterations, total_frames, AT;
                                       scale = scale, theta = theta)
 
     # now turning it into a fractal operator
-    smear_transform = fee([FractalOperator(smear)], fis; name = "smear",
-                          final = true, diagnostic = true)
+    smear_transform = fee(Hutchinson, [FractalOperator(smear)],
+                          fis; name = "smear", final = true, diagnostic = true)
 
     for i = 1:total_frames
 

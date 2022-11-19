@@ -199,7 +199,7 @@ function add_layer!(canvas::AL1, layer::AL2;
 end
 
 function write_image(layer, filename;
-                     img = fill(RGB(0,0,0), size(layer.reds)),
+                     img = fill(RGBA(0,0,0), size(layer.reds)),
                      numcores = 4, numthreads = 256) where AL <: AbstractLayer
 
     norm_layer!(layer)
@@ -212,7 +212,7 @@ end
 
 
 function write_image(layers::Vector{AL}, filename;
-                     img = fill(RGB(0,0,0), size(layers[1].reds)),
+                     img = fill(RGBA(0,0,0), size(layers[1].reds)),
                      numcores = 4, numthreads = 256) where AL <: AbstractLayer
 
     norm_layer!(layers[1])
