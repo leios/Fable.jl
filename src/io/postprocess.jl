@@ -1,12 +1,3 @@
-# TODO: Deal with potential NaNs
-function rgb_clip(a)
-    if isnan(a)
-        return 0
-    else
-        return min(abs(a), 1)
-    end
-end
-
 function to_canvas!(layer::AL;
                     numcores = 4, numthreads = 256) where AL <: AbstractLayer
 end
@@ -30,12 +21,19 @@ end
                                       layer_blues, layer_alphas, layer_values)
     tid = @index(Global, Linear)
 
-    r = rgb_clip(layer_reds[tid]/layer_values[tid])
-    g = rgb_clip(layer_greens[tid]/layer_values[tid])
-    b = rgb_clip(layer_blues[tid]/layer_values[tid])
-    a = rgb_clip(layer_alphas[tid]/layer_values[tid])
+    FT = eltype(layer_reds)
 
-    @inbounds canvas[tid] = RGBA(r, g, b, a)
+    # warp divergence, WOOOoooOOO
+    if layer_values[tid] > 0
+        @inbounds r = layer_reds[tid]/layer_values[tid]
+        @inbounds g = layer_greens[tid]/layer_values[tid]
+        @inbounds b = layer_blues[tid]/layer_values[tid]
+        @inbounds a = layer_alphas[tid]/layer_values[tid]
+
+        @inbounds canvas[tid] = RGBA(r,g,b,a)
+    else
+        @inbounds canvas[tid] = RGBA(FT(0), 0, 0, 0)
+    end
 
 end
 

@@ -46,22 +46,22 @@ function FractalLayer(v, r, g, b, a, c; gamma = 2.2, logscale = true,
 end
 
 # Create a blank, black image of size s
-function FractalLayer(s; AT=Array, FT = Float64, gamma = 2.2, logscale = true,
+function FractalLayer(s; AT=Array, FT = Float32, gamma = 2.2, logscale = true,
                       calc_max_value = true, max_value = 0)
     return FractalLayer(AT(zeros(Int,s)), AT(zeros(FT, s)),
                         AT(zeros(FT, s)), AT(zeros(FT, s)), AT(zeros(FT, s)),
-                        AT(fill(RGBA(0,0,0,0), s)),
+                        AT(fill(RGBA(FT(0),0,0,0), s)),
                         gamma, logscale, calc_max_value, max_value)
 end
 
 function ShaderLayer(shader::Shader, s; AT = Array, FT = Float32)
     return ShaderLayer(shader, AT(zeros(s)), AT(zeros(s)), AT(zeros(s)),
-                       AT(zeros(s)), AT(fill(RGBA(0,0,0,0), s)))
+                       AT(zeros(s)), AT(fill(RGBA(FT(0),0,0,0), s)))
 end
 
 function ShaderLayer(fum::FractalUserMethod, s; AT = Array, FT = Float32)
     return ShaderLayer(Shader(fum), AT(zeros(s)), AT(zeros(s)), AT(zeros(s)),
-                       AT(zeros(s)), AT(fill(RGBA(0,0,0,0), s)))
+                       AT(zeros(s)), AT(fill(RGBA(FT(0),0,0,0), s)))
 end
 
 # frame is an intermediate frame before being written to the writer
