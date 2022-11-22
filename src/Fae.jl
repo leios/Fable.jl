@@ -47,6 +47,7 @@ include("objects/lollipeople.jl")
 
 # 
 include("io/io_structs.jl")
+include("io/postprocess.jl")
 include("io/io_tools.jl")
 
 # Main file

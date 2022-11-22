@@ -1,4 +1,8 @@
-export write_image, write_video!, zero!, reset!
+export write_image, write_video!, zero!, reset!, create_canvas
+
+function create_canvas(s; AT = Array)
+    return AT(fill(RGBA(0,0,0,0), s))
+end
 
 @kernel function zero_kernel!(layer_values, layer_reds, layer_greens, layer_blues)
     tid = @index(Global, Cartesian)
@@ -212,11 +216,12 @@ end
 
 
 function write_image(layers::Vector{AL}, filename;
-                     img = fill(RGBA(0,0,0), size(layers[1].reds)),
+                     img = fill(RGBA(0,0,0,0), size(layers[1].reds)),
                      numcores = 4, numthreads = 256) where AL <: AbstractLayer
 
-    norm_layer!(layers[1])
+    postprocess!(layers[1])
     for i = 2:length(layers)
+        post_process!(layers[i])
         add_layer!(layers[1], layers[i])
     end
 
@@ -229,8 +234,9 @@ end
 function write_video!(v::VideoParams, layers::Vector{AL};
                       numcores = 4, numthreads = 256) where AL <: AbstractLayer
  
-    norm_layer!(layers[1])
+    postprocess!(layers[1])
     for i = 2:length(layers)
+        post_process!(layers[i])
         add_layer!(layers[1], layers[i])
     end
 

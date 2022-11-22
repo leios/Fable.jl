@@ -10,6 +10,7 @@ mutable struct FractalLayer <: AbstractLayer
     greens::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
     blues::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
     alphas::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
+    canvas::Union{Array{C}, CuArray{C}, ROCArray{C}} where C <: RGBA
     gamma::Number
     logscale::Bool
     calc_max_value::Bool
@@ -18,10 +19,6 @@ end
 
 mutable struct ColorLayer <: AbstractLayer
     color::Union{RGB, RGBA}
-    reds::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
-    greens::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
-    blues::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
-    alphas::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
 end
 
 mutable struct ShaderLayer <: AbstractLayer
@@ -30,6 +27,7 @@ mutable struct ShaderLayer <: AbstractLayer
     greens::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
     blues::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
     alphas::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
+    canvas::Union{Array{C}, CuArray{C}, ROCArray{C}} where C <: RGBA
 end
 
 function ColorLayer(c::CT, s; AT = Array) where CT<:Union{RGB, RGBA}
@@ -41,9 +39,9 @@ function ColorLayer(c::CT, s; AT = Array) where CT<:Union{RGB, RGBA}
 end
 
 # Creating a default call
-function FractalLayer(v, r, g, b, a; gamma = 2.2, logscale = true,
+function FractalLayer(v, r, g, b, a, c; gamma = 2.2, logscale = true,
                       calc_max_value = true, max_value = 0)
-    return FractalLayer(v, r, g, b, a, gamma, logscale,
+    return FractalLayer(v, r, g, b, a, c, gamma, logscale,
                         calc_max_value, max_value)
 end
 
@@ -52,17 +50,18 @@ function FractalLayer(s; AT=Array, FT = Float64, gamma = 2.2, logscale = true,
                       calc_max_value = true, max_value = 0)
     return FractalLayer(AT(zeros(Int,s)), AT(zeros(FT, s)),
                         AT(zeros(FT, s)), AT(zeros(FT, s)), AT(zeros(FT, s)),
+                        AT(fill(RGBA(0,0,0,0), s)),
                         gamma, logscale, calc_max_value, max_value)
 end
 
 function ShaderLayer(shader::Shader, s; AT = Array, FT = Float32)
-    return ShaderLayer(shader, AT(zeros(s)), AT(zeros(s)),
-                       AT(zeros(s)), AT(zeros(s)))
+    return ShaderLayer(shader, AT(zeros(s)), AT(zeros(s)), AT(zeros(s)),
+                       AT(zeros(s)), AT(fill(RGBA(0,0,0,0), s)))
 end
 
 function ShaderLayer(fum::FractalUserMethod, s; AT = Array, FT = Float32)
-    return ShaderLayer(Shader(fum), AT(zeros(s)), AT(zeros(s)),
-                       AT(zeros(s)), AT(zeros(s)))
+    return ShaderLayer(Shader(fum), AT(zeros(s)), AT(zeros(s)), AT(zeros(s)),
+                       AT(zeros(s)), AT(fill(RGBA(0,0,0,0), s)))
 end
 
 # frame is an intermediate frame before being written to the writer
