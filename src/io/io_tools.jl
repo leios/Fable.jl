@@ -1,5 +1,42 @@
 export write_image, write_video!, zero!, reset!, create_canvas
 
+function mix_layers(layer_1::AL1, layer_2::AL2; mode = :simple, numcores = 4,
+                    numthreads = 256) where {AL1 <: AbstractLayer,
+                                             AL2 <: AbstractLayer}
+
+    if mode == :simple
+        f = simple_layer_kernel
+    else
+        error("Mixing mode ", string(mode), " not found!")
+    end
+
+    if isa(layer_1.reds, Array)
+        kernel! = f(CPU(), numcores)
+    elseif has_cuda_gpu() && isa(layer_1.reds, CuArray)
+        kernel! = f(CUDADevice(), numthreads)
+    elseif has_rocm_gpu() && isa(layer_1.reds, ROCArray)
+        kernel! = f(ROCDevice(), numthreads)
+    end
+
+    kernel!(layer_1.canvas, layer_2.canvas, ndrange = size(layer_1.canvas))
+
+end
+
+@kernel function simple_layer_kernel!(canvas_1, canvas_2)
+
+    tid = @index(Global, Linear)
+
+    @inbounds r = canvas_1[tid].r*(1-canvas_2[tid].alpha) +
+                  canvas_2[tid].r*canvas_2.alpha
+    @inbounds g = canvas_1[tid].g*(1-canvas_2[tid].alpha) +
+                  canvas_2[tid].g*canvas_2.alpha
+    @inbounds b = canvas_1[tid].b*(1-canvas_2[tid].alpha) +
+                  canvas_2[tid].b*canvas_2.alpha
+    @inbounds a = canvas_1[tid].alpah*canvas_2[tid].alpha
+
+    @inbounds canvas_1[tid] = RGBA(r,g,b,a)
+end
+
 function create_canvas(s; AT = Array)
     return AT(fill(RGBA(0,0,0,0), s))
 end
@@ -31,9 +68,10 @@ function zero!(layer; numthreads = 256, numcores = 4)
 
 end
 
-function reset!(layers::Vector{AL}) where AL <: AbstractLayer
+function reset!(layers::Vector{AL}; numthreads = 256,
+                numcores = 4) where AL <: AbstractLayer
     for i = 1:length(layers)
-        reset!(layers[i])
+        reset!(layers[i]; numthreads = numthreads, numcores = numcores)
     end
 end
 
@@ -105,56 +143,6 @@ function to_rgb!(canvas, layer::AL) where AL <: AbstractLayer
     canvas .= to_rgb.(layer.reds, layer.greens, layer.blues, layer.alphas)
 end
 
-function coalesce!(canvas::AL1, layer::AL2) where {AL1 <: AbstractLayer,
-                                                   AL2 <: AbstractLayer}
-
-    canvas.reds .= (1 .- layer.alphas) .* canvas.reds .+
-                   layer.alphas .* layer.reds
-    canvas.greens .= (1 .- layer.alphas) .* canvas.greens .+
-                     layer.alphas .* layer.greens
-    canvas.blues .= (1 .- layer.alphas) .* canvas.blues .+
-                    layer.alphas .* layer.blues
-    canvas.alphas .= max.(canvas.alphas, layer.alphas)
-end
-
-function logscale_coalesce!(canvas::AL, layer::FractalLayer; numcores = 4,
-                            numthreads = 256) where AL <: AbstractLayer
-    if isa(layer.reds, Array)
-        kernel! = logscale_coalesce_kernel!(CPU(), numcores)
-    elseif has_cuda_gpu() && isa(layer.reds, CuArray)
-        kernel! = logscale_coalesce_kernel!(CUDADevice(), numthreads)
-    elseif has_rocm_gpu() && isa(layer.reds, ROCArray)
-        kernel! = logscale_coalesce_kernel!(ROCDevice(), numthreads)
-    end
-
-    kernel!(canvas.reds, canvas.greens, canvas.blues, canvas.alphas, canvas.values,
-            layer.reds, layer.greens, layer.blues, layer.alphas, layer.values,
-            layer.gamma, layer.max_value, ndrange=length(layer.reds))
-
-end
-
-@kernel function logscale_coalesce_kernel!(
-    canvas_reds, canvas_greens, canvas_blues, canvas_alphas,
-    canvas_values, layer_reds, layer_greens,
-    layer_blues, layer_alphas, layer_values,
-    layer_gamma, layer_max_value)
-
-    tid = @index(Global, Linear)
-
-    alpha = log10((9*layer_values[tid]/layer_max_value)+1)
-
-    new_red = layer_reds[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
-    new_green = layer_greens[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
-    new_blue = layer_blues[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
-    new_alpha = layer_alphas[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
-
-    layer_reds[tid] = layer_reds[tid]*(1-alpha^(1/layer_gamma)) + new_red
-    layer_greens[tid] = layer_greens[tid]*(1-alpha^(1/layer_gamma)) + new_green
-    layer_blues[tid] = layer_blues[tid]*(1-alpha^(1/layer_gamma)) + new_blue
-    layer_alphas[tid] = layer_alphas[tid]*(1-alpha^(1/layer_gamma)) + new_alpha
-    
-end
-
 function norm_layer!(layer::AL) where AL <: AbstractLayer
     return layer
 end
@@ -221,29 +209,32 @@ function write_image(layers::Vector{AL}, filename;
 
     postprocess!(layers[1])
     for i = 2:length(layers)
-        post_process!(layers[i])
-        add_layer!(layers[1], layers[i])
+        postprocess!(layers[i])
+        mix_layers!(layers[1], layers[i]; mode = :simple,
+                    numthreads = numthreads, numcores = numcores)
     end
 
-    to_rgb!(img, layers[1])
+    img .= Array(layers[1].canvas)
 
     save(filename, img)
+    reset!(layers; numthreads = numthreads, numcores = numcores)
     println(filename)
 end
 
 function write_video!(v::VideoParams, layers::Vector{AL};
                       numcores = 4, numthreads = 256) where AL <: AbstractLayer
  
-    postprocess!(layers[1])
+    postprocess!(layers[end])
     for i = 2:length(layers)
         post_process!(layers[i])
-        add_layer!(layers[1], layers[i])
+        mix_layers!(layers[1], layers[i])
     end
 
-    to_rgb!(v.frame, layers[1])
+    v.frame .= Array(layers[1].canvas)
+
     write(v.writer, v.frame)
     zero!(v.frame)
-    reset!(layers[1]; numthreads = 256, numcores = numcores)
+    reset!(layers; numthreads = 256, numcores = numcores)
     println(v.frame_count)
     v.frame_count += 1
 end

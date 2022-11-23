@@ -1,14 +1,29 @@
+function postprocess!(layer::AL) where AL <: AbstractLayer
+    to_canvas!(layer)   
+end
+
 function to_canvas!(layer::AL;
                     numcores = 4, numthreads = 256) where AL <: AbstractLayer
 end
 
 function to_canvas!(layer::FractalLayer; numcores = 4, numthreads = 256)
+
+    if layer.logscale
+        f = FL_canvas_kernel!
+    else
+        f = FL_logscale_kernel!
+    end
+
+    if layer.calc_max_value != 0
+        layer.max_value = maximum(layer.values)
+    end
+
     if isa(layer.reds, Array)
-        kernel! = FL_to_canvas_kernel!(CPU(), numcores)
+        kernel! = f(CPU(), numcores)
     elseif has_cuda_gpu() && isa(layer.reds, CuArray)
-        kernel! = FL_to_canvas_kernel!(CUDADevice(), numthreads)
+        kernel! = f(CUDADevice(), numthreads)
     elseif has_rocm_gpu() && isa(layer.reds, ROCArray)
-        kernel! = FL_to_canvas_kernel!(ROCDevice(), numthreads)
+        kernel! = f(ROCDevice(), numthreads)
     end
 
     wait(kernel!(layer.canvas, layer.reds, layer.greens, layer.blues,
@@ -17,10 +32,9 @@ function to_canvas!(layer::FractalLayer; numcores = 4, numthreads = 256)
     return nothing
 end
 
-@kernel function FL_to_canvas_kernel!(canvas, layer_reds, layer_greens,
-                                      layer_blues, layer_alphas, layer_values)
+@kernel function FL_canvas_kernel!(canvas, layer_reds, layer_greens,
+                                   layer_blues, layer_alphas, layer_values)
     tid = @index(Global, Linear)
-
     FT = eltype(layer_reds)
 
     # warp divergence, WOOOoooOOO
@@ -37,6 +51,22 @@ end
 
 end
 
-function postprocess!(layer::AL) where AL <: AbstractLayer
-    to_canvas!(layer)   
+@kernel function FL_logscale_kernel!(layer_reds, layer_greens, layer_blues,
+                                     layer_alphas, layer_values, layer_gamma,
+                                     layer_max_value)
+
+    tid = @index(Global, Linear)
+    FT = eltype(layer_reds)
+
+    if layer_max_value == 0
+        @inbounds alpha = log10((9*layer_values[tid]/layer_max_value)+1)
+        @inbounds r = layer_reds[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
+        @inbounds g = layer_greens[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
+        @inbounds b = layer_blues[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
+        @inbounds a = layer_alphas[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
+        @inbounds canvas[tid] = RGBA(r,g,b,a)
+    else
+        @inbounds canvas[tid] = RGBA(FT(0), 0, 0, 0)
+    end
+
 end

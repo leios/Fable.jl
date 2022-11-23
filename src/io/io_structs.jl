@@ -19,6 +19,7 @@ end
 
 mutable struct ColorLayer <: AbstractLayer
     color::Union{RGB, RGBA}
+    canvas::Union{Array{C}, CuArray{C}, ROCArray{C}} where C <: RGBA
 end
 
 mutable struct ShaderLayer <: AbstractLayer
@@ -30,24 +31,24 @@ mutable struct ShaderLayer <: AbstractLayer
     canvas::Union{Array{C}, CuArray{C}, ROCArray{C}} where C <: RGBA
 end
 
-function ColorLayer(c::CT, s; AT = Array) where CT<:Union{RGB, RGBA}
+function ColorLayer(c::CT, s; AT = Array,
+                    FT = Float32) where CT<:Union{RGB, RGBA}
     if isa(c, RGB)
         c = RGBA(c)
     end
-    return ColorLayer(c, AT(fill(c.r, s)), AT(fill(c.g, s)),
-                      AT(fill(c.b, s)), AT(fill(c.alpha, s)))
+    return ColorLayer(c, AT(fill(RGBA(FT(0),0,0,0), s)))
 end
 
 # Creating a default call
 function FractalLayer(v, r, g, b, a, c; gamma = 2.2, logscale = true,
-                      calc_max_value = true, max_value = 0)
+                      calc_max_value = true, max_value = 1)
     return FractalLayer(v, r, g, b, a, c, gamma, logscale,
                         calc_max_value, max_value)
 end
 
 # Create a blank, black image of size s
 function FractalLayer(s; AT=Array, FT = Float32, gamma = 2.2, logscale = true,
-                      calc_max_value = true, max_value = 0)
+                      calc_max_value = true, max_value = 1)
     return FractalLayer(AT(zeros(Int,s)), AT(zeros(FT, s)),
                         AT(zeros(FT, s)), AT(zeros(FT, s)), AT(zeros(FT, s)),
                         AT(fill(RGBA(FT(0),0,0,0), s)),
