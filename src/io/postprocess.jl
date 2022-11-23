@@ -1,5 +1,19 @@
-function postprocess!(layer::AL) where AL <: AbstractLayer
-    to_canvas!(layer)   
+function norm_layer!(layer::AL) where AL <: AbstractLayer
+end
+
+function norm_layer!(layer::FractalLayer)
+    layer.reds .= norm_component.(layer.reds, layer.values)
+    layer.greens .= norm_component.(layer.greens, layer.values)
+    layer.blues .= norm_component.(layer.blues, layer.values)
+    layer.alphas .= norm_component.(layer.alphas, layer.values)
+end
+
+function norm_component(color, value)
+    if value == 0 || isnan(value)
+        return color
+    else
+        return color / value
+    end
 end
 
 function to_canvas!(layer::AL;
@@ -68,5 +82,10 @@ end
     else
         @inbounds canvas[tid] = RGBA(FT(0), 0, 0, 0)
     end
-
 end
+
+function postprocess!(layer::AL) where AL <: AbstractLayer
+    norm_layer!(layer)
+    to_canvas!(layer)   
+end
+

@@ -36,7 +36,7 @@ function ColorLayer(c::CT, s; AT = Array,
     if isa(c, RGB)
         c = RGBA(c)
     end
-    return ColorLayer(c, AT(fill(RGBA(FT(0),0,0,0), s)))
+    return ColorLayer(c, AT(fill(c, s)))
 end
 
 # Creating a default call

@@ -85,34 +85,6 @@ function reset!(layer::AL;
     zero!(layer; numthreads = numthreads, numcores = numcores)
 end
 
-function reset!(layer::ColorLayer; numthreads = 0, numcores = 0)
-    layer.reds .= layer.color.r
-    layer.blues .= layer.color.g
-    layer.greens .= layer.color.b
-    if isa(layer.color, RGBA)
-        layer.alphas .= layer.color.a
-    else
-        layer.alphas .= 1
-    end
-end
-
-function to_rgb(r,g,b)
-    return RGB(r,g,b)
-end
-
-function to_rgb(r,g,b,a)
-    return RGBA(r,g,b,a)
-end
-
-function to_rgb(layer::FractalLayer)
-    if typeof(layer.reds) != Array
-        layer = to_cpu(layer)
-    end
-    a = [RGBA(layer.reds[i], layer.greens[i], layer.blues[i], layer.alphas[i])
-         for i = 1:length(layer)]
-    return a
-end
-
 function to_cpu(layer::ShaderLayer)
     return ShaderLayer(layer.shader, Array(layer.reds), Array(layer.greens),
                        Array(layer.blues), Array(layer.alphas))
@@ -136,37 +108,10 @@ function to_cpu!(cpu_layer, layer)
     cpu_layer.alphas = Array(layer.alphas)
 end
 
-function to_rgb!(canvas, layer::AL) where AL <: AbstractLayer
-    if !isa(layer.reds, Array)
-        layer = to_cpu(layer)
-    end
-    canvas .= to_rgb.(layer.reds, layer.greens, layer.blues, layer.alphas)
-end
-
-function norm_layer!(layer::AL) where AL <: AbstractLayer
-    return layer
-end
-
-function norm_layer!(layer::FractalLayer)
-    layer.reds .= norm_component.(layer.reds, layer.values)
-    layer.greens .= norm_component.(layer.greens, layer.values)
-    layer.blues .= norm_component.(layer.blues, layer.values)
-    layer.alphas .= norm_component.(layer.alphas, layer.values)
-end
-
-function norm_component(color, value)
-    if value == 0 || isnan(value)
-        return color
-    else
-        return color / value
-    end
-end
-
 function add_layer!(canvas::AL, layer::FractalLayer;
                     numcores = 4, numthreads = 256) where AL <: AbstractLayer
 
-    # naive normalization
-    norm_layer!(layer)
+    postprocess!(layer)
 
     if layer.logscale
         # This means the max_value is manually set
@@ -184,8 +129,7 @@ function add_layer!(canvas::AL1, layer::AL2;
                     numcores = 4, numthreads = 256) where {AL1 <: AbstractLayer,
                                                            AL2 <: AbstractLayer}
 
-    # naive normalization
-    norm_layer!(layer)
+    postprocess!(layer)
 
     coalesce!(canvas, layer)
 end
@@ -194,9 +138,9 @@ function write_image(layer, filename;
                      img = fill(RGBA(0,0,0), size(layer.reds)),
                      numcores = 4, numthreads = 256) where AL <: AbstractLayer
 
-    norm_layer!(layer)
+    postprocess!(layer)
 
-    to_rgb!(img, layer)
+    img .= Array(layer.canvas)
 
     save(filename, img)
     println(filename)
