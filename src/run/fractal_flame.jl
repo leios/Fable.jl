@@ -143,19 +143,19 @@ function fractal_flame(H1::Hutchinson, H2::Hutchinson, num_particles::Int,
 
     layer = FractalLayer(res; AT = AT, FT = FT, logscale = logscale)
 
-    fractal_flame!(layer, H1, num_particles, num_iterations, bounds, res;
+    fractal_flame!(layer, H1, num_particles, num_iterations, bounds;
                    dims = dims, AT = AT, FT = FT, H2 = H2,
                    num_ignore = num_ignore, diagnostic = diagnostic,
                    numthreads = numthreads, numcores = numcores)
 end
 
 function fractal_flame!(layer::FractalLayer, H1::Hutchinson, H2::Hutchinson,
-                        num_particles::Int, num_iterations::Int, bounds, res;
+                        num_particles::Int, num_iterations::Int, bounds;
                         dims = 2, AT = Array, FT = Float32, diagnostic = false, 
                         num_ignore = 20, numthreads = 256,
                         numcores = 4)
 
-    fractal_flame!(layer, H1, num_particles, num_iterations, bounds, res;
+    fractal_flame!(layer, H1, num_particles, num_iterations, bounds;
                    dims = dims, AT = AT, FT = FT, H2 = H2,
                    num_ignore = num_ignore, diagnostic = diagnostic,
                    numthreads = numthreads, numcores = numcores)
@@ -170,7 +170,7 @@ function fractal_flame(H::Hutchinson, num_particles::Int,
 
     layer = FractalLayer(res; AT = AT, FT = FT)
 
-    fractal_flame!(layer, H, num_particles, num_iterations, bounds, res;
+    fractal_flame!(layer, H, num_particles, num_iterations, bounds;
                    dims = dims, AT = AT, FT = FT, H2 = H2,
                    num_ignore = num_ignore, diagnostic = diagnostic,
                    numthreads = numthreads, numcores = numcores)
@@ -191,12 +191,12 @@ end
 #   [RGB(0,1,0), RGB(0,0,1), RGB(1,0,1), RGB(1,0,0)],
 #   [0.25, 0.25, 0.25, 0.25])
 function fractal_flame!(layer::FractalLayer, H::Hutchinson, num_particles::Int,
-                        num_iterations::Int, bounds, res;
+                        num_iterations::Int, bounds;
                         dims = 2, AT = Array, FT = Float32,
                         H2 = Hutchinson(), num_ignore = 20, diagnostic = false,
                         numthreads = 256, numcores = 4)
 
-
+    res = size(layer.canvas)
     pts = Points(num_particles; FT = FT, dims = dims, AT = AT, bounds = bounds)
 
     bin_widths = zeros(size(bounds)[1])

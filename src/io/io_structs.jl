@@ -24,10 +24,6 @@ end
 
 mutable struct ShaderLayer <: AbstractLayer
     shader::Shader
-    reds::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
-    greens::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
-    blues::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
-    alphas::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
     canvas::Union{Array{C}, CuArray{C}, ROCArray{C}} where C <: RGBA
 end
 
