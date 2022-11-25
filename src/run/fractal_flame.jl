@@ -1,6 +1,17 @@
-export fractal_flame, fractal_flame!, run!
-
-run!(layer::FractalLayer, args...; kwargs...) = fractal_flame!(layer, args...; kwargs...)
+#TODO: 1. Super sampling must be implemented by increasing the number of bins 
+#         before sampling down. Gamma correction at that stage
+#TODO: Parallelize with large number of initial points
+#TODO: Allow Affine transforms to have a time variable and allow for 
+#      supersampling across time with different timesteps all falling into the
+#      same bin -- might require 2 buffers: one for log of each step, another
+#      for all logs
+#TODO: think about directional motion blur
+# Example H:
+# H = Fae.Hutchinson(
+#   (Fae.swirl, Fae.heart, Fae.polar, Fae.horseshoe),
+#   [RGB(0,1,0), RGB(0,0,1), RGB(1,0,1), RGB(1,0,0)],
+#   [0.25, 0.25, 0.25, 0.25])
+export run!
 
 # couldn't figure out how to get an n-dim version working for GPU
 @inline function on_image(p_y, p_x, bounds, dims)
@@ -133,63 +144,11 @@ end
     end
 end
 
-function fractal_flame(H1::Hutchinson, H2::Hutchinson, num_particles::Int,
-                       num_iterations::Int, bounds, res;
-                       dims = 2, ArrayType = Array, FloatType = Float32,
-                       diagnostic = false, num_ignore = 20, numthreads = 256,
-                       logscale = true, numcores = 4)
-
-    layer = FractalLayer(res; ArrayType = ArrayType, FloatType = FloatType,
-                         logscale = logscale, num_ignore = num_ignore,
-                         numthreads = numthreads, numcores = numcores)
-
-    fractal_flame!(layer, H1, num_particles, num_iterations, bounds;
-                   dims = dims, H2 = H2, diagnostic = diagnostic)
-end
-
-function fractal_flame!(layer::FractalLayer, H1::Hutchinson, H2::Hutchinson,
-                        num_particles::Int, num_iterations::Int, bounds;
-                        dims = 2, diagnostic = false)
-
-    fractal_flame!(layer, H1, num_particles, num_iterations, bounds;
-                   dims = dims, H2 = H2, diagnostic = diagnostic)
-
-end
-
-function fractal_flame(H::Hutchinson, num_particles::Int,
-                       num_iterations::Int, bounds, res;
-                       dims = 2, ArrayType = Array, FloatType = Float32,
-                       H2 = Hutchinson(), num_ignore = 20, diagnostic = false,
-                       logscale = true, numthreads = 256, numcores = 4)
-
-    layer = FractalLayer(res; ArrayType = ArrayType, FloatType = FloatType,
-                         num_ignore = num_ignore, numthreads = numthreads,
-                         numcores = numcores)
-
-    fractal_flame!(layer, H, num_particles, num_iterations, bounds;
-                   dims = dims, H2 = H2, diagnostic = diagnostic)
-end
-
-
-#TODO: 1. Super sampling must be implemented by increasing the number of bins 
-#         before sampling down. Gamma correction at that stage
-#TODO: Parallelize with large number of initial points
-#TODO: Allow Affine transforms to have a time variable and allow for 
-#      supersampling across time with different timesteps all falling into the
-#      same bin -- might require 2 buffers: one for log of each step, another
-#      for all logs
-#TODO: think about directional motion blur
-# Example H:
-# H = Fae.Hutchinson(
-#   (Fae.swirl, Fae.heart, Fae.polar, Fae.horseshoe),
-#   [RGB(0,1,0), RGB(0,0,1), RGB(1,0,1), RGB(1,0,0)],
-#   [0.25, 0.25, 0.25, 0.25])
-function fractal_flame!(layer::FractalLayer, H::Hutchinson, num_particles::Int,
-                        num_iterations::Int, bounds;
-                        dims = 2, H2 = Hutchinson())
+function run!(layer::FractalLayer, bounds)
 
     res = size(layer.canvas)
-    pts = Points(num_particles; FloatType = eltype(layer.reds), dims = dims,
+    pts = Points(num_particles; FloatType = eltype(layer.reds),
+                 dims = layer.params.dims,
                  ArrayType = typeof(layer.reds), bounds = bounds)
 
     bin_widths = zeros(size(bounds)[1])
@@ -198,8 +157,8 @@ function fractal_flame!(layer::FractalLayer, H::Hutchinson, num_particles::Int,
     end
 
     println("kernel time:")
-    @time wait(iterate!(pts, layer, H, num_iterations,
-                        bounds, bin_widths, H2, diagnostic = diagnostic))
+    @time wait(iterate!(pts, layer, layer.H1, num_iterations,
+                        bounds, bin_widths, layer.H2, diagnostic = diagnostic))
 
     return layer
 

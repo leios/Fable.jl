@@ -1,7 +1,6 @@
 export run!
 
-function run!(layer::ShaderLayer, bounds;
-              name = "ShaderLayer", diagnostic = false) 
+function run!(layer::ShaderLayer, bounds; diagnostic = false) 
 
     if isa(layer.canvas, Array)
         kernel! = shader_kernel!(CPU(), layer.params.numcores)

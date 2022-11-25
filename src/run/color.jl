@@ -1,7 +1,6 @@
 export run!
 
-function run!(layer::ColorLayer, bounds;
-              name = "ColorLayer", diagnostic = false) 
+function run!(layer::ColorLayer, bounds; diagnostic = false) 
 
     if isa(layer.reds, Array)
         kernel! = color_kernel!(CPU(), layer.params.numcores)

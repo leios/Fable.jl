@@ -23,6 +23,8 @@ end
 # Note: the rgb components needed to be spread into separate arrays for indexing
 #       reasons in the KA kernels
 mutable struct FractalLayer <: AbstractLayer
+    H1::Union{Nothing, Hutchinson}
+    H2::Union{Nothing, Hutchinson}
     values::Union{Array{I}, CuArray{I}, ROCArray{I}} where I <: Integer
     reds::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
     greens::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
@@ -33,23 +35,29 @@ mutable struct FractalLayer <: AbstractLayer
 end
 
 function default_params(a::Type{FractalLayer}; config = :standard,
-                        ArrayType = Array, FloatType = Float32)
+                        ArrayType = Array, FloatType = Float32,
+                        num_particles = 1000, num_iterations = 1000)
 
     if config == :standard
         return (numthreads = 256, numcores = 4, gamma = 2.2, logscale = false,
                 calc_max_value = false, max_value = 1, ArrayType = ArrayType,
-                FloatType = FloatType, num_ignore = 20)
+                FloatType = FloatType, num_ignore = 20,
+                num_particles = num_particles, 
+                num_iterations = num_iterations)
     elseif config == :fractal_flame
         return (numthreads = 256, numcores = 4, gamma = 2.2, logscale = true,
                 calc_max_value = true, max_value = 1, ArrayType = ArrayType,
-                FloatType = FloatType, num_ignore = 20)
+                FloatType = FloatType, num_ignore = 20,
+                num_particles = num_particles, 
+                num_iterations = num_iterations)
     end
 end
 
 function params(a::Type{FractalLayer}; numthreads = 256, numcores = 4,
                 ArrayType = Array, FloatType = Float32,
                 logscale = false, gamma = 2.2, calc_max_value = false,
-                max_value = 1, num_ignore = 20)
+                max_value = 1, num_ignore = 20, num_particles = 1000,
+                num_iterations = 1000)
     return (numthreads = numthreads,
             numcores = numcores,
             ArrayType = ArrayType,
@@ -58,21 +66,28 @@ function params(a::Type{FractalLayer}; numthreads = 256, numcores = 4,
             gamma = gamma,
             max_value = max_value,
             calc_max_value = calc_max_value,
-            num_ignore = 20)
+            num_ignore = num_ignore,
+            num_particles = num_particles,
+            num_interactions = num_interactions)
 end
 
 
 # Creating a default call
-function FractalLayer(v, r, g, b, a, c; config = standard)
-    return FractalLayer(v, r, g, b, a, c, default_params(FractalLayer,
-                        config = config, ArrayType = typeof(v),
-                        FloatType = eltype(v)))
+function FractalLayer(v, r, g, b, a, c; config = standard,
+                      H_1 = Hutchinson(), H_2 = Hutchinson())
+    return FractalLayer(Hutchinson(), Hutchinson(),
+                        v, r, g, b, a, c, default_params(FractalLayer,
+                                                         config = config,
+                                                         ArrayType = typeof(v),
+                                                         FloatType = eltype(v)))
 end
 
 # Create a blank, black image of size s
 function FractalLayer(s; config = :meh, ArrayType=Array, FloatType = Float32,
                       gamma = 2.2, logscale = true, calc_max_value = true,
-                      max_value = 1, numcores = 4, numthreads = 256)
+                      max_value = 1, numcores = 4, numthreads = 256,
+                      num_particles = 1000, num_iterations = 1000,
+                      H_1 = Hutchinson(), H_2 = Hutchinson())
     v = ArrayType(zeros(Int,s))
     r = ArrayType(zeros(FloatType,s))
     g = ArrayType(zeros(FloatType,s))
@@ -80,16 +95,15 @@ function FractalLayer(s; config = :meh, ArrayType=Array, FloatType = Float32,
     a = ArrayType(zeros(FloatType,s))
     c = ArrayType(fill(RGBA(FloatType(0),0,0,0), s)),
     if config == :standard || config == :fractal_flame
-        return FractalLayer(v, r, g, b, a, c,
+        return FractalLayer(H_1, H_2, v, r, g, b, a, c,
                             default_params(; ArrayType = ArrayType,
                                              FloatType = FloatType,
-                                             config = config))
+                                             config = config,
+                                             num_particles = num_particles,
+                                             num_iterations = num_iterations))
     else
-        return FractalLayer(v, r, g, b, a, c, 
-                            (numthreads = numthreads, numcores = numcores,
-                             gamma = gamma, logscale = logscale,
-                             calc_max_value = calc_max_value,
-                             max_value = max_value, num_ignore = num_ignore))
+        return FractalLayer(H_1, H_2, v, r, g, b, a, c,
+                            params(FractalLayer; kwargs...))
     end
 end
 

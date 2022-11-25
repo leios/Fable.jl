@@ -51,6 +51,7 @@ include("io/postprocess.jl")
 include("io/io_tools.jl")
 
 # Main file
+include("run/run.jl")
 include("run/fractal_flame.jl")
 include("run/shader.jl")
 include("run/color.jl")
