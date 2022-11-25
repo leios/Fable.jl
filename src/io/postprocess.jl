@@ -16,11 +16,10 @@ function norm_component(color, value)
     end
 end
 
-function to_canvas!(layer::AL;
-                    numcores = 4, numthreads = 256) where AL <: AbstractLayer
+function to_canvas!(layer::AL) where AL <: AbstractLayer
 end
 
-function to_canvas!(layer::FractalLayer; numcores = 4, numthreads = 256)
+function to_canvas!(layer::FractalLayer)
 
     if layer.logscale
         f = FL_canvas_kernel!
@@ -33,11 +32,11 @@ function to_canvas!(layer::FractalLayer; numcores = 4, numthreads = 256)
     end
 
     if isa(layer.reds, Array)
-        kernel! = f(CPU(), numcores)
+        kernel! = f(CPU(), layer.params.numcores)
     elseif has_cuda_gpu() && isa(layer.reds, CuArray)
-        kernel! = f(CUDADevice(), numthreads)
+        kernel! = f(CUDADevice(), layer.params.numthreads)
     elseif has_rocm_gpu() && isa(layer.reds, ROCArray)
-        kernel! = f(ROCDevice(), numthreads)
+        kernel! = f(ROCDevice(), layer.params.numthreads)
     end
 
     wait(kernel!(layer.canvas, layer.reds, layer.greens, layer.blues,

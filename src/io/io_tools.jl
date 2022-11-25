@@ -1,8 +1,8 @@
 export write_image, write_video!, zero!, reset!, create_canvas
 
-function mix_layers(layer_1::AL1, layer_2::AL2; mode = :simple, numcores = 4,
-                    numthreads = 256) where {AL1 <: AbstractLayer,
-                                             AL2 <: AbstractLayer}
+function mix_layers(layer_1::AL1, layer_2::AL2;
+                    mode = :simple) where {AL1 <: AbstractLayer,
+                                           AL2 <: AbstractLayer}
 
     if mode == :simple
         f = simple_layer_kernel
@@ -11,11 +11,11 @@ function mix_layers(layer_1::AL1, layer_2::AL2; mode = :simple, numcores = 4,
     end
 
     if isa(layer_1.reds, Array)
-        kernel! = f(CPU(), numcores)
+        kernel! = f(CPU(), layer_1.params.numcores)
     elseif has_cuda_gpu() && isa(layer_1.reds, CuArray)
-        kernel! = f(CUDADevice(), numthreads)
+        kernel! = f(CUDADevice(), layer_1.params.numthreads)
     elseif has_rocm_gpu() && isa(layer_1.reds, ROCArray)
-        kernel! = f(ROCDevice(), numthreads)
+        kernel! = f(ROCDevice(), layer_1.params.numthreads)
     end
 
     kernel!(layer_1.canvas, layer_2.canvas, ndrange = size(layer_1.canvas))
@@ -37,8 +37,8 @@ end
     @inbounds canvas_1[tid] = RGBA(r,g,b,a)
 end
 
-function create_canvas(s; AT = Array)
-    return AT(fill(RGBA(0,0,0,0), s))
+function create_canvas(s; ArrayType = Array)
+    return ArrayType(fill(RGBA(0,0,0,0), s))
 end
 
 @kernel function zero_kernel!(layer_values, layer_reds, layer_greens, layer_blues)
@@ -53,14 +53,14 @@ function zero!(a::Array{T}) where T <: Union{RGB, RGB{N0f8}}
     a[:] .= RGB(0)
 end
 
-function zero!(layer; numthreads = 256, numcores = 4)
+function zero!(layer)
     
     if isa(layer.reds, Array)
-        kernel! = zero_kernel!(CPU(), numcores)
+        kernel! = zero_kernel!(CPU(), layer.params.numcores)
     elseif has_cuda_gpu() && isa(layer.reds, CuArray)
-        kernel! = zero_kernel!(CUDADevice(), numthreads)
+        kernel! = zero_kernel!(CUDADevice(), layer.params.numthreads)
     elseif has_rocm_gpu() && isa(layer.reds, ROCArray)
-        kernel! = zero_kernel!(ROCDevice(), numthreads)
+        kernel! = zero_kernel!(ROCDevice(), layer.params.numthreads)
     end
 
     kernel!(layer.values, layer.reds, layer.greens, layer.blues,
@@ -68,10 +68,9 @@ function zero!(layer; numthreads = 256, numcores = 4)
 
 end
 
-function reset!(layers::Vector{AL}; numthreads = 256,
-                numcores = 4) where AL <: AbstractLayer
+function reset!(layers::Vector{AL}) where AL <: AbstractLayer
     for i = 1:length(layers)
-        reset!(layers[i]; numthreads = numthreads, numcores = numcores)
+        reset!(layers[i])
     end
 end
 
@@ -80,9 +79,8 @@ function reset!(a::Array{T};
     zero!(a; numthreads = numthreads, numcores = numcores)
 end
 
-function reset!(layer::AL;
-                numthreads = 256, numcores = 4) where AL <: AbstractLayer
-    zero!(layer; numthreads = numthreads, numcores = numcores)
+function reset!(layer::AL) where AL <: AbstractLayer
+    zero!(layer)
 end
 
 function to_cpu(layer::ShaderLayer)
@@ -108,35 +106,9 @@ function to_cpu!(cpu_layer, layer)
     cpu_layer.alphas = Array(layer.alphas)
 end
 
-function add_layer!(canvas::AL, layer::FractalLayer;
-                    numcores = 4, numthreads = 256) where AL <: AbstractLayer
-
-    postprocess!(layer)
-
-    if layer.logscale
-        # This means the max_value is manually set
-        if layer.calc_max_value != 0
-            layer.max_value = maximum(layer.values)
-        end
-        logscale_coalesce!(layer, layer,
-                           numcores = numcores, numthreads = numthreads)
-    else
-        coalesce!(canvas, layer)
-    end
-end
-
-function add_layer!(canvas::AL1, layer::AL2;
-                    numcores = 4, numthreads = 256) where {AL1 <: AbstractLayer,
-                                                           AL2 <: AbstractLayer}
-
-    postprocess!(layer)
-
-    coalesce!(canvas, layer)
-end
-
 function write_image(layer, filename;
-                     img = fill(RGBA(0,0,0), size(layer.reds)),
-                     numcores = 4, numthreads = 256) where AL <: AbstractLayer
+                     img = fill(RGBA(0,0,0),
+                                size(layer.reds))) where AL <: AbstractLayer
 
     postprocess!(layer)
 
@@ -148,37 +120,36 @@ end
 
 
 function write_image(layers::Vector{AL}, filename;
-                     img = fill(RGBA(0,0,0,0), size(layers[1].reds)),
-                     numcores = 4, numthreads = 256) where AL <: AbstractLayer
+                     img = fill(RGBA(0,0,0,0),
+                                size(layers[1].reds))) where AL <: AbstractLayer
 
     postprocess!(layers[1])
     for i = 2:length(layers)
         postprocess!(layers[i])
-        mix_layers!(layers[1], layers[i]; mode = :simple,
-                    numthreads = numthreads, numcores = numcores)
+        mix_layers!(layers[1], layers[i]; mode = :simple)
     end
 
     img .= Array(layers[1].canvas)
 
     save(filename, img)
-    reset!(layers; numthreads = numthreads, numcores = numcores)
+    reset!(layers)
     println(filename)
 end
 
-function write_video!(v::VideoParams, layers::Vector{AL};
-                      numcores = 4, numthreads = 256) where AL <: AbstractLayer
+function write_video!(v::VideoParams,
+                      layers::Vector{AL}) where AL <: AbstractLayer
  
-    postprocess!(layers[end])
+    postprocess!(layers[1])
     for i = 2:length(layers)
         post_process!(layers[i])
-        mix_layers!(layers[1], layers[i])
+        mix_layers!(layers[1], layers[i]; mode = :simple)
     end
 
     v.frame .= Array(layers[1].canvas)
 
     write(v.writer, v.frame)
     zero!(v.frame)
-    reset!(layers; numthreads = 256, numcores = numcores)
+    reset!(layers)
     println(v.frame_count)
     v.frame_count += 1
 end

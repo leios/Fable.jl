@@ -234,18 +234,15 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
 end
 
 function Hutchinson(fums::Array{FractalUserMethod},
-                    color_set, prob_set;
-                    AT = Array, FT = Float64, name = "",
+                    color_set, prob_set; name = "",
                     diagnostic = false, final = false) where A <: Array
     Hutchinson(fums, [], color_set, prob_set; final = final,
-               diagnostic = diagnostic, AT = AT, FT = FT, name = name)
+               diagnostic = diagnostic, name = name)
 end
 
 # This is a constructor for when people read in an array of arrays for colors
 function Hutchinson(fums::Array{FractalUserMethod},
-                    fis::Vector,
-                    color_set, prob_set;
-                    AT = Array, FT = Float64, name = "",
+                    fis::Vector, color_set, prob_set; name = "",
                     diagnostic = false, final = false) where A <: Array
 
     fnum = length(fums)
@@ -268,8 +265,7 @@ function Hutchinson(fums::Array{FractalUserMethod},
                       symbols, Tuple(length(fums)))
 end
 
-function Hutchinson(fos::Vector{FractalOperator}, fis::Vector;
-                    AT = Array, FT = Float64, name = "",
+function Hutchinson(fos::Vector{FractalOperator}, fis::Vector; name = "",
                     diagnostic = false, final = false)
 
     # constructing probabilities and colors
@@ -300,10 +296,9 @@ function Hutchinson(fos::Vector{FractalOperator}, fis::Vector;
 
 end
 
-function Hutchinson(fos::Vector{FractalOperator};
-                    AT = Array, FT = Float64, name = "",
+function Hutchinson(fos::Vector{FractalOperator}; name = "",
                     diagnostic = false, final = false)
-    Hutchinson(fos, [], AT = AT, FT = FT, name = name, diagnostic = diagnostic,
+    Hutchinson(fos, [], name = name, diagnostic = diagnostic,
                final = final)
 end
 
@@ -312,8 +307,7 @@ function update_fis!(H::Hutchinson, fis::Vector{FractalInput})
 end
 
 function update_colors!(H::Hutchinson, fx_id, h_id,
-                        new_color::Union{RGB, RGBA, Vector{N}};
-                        AT = Array) where N<:Number
+                        new_color::Union{RGB, RGBA, Vector{N}}) where N<:Number
 
     offset = 1
     for i = 2:h_id

@@ -11,8 +11,7 @@ triangle_fill = @fum function triangle_fill(x,y;
 end
 
 function define_triangle(A::Vector{FT}, B::Vector{FT}, C::Vector{FT},
-                         color; AT = Array, name = "triangle",
-                         chosen_fx = :fill,
+                         color; name = "triangle", chosen_fx = :fill,
                          diagnostic = false) where FT <: AbstractFloat
     fums, fis = define_triangle_operators(A, B, C; name = name)
 
@@ -31,8 +30,7 @@ function define_triangle(A::Vector{FT}, B::Vector{FT}, C::Vector{FT},
     end
     fos = [FractalOperator(fums[i], color_set[i], 1/fnum) for i = 1:fnum]
 
-    return Hutchinson(fos, fis; AT = AT, FT = FT,
-                      name = name, diagnostic = diagnostic)
+    return Hutchinson(fos, fis; name = name, diagnostic = diagnostic)
 end
 
 # This specifically returns the fums for a triangle triangle
@@ -60,16 +58,15 @@ function define_triangle_operators(A::Vector{FT}, B::Vector{FT},
     end
 end
 
-function update_triangle!(H::Hutchinson, A::Vector{F}, B::Vector{F},
-                          C::Vector{F};
-                          FT = Float64, AT = Array) where F <: AbstractFloat
+function update_triangle!(H::Hutchinson, A::Vector{FT}, B::Vector{FT},
+                          C::Vector{FT}) where FT <: AbstractFloat
 
     update_triangle!(H, A, B, C, nothing, nothing, nothing)
 end
 
-function update_triangle!(H::Hutchinson, A::Vector{F}, B::Vector{F},
-                          C::Vector{F}, color::Union{Array{F}, Nothing},
-                          FT = Float64, AT = Array) where F <: AbstractFloat
+function update_triangle!(H::Hutchinson, A::Vector{FT}, B::Vector{FT},
+                          C::Vector{FT},
+                          color::Union{Array{FT}, Nothing}) where FT <: AbstractFloat
 
     f_A = fi("A",A)
     f_B = fi("B",B)
@@ -77,7 +74,7 @@ function update_triangle!(H::Hutchinson, A::Vector{F}, B::Vector{F},
 
     H.symbols = configure_fis!([f_A, f_B, f_C])
     if color != nothing
-        H.color_set = new_color_array(color; FT = FT, AT = AT)
+        H.color_set = new_color_array(color)
     end
 
 end

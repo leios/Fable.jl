@@ -50,8 +50,7 @@ constant_disk = Fae.@fum function constant_disk(x, y; radius = 1, pos = (0,0),
 end
 
 # Returns back H, colors, and probs for a circle
-function define_circle(pos::Vector{FT}, radius::FT, color;
-                       AT = Array, name = "circle",
+function define_circle(pos::Vector{FT}, radius::FT, color; name = "circle",
                        chosen_fx = :constant_disk,
                        diagnostic = false) where FT <: AbstractFloat
 
@@ -66,8 +65,7 @@ function define_circle(pos::Vector{FT}, radius::FT, color;
               "maybe improper number of functions?")
     end
     fos = [FractalOperator(fums[i], color_set[i], 0.5) for i = 1:2]
-    return Hutchinson(fos, fis; AT = AT, FT = FT,
-                      name = name, diagnostic = diagnostic)
+    return Hutchinson(fos, fis; name = name, diagnostic = diagnostic)
 end
 
 # This specifically returns the fums for a circle
@@ -96,9 +94,8 @@ function update_circle!(H, pos, radius)
     update_circle!(H, pos, radius, nothing)
 end
 
-function update_circle!(H::Hutchinson, pos::Vector{F},
-                        radius, color::Union{Array{F}, Nothing};
-                        FT = Float64, AT = Array) where F <: AbstractFloat
+function update_circle!(H::Hutchinson, pos::Vector{FT}, radius,
+                        color::Union{Array{FT}, Nothing}) where FT <: AbstractFloat
 
     
     H.fi_set[3] = FractalInput(H.fi_set[3].index, H.fi_set[3].name, Tuple(pos))
@@ -106,7 +103,7 @@ function update_circle!(H::Hutchinson, pos::Vector{F},
     
     H.symbols = configure_fis!(H.fi_set)
     if color != nothing
-        H.color_set = new_color_array([color for i = 1:2], 4; FT = FT, AT = AT)
+        H.color_set = new_color_array([color for i = 1:2], 4)
     end
 
 end

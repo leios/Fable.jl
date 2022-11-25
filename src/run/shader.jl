@@ -1,14 +1,14 @@
 export run!
 
-function run!(layer::ShaderLayer, bounds; numcores = 4, numthreads = 256,
+function run!(layer::ShaderLayer, bounds;
               name = "ShaderLayer", diagnostic = false) 
 
     if isa(layer.canvas, Array)
-        kernel! = shader_kernel!(CPU(), numcores)
+        kernel! = shader_kernel!(CPU(), layer.params.numcores)
     elseif has_cuda_gpu() && isa(layer.canvas, CuArray)
-        kernel! = shader_kernel!(CUDADevice(), numthreads)
+        kernel! = shader_kernel!(CUDADevice(), layer.params.numthreads)
     elseif has_rocm_gpu() && isa(layer.canvas, ROCArray)
-        kernel! = shader_kernel!(ROCDevice(), numthreads)
+        kernel! = shader_kernel!(ROCDevice(), layer.params.numthreads)
     end
 
     wait(kernel!(layer.shader.symbols, Tuple(bounds),

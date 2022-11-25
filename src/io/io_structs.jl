@@ -38,18 +38,18 @@ function default_params(a::Type{FractalLayer}; config = :standard,
     if config == :standard
         return (numthreads = 256, numcores = 4, gamma = 2.2, logscale = false,
                 calc_max_value = false, max_value = 1, ArrayType = ArrayType,
-                FloatType = FloatType)
+                FloatType = FloatType, num_ignore = 20)
     elseif config == :fractal_flame
         return (numthreads = 256, numcores = 4, gamma = 2.2, logscale = true,
                 calc_max_value = true, max_value = 1, ArrayType = ArrayType,
-                FloatType = FloatType)
+                FloatType = FloatType, num_ignore = 20)
     end
 end
 
 function params(a::Type{FractalLayer}; numthreads = 256, numcores = 4,
                 ArrayType = Array, FloatType = Float32,
                 logscale = false, gamma = 2.2, calc_max_value = false,
-                max_value = 1)
+                max_value = 1, num_ignore = 20)
     return (numthreads = numthreads,
             numcores = numcores,
             ArrayType = ArrayType,
@@ -57,7 +57,8 @@ function params(a::Type{FractalLayer}; numthreads = 256, numcores = 4,
             logscale = logscale,
             gamma = gamma,
             max_value = max_value,
-            calc_max_value = calc_max_value)
+            calc_max_value = calc_max_value,
+            num_ignore = 20)
 end
 
 
@@ -69,26 +70,29 @@ function FractalLayer(v, r, g, b, a, c; config = standard)
 end
 
 # Create a blank, black image of size s
-function FractalLayer(s; ArrayType=Array, FloatType = Float32,
+function FractalLayer(s; config = :meh, ArrayType=Array, FloatType = Float32,
                       gamma = 2.2, logscale = true, calc_max_value = true,
                       max_value = 1, numcores = 4, numthreads = 256)
-    return FractalLayer(AT(zeros(Int,s)), AT(zeros(FT, s)),
-                        AT(zeros(FT, s)), AT(zeros(FT, s)), AT(zeros(FT, s)),
-                        AT(fill(RGBA(FT(0),0,0,0), s)),
-                        (numthreads = numthreads, numcores = numcores,
-                         gamma = gamma, logscale = logscale,
-                         calc_max_value = calc_max_value, max_value = max_value)
+    v = ArrayType(zeros(Int,s))
+    r = ArrayType(zeros(FloatType,s))
+    g = ArrayType(zeros(FloatType,s))
+    b = ArrayType(zeros(FloatType,s))
+    a = ArrayType(zeros(FloatType,s))
+    c = ArrayType(fill(RGBA(FloatType(0),0,0,0), s)),
+    if config == :standard || config == :fractal_flame
+        return FractalLayer(v, r, g, b, a, c,
+                            default_params(; ArrayType = ArrayType,
+                                             FloatType = FloatType,
+                                             config = config))
+    else
+        return FractalLayer(v, r, g, b, a, c, 
+                            (numthreads = numthreads, numcores = numcores,
+                             gamma = gamma, logscale = logscale,
+                             calc_max_value = calc_max_value,
+                             max_value = max_value, num_ignore = num_ignore))
+    end
 end
 
-function FractalLayer(s; ArrayType=Array, FloatType = Float32,
-                      config = :standard)
-    return FractalLayer(AT(zeros(Int,s)), AT(zeros(FT, s)),
-                        AT(zeros(FT, s)), AT(zeros(FT, s)), AT(zeros(FT, s)),
-                        AT(fill(RGBA(FT(0),0,0,0), s)),
-                        default_params(; ArrayType = ArrayType,
-                                         FloatType = FloatType,
-                                         config = config)
-end
 #------------------------------------------------------------------------------#
 # Color Layer
 #------------------------------------------------------------------------------#
@@ -104,7 +108,7 @@ function ColorLayer(c::CT, s; ArrayType = Array, FloatType = Float32,
     if isa(c, RGB)
         c = RGBA(c)
     end
-    return ColorLayer(c, AT(fill(c, s)), params(ColorLayer;
+    return ColorLayer(c, ArrayType(fill(c, s)), params(ColorLayer;
                                                 ArrayType = ArrayType,
                                                 FloatType = FloatType,
                                                 numcores = numcores,
@@ -123,8 +127,10 @@ end
 
 function ShaderLayer(shader::Shader, s; ArrayType = Array, FloatType = Float32,
                      numcores = 4, numthreads = 256)
-    return ShaderLayer(shader, AT(zeros(s)), AT(zeros(s)), AT(zeros(s)),
-                       AT(zeros(s)), AT(fill(RGBA(FT(0),0,0,0), s)),
+    return ShaderLayer(shader, ArrayType(zeros(s)), ArrayType(zeros(s)),
+                       ArrayType(zeros(s)),
+                       ArrayType(zeros(s)),
+                       ArrayType(fill(RGBA(FloatType(0),0,0,0), s)),
                        params(ShaderLayer; ArrayType = ArrayType,
                                            FloatType = FloatType,
                                            numcores = numcores,
@@ -133,8 +139,10 @@ end
 
 function ShaderLayer(fum::FractalUserMethod, s; ArrayType = Array,
                      FloatType = Float32, numcores = 4, numthreads = 256)
-    return ShaderLayer(Shader(fum), AT(zeros(s)), AT(zeros(s)), AT(zeros(s)),
-                       AT(zeros(s)), AT(fill(RGBA(FT(0),0,0,0), s)),
+    return ShaderLayer(Shader(fum), ArrayType(zeros(s)),
+                       ArrayType(zeros(s)), ArrayType(zeros(s)),
+                       ArrayType(zeros(s)),
+                       ArrayType(fill(RGBA(FloatType(0),0,0,0), s)),
                        params(ShaderLayer; ArrayType = ArrayType,
                                            FloatType = FloatType,
                                            numcores = numcores,

@@ -18,17 +18,15 @@ run!(layer::FractalLayer, args...; kwargs...) = fractal_flame!(layer, args...; k
 end
 
 function iterate!(ps::Points, pxs::FractalLayer, H::Hutchinson, n,
-                  bounds, bin_widths, H2::Hutchinson;
-                  diagnostic = false, numcores = 4, numthreads=256,
-                  num_ignore = 20)
+                  bounds, bin_widths, H2::Hutchinson; diagnostic = false)
 
     max_range = maximum(bounds)*10
     if isa(ps.positions, Array)
-        kernel! = naive_chaos_kernel!(CPU(), numcores)
+        kernel! = naive_chaos_kernel!(CPU(), pxs.params.numcores)
     elseif has_cuda_gpu() && isa(ps.positions, CuArray)
-        kernel! = naive_chaos_kernel!(CUDADevice(), numthreads)
+        kernel! = naive_chaos_kernel!(CUDADevice(), pxs.params.numthreads)
     elseif has_rocm_gpu() && isa(ps.positions, ROCArray)
-        kernel! = naive_chaos_kernel!(ROCDevice(), numthreads)
+        kernel! = naive_chaos_kernel!(ROCDevice(), pxs.params.numthreads)
     end
 
     if diagnostic
@@ -38,7 +36,7 @@ function iterate!(ps::Points, pxs::FractalLayer, H::Hutchinson, n,
     kernel!(ps.positions, n, H.op, H.cop, H.prob_set, H.symbols, H.fnums,
             H2.op, H2.cop, H2.symbols, H2.prob_set, H2.fnums,
             pxs.values, pxs.reds, pxs.greens, pxs.blues, pxs.alphas, 
-            Tuple(bounds), Tuple(bin_widths), num_ignore, max_range,
+            Tuple(bounds), Tuple(bin_widths), pxs.params.num_ignore, max_range,
             ndrange=size(ps.positions)[1])
 end
 
@@ -137,43 +135,39 @@ end
 
 function fractal_flame(H1::Hutchinson, H2::Hutchinson, num_particles::Int,
                        num_iterations::Int, bounds, res;
-                       dims = 2, AT = Array, FT = Float32, diagnostic = false,
-                       num_ignore = 20, numthreads = 256, logscale = true, 
-                       numcores = 4)
+                       dims = 2, ArrayType = Array, FloatType = Float32,
+                       diagnostic = false, num_ignore = 20, numthreads = 256,
+                       logscale = true, numcores = 4)
 
-    layer = FractalLayer(res; AT = AT, FT = FT, logscale = logscale)
+    layer = FractalLayer(res; ArrayType = ArrayType, FloatType = FloatType,
+                         logscale = logscale, num_ignore = num_ignore,
+                         numthreads = numthreads, numcores = numcores)
 
     fractal_flame!(layer, H1, num_particles, num_iterations, bounds;
-                   dims = dims, AT = AT, FT = FT, H2 = H2,
-                   num_ignore = num_ignore, diagnostic = diagnostic,
-                   numthreads = numthreads, numcores = numcores)
+                   dims = dims, H2 = H2, diagnostic = diagnostic)
 end
 
 function fractal_flame!(layer::FractalLayer, H1::Hutchinson, H2::Hutchinson,
                         num_particles::Int, num_iterations::Int, bounds;
-                        dims = 2, AT = Array, FT = Float32, diagnostic = false, 
-                        num_ignore = 20, numthreads = 256,
-                        numcores = 4)
+                        dims = 2, diagnostic = false)
 
     fractal_flame!(layer, H1, num_particles, num_iterations, bounds;
-                   dims = dims, AT = AT, FT = FT, H2 = H2,
-                   num_ignore = num_ignore, diagnostic = diagnostic,
-                   numthreads = numthreads, numcores = numcores)
+                   dims = dims, H2 = H2, diagnostic = diagnostic)
 
 end
 
 function fractal_flame(H::Hutchinson, num_particles::Int,
                        num_iterations::Int, bounds, res;
-                       dims = 2, AT = Array, FT = Float32, H2 = Hutchinson(),
-                       num_ignore = 20, diagnostic = false, logscale = true, 
-                       numthreads = 256, numcores = 4)
+                       dims = 2, ArrayType = Array, FloatType = Float32,
+                       H2 = Hutchinson(), num_ignore = 20, diagnostic = false,
+                       logscale = true, numthreads = 256, numcores = 4)
 
-    layer = FractalLayer(res; AT = AT, FT = FT)
+    layer = FractalLayer(res; ArrayType = ArrayType, FloatType = FloatType,
+                         num_ignore = num_ignore, numthreads = numthreads,
+                         numcores = numcores)
 
     fractal_flame!(layer, H, num_particles, num_iterations, bounds;
-                   dims = dims, AT = AT, FT = FT, H2 = H2,
-                   num_ignore = num_ignore, diagnostic = diagnostic,
-                   numthreads = numthreads, numcores = numcores)
+                   dims = dims, H2 = H2, diagnostic = diagnostic)
 end
 
 
@@ -192,12 +186,11 @@ end
 #   [0.25, 0.25, 0.25, 0.25])
 function fractal_flame!(layer::FractalLayer, H::Hutchinson, num_particles::Int,
                         num_iterations::Int, bounds;
-                        dims = 2, AT = Array, FT = Float32,
-                        H2 = Hutchinson(), num_ignore = 20, diagnostic = false,
-                        numthreads = 256, numcores = 4)
+                        dims = 2, H2 = Hutchinson())
 
     res = size(layer.canvas)
-    pts = Points(num_particles; FT = FT, dims = dims, AT = AT, bounds = bounds)
+    pts = Points(num_particles; FloatType = eltype(layer.reds), dims = dims,
+                 ArrayType = typeof(layer.reds), bounds = bounds)
 
     bin_widths = zeros(size(bounds)[1])
     for i = 1:length(bin_widths)
@@ -206,9 +199,7 @@ function fractal_flame!(layer::FractalLayer, H::Hutchinson, num_particles::Int,
 
     println("kernel time:")
     @time wait(iterate!(pts, layer, H, num_iterations,
-                        bounds, bin_widths, H2,
-                        numcores=numcores, numthreads=numthreads,
-                        num_ignore=num_ignore, diagnostic = diagnostic))
+                        bounds, bin_widths, H2, diagnostic = diagnostic))
 
     return layer
 
