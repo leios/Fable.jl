@@ -144,10 +144,10 @@ end
     end
 end
 
-function run!(layer::FractalLayer, bounds)
+function run!(layer::FractalLayer, bounds; diagnostic = false)
 
     res = size(layer.canvas)
-    pts = Points(num_particles; FloatType = eltype(layer.reds),
+    pts = Points(layer.params.num_particles; FloatType = eltype(layer.reds),
                  dims = layer.params.dims,
                  ArrayType = typeof(layer.reds), bounds = bounds)
 
@@ -157,8 +157,8 @@ function run!(layer::FractalLayer, bounds)
     end
 
     println("kernel time:")
-    @time wait(iterate!(pts, layer, layer.H1, num_iterations,
-                        bounds, bin_widths, layer.H2, diagnostic = diagnostic))
+    @time wait(iterate!(pts, layer, layer.H1, layer.params.num_iterations,
+                        bounds, bin_widths, layer.H2; diagnostic = diagnostic))
 
     return layer
 

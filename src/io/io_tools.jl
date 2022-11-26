@@ -106,7 +106,8 @@ function to_cpu!(cpu_layer, layer)
     cpu_layer.alphas = Array(layer.alphas)
 end
 
-function write_image(layer, filename;
+function write_image(layer;
+                     filename::Union{Nothing, String} = nothing,
                      img = fill(RGBA(0,0,0),
                                 size(layer.reds))) where AL <: AbstractLayer
 
@@ -114,12 +115,18 @@ function write_image(layer, filename;
 
     img .= Array(layer.canvas)
 
-    save(filename, img)
-    println(filename)
+    reset!(layer)
+    if isnothing(filename)
+        return img
+    else
+        save(filename, img)
+        println(filename)
+    end
 end
 
 
-function write_image(layers::Vector{AL}, filename;
+function write_image(layers::Vector{AL};
+                     filename::Union{Nothing, String} = nothing,
                      img = fill(RGBA(0,0,0,0),
                                 size(layers[1].reds))) where AL <: AbstractLayer
 
@@ -131,9 +138,13 @@ function write_image(layers::Vector{AL}, filename;
 
     img .= Array(layers[1].canvas)
 
-    save(filename, img)
     reset!(layers)
-    println(filename)
+    if isnothing(filename)
+        return img
+    else
+        save(filename, img)
+        println(filename)
+    end
 end
 
 function write_video!(v::VideoParams,

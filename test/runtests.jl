@@ -1,6 +1,7 @@
 using Test
 using KernelAbstractions
 using Fae
+using Images
 
 ArrayTypes = [Array]
 using CUDA
@@ -20,11 +21,13 @@ end
 
 include("histogram_tests.jl")
 include("random_tests.jl")
+include("chaos_tests.jl")
 
 function run_tests(ArrayTypes)
     for ArrayType in ArrayTypes
         histogram_testsuite(ArrayType)
         random_testsuite(ArrayType)
+        chaos_testsuite(ArrayType)
     end
 end
 

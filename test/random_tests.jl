@@ -87,7 +87,7 @@ function random_testsuite(ArrayType::Type{AT}) where AT <: AbstractArray
         end
     end
 
-    @testset "LCG tests for $(string(ArrayType))" begin
+    @testset "LCG tests for $(string(ArrayType))s" begin
         LCG_tests(ArrayType)
     end
 end

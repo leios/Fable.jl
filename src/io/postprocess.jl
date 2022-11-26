@@ -21,14 +21,13 @@ end
 
 function to_canvas!(layer::FractalLayer)
 
-    if layer.logscale
-        f = FL_canvas_kernel!
-    else
+    f = FL_canvas_kernel!
+    if layer.params.logscale
         f = FL_logscale_kernel!
     end
 
-    if layer.calc_max_value != 0
-        layer.max_value = maximum(layer.values)
+    if layer.params.calc_max_value != 0
+        update_params!(layer; max_value = maximum(layer.values))
     end
 
     if isa(layer.reds, Array)
@@ -39,8 +38,15 @@ function to_canvas!(layer::FractalLayer)
         kernel! = f(ROCDevice(), layer.params.numthreads)
     end
 
-    wait(kernel!(layer.canvas, layer.reds, layer.greens, layer.blues,
-                 layer.alphas, layer.values, ndrange = length(layer.canvas)))
+    if layer.params.logscale
+        wait(kernel!(layer.canvas, layer.reds, layer.greens, layer.blues,
+                     layer.alphas, layer.values, layer.params.gamma,
+                     layer.params.max_value, ndrange = length(layer.canvas)))
+    else
+        wait(kernel!(layer.canvas, layer.reds, layer.greens, layer.blues,
+                     layer.alphas, layer.values,
+                     ndrange = length(layer.canvas)))
+    end
     
     return nothing
 end
@@ -64,9 +70,9 @@ end
 
 end
 
-@kernel function FL_logscale_kernel!(layer_reds, layer_greens, layer_blues,
-                                     layer_alphas, layer_values, layer_gamma,
-                                     layer_max_value)
+@kernel function FL_logscale_kernel!(canvas, layer_reds, layer_greens,
+                                     layer_blues, layer_alphas, layer_values,
+                                     layer_gamma, layer_max_value)
 
     tid = @index(Global, Linear)
     FT = eltype(layer_reds)
