@@ -1,3 +1,7 @@
+#------------------------------------------------------------------------------#
+# Helper Functions
+#------------------------------------------------------------------------------#
+
 function find_dims(a)
     if ndims(a) == 1
         return 1
@@ -13,15 +17,17 @@ function create_histogram!(histogram_output, input;
                           bin_widths = ones(dims))
  
     for i = 1:size(input)[1]
-        bin = Fae.find_bin(histogram_output,
-                                input, i, dims,
-                                bounds, bin_widths)
+        bin = Fae.find_bin(histogram_output, input, i, dims, bounds, bin_widths)
         histogram_output[bin] += 1
     end
 
 end
 
-@testset "find bin test" begin
+#------------------------------------------------------------------------------#
+# Test Definitions
+#------------------------------------------------------------------------------#
+
+function find_bin_tests()
 
     # Integer test
     # defining a to be 1's everywhere
@@ -55,7 +61,7 @@ end
 
 end
 
-@testset "histogram kernel tests" begin
+function histogram_kernel_tests(ArrayType::Type{AT}) where AT <: AbstractArray
 
     rand_input = rand(Float32, 128)*128
     linear_input = [i for i = 1:1024]
@@ -86,77 +92,44 @@ end
     create_histogram!(histogram_rand_baseline_2d, rand_input_2d)
     create_histogram!(histogram_rand_baseline_3d, rand_input_3d)
 
-    CPU_rand_histogram = zeros(Int, 128)
-    CPU_linear_histogram = zeros(Int, 1024)
-    CPU_linear_2d_histogram = zeros(Int, 100, 100)
-    CPU_offset_2d_histogram = zeros(Int, 100, 100)
-    CPU_2_histogram = zeros(Int, 2)
-    CPU_rand_histogram_2d = zeros(Int, 128, 128)
-    CPU_rand_histogram_3d = zeros(Int, 32, 32, 32)
+    rand_histogram = ArrayType(zeros(Int, 128))
+    linear_histogram = ArrayType(zeros(Int, 1024))
+    linear_2d_histogram = ArrayType(zeros(Int, 100, 100))
+    offset_2d_histogram = ArrayType(zeros(Int, 100, 100))
+    histogram_2s = ArrayType(zeros(Int, 2))
+    rand_histogram_2d = ArrayType(zeros(Int, 128, 128))
+    rand_histogram_3d = ArrayType(zeros(Int, 32, 32, 32))
 
-    @time wait(Fae.histogram!(CPU_rand_histogram, rand_input))
-    @time wait(Fae.histogram!(CPU_linear_histogram, linear_input))
-    @time wait(Fae.histogram!(CPU_linear_2d_histogram, linear_input_2d))
-    @time wait(Fae.histogram!(CPU_offset_2d_histogram, linear_input_2d))
-    @time wait(Fae.histogram!(CPU_2_histogram, all_2))
-    @time wait(Fae.histogram!(CPU_rand_histogram_2d, rand_input_2d))
-    @time wait(Fae.histogram!(CPU_rand_histogram_3d, rand_input_3d))
+    @time wait(Fae.histogram!(rand_histogram, ArrayType(rand_input)))
+    @time wait(Fae.histogram!(linear_histogram, ArrayType(linear_input)))
+    @time wait(Fae.histogram!(linear_2d_histogram, ArrayType(linear_input_2d)))
+    @time wait(Fae.histogram!(offset_2d_histogram, ArrayType(linear_input_2d)))
+    @time wait(Fae.histogram!(histogram_2s, ArrayType(all_2)))
+    @time wait(Fae.histogram!(rand_histogram_2d, ArrayType(rand_input_2d)))
+    @time wait(Fae.histogram!(rand_histogram_3d, ArrayType(rand_input_3d)))
 
-    @test isapprox(CPU_rand_histogram, histogram_rand_baseline)
-    @test isapprox(CPU_linear_histogram, histogram_linear_baseline)
-    @test isapprox(CPU_linear_2d_histogram, histogram_linear_2d_baseline)
-    @test isapprox(CPU_offset_2d_histogram, histogram_offset_2d_baseline)
-    @test isapprox(CPU_2_histogram, histogram_2_baseline)
-    @test isapprox(CPU_rand_histogram_2d, histogram_rand_baseline_2d)
-    @test isapprox(CPU_rand_histogram_3d, histogram_rand_baseline_3d)
+    @test isapprox(Array(rand_histogram), histogram_rand_baseline)
+    @test isapprox(Array(linear_histogram), histogram_linear_baseline)
+    @test isapprox(Array(linear_2d_histogram), histogram_linear_2d_baseline)
+    @test isapprox(Array(offset_2d_histogram), histogram_offset_2d_baseline)
+    @test isapprox(Array(histogram_2s), histogram_2_baseline)
+    @test isapprox(Array(rand_histogram_2d), histogram_rand_baseline_2d)
+    @test isapprox(Array(rand_histogram_3d), histogram_rand_baseline_3d)
 
-    if has_cuda_gpu()
-        CUDA.allowscalar(false)
+end
 
-        GPU_rand_input = CuArray(rand_input)
-        GPU_linear_input = CuArray(linear_input)
-        GPU_linear_2d_input = CuArray(linear_input_2d)
-        GPU_offset_2d_input = CuArray(offset_input_2d)
-        GPU_2_input = CuArray(all_2)
-        GPU_rand_input_2d = CuArray(rand_input_2d)
-        GPU_rand_input_3d = CuArray(rand_input_3d)
+#------------------------------------------------------------------------------#
+# Testsuit Definition
+#------------------------------------------------------------------------------#
 
-        GPU_rand_histogram = CuArray(zeros(Int, 128))
-        GPU_linear_histogram = CuArray(zeros(Int, 1024))
-        GPU_linear_2d_histogram = CuArray(zeros(Int, 100, 100))
-        GPU_offset_2d_histogram = CuArray(zeros(Int, 100, 100))
-        GPU_2_histogram = CuArray(zeros(Int, 2))
-        GPU_rand_histogram_2d = CuArray(zeros(Int, 128, 128))
-        GPU_rand_histogram_3d = CuArray(zeros(Int, 32, 32, 32))
-
-        CUDA.@time wait(Fae.histogram!(GPU_rand_histogram, GPU_rand_input))
-        CUDA.@time wait(Fae.histogram!(GPU_linear_histogram, GPU_linear_input))
-        CUDA.@time wait(Fae.histogram!(GPU_linear_2d_histogram, GPU_linear_2d_input))
-        CUDA.@time wait(Fae.histogram!(GPU_offset_2d_histogram, GPU_offset_2d_input))
-        CUDA.@time wait(Fae.histogram!(GPU_2_histogram, GPU_2_input))
-        CUDA.@time wait(Fae.histogram!(GPU_rand_histogram_2d, GPU_rand_input_2d))
-        CUDA.@time wait(Fae.histogram!(GPU_rand_histogram_3d, GPU_rand_input_3d))
-
-#=
-        return (Array(GPU_linear_2d_histogram), histogram_linear_2d_baseline)
-        #return (Array(GPU_rand_histogram_2d), histogram_rand_baseline_2d)
-        println(sum(Array(GPU_rand_histogram_2d)))
-        println(sum(CPU_rand_histogram_2d))
-        println(sum(histogram_rand_baseline_2d))
-        println(sum(Array(GPU_rand_histogram_3d)))
-        println(sum(CPU_rand_histogram_3d))
-        println(sum(histogram_rand_baseline_3d))
-=#
-
-        @test isapprox(Array(GPU_rand_histogram), histogram_rand_baseline)
-        @test isapprox(Array(GPU_linear_histogram), histogram_linear_baseline)
-        @test isapprox(Array(GPU_linear_2d_histogram),
-                       histogram_linear_2d_baseline)
-        @test isapprox(Array(GPU_offset_2d_histogram),
-                       histogram_offset_2d_baseline)
-        @test isapprox(Array(GPU_2_histogram), histogram_2_baseline)
-        @test isapprox(Array(GPU_rand_histogram_2d), histogram_rand_baseline_2d)
-        @test isapprox(Array(GPU_rand_histogram_3d), histogram_rand_baseline_3d)
+function histogram_testsuite(ArrayType::Type{AT}) where AT <: AbstractArray
+    if ArrayType <: Array
+        @testset "find bin tests" begin
+            find_bin_tests()
+        end
     end
 
+    @testset "Histogram kernel tests for $(string(ArrayType))s" begin
+        histogram_kernel_tests(ArrayType)
+    end
 end
