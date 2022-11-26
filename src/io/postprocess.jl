@@ -56,12 +56,14 @@ end
     tid = @index(Global, Linear)
     FT = eltype(layer_reds)
 
+    val = layer_values[tid]
+
     # warp divergence, WOOOoooOOO
-    if layer_values[tid] > 0
-        @inbounds r = layer_reds[tid]/layer_values[tid]
-        @inbounds g = layer_greens[tid]/layer_values[tid]
-        @inbounds b = layer_blues[tid]/layer_values[tid]
-        @inbounds a = layer_alphas[tid]/layer_values[tid]
+    if val > 0
+        @inbounds r = layer_reds[tid]/val
+        @inbounds g = layer_greens[tid]/val
+        @inbounds b = layer_blues[tid]/val
+        @inbounds a = layer_alphas[tid]/val
 
         @inbounds canvas[tid] = RGBA(r,g,b,a)
     else
@@ -77,7 +79,7 @@ end
     tid = @index(Global, Linear)
     FT = eltype(layer_reds)
 
-    if layer_max_value == 0
+    if layer_max_value != 0
         @inbounds alpha = log10((9*layer_values[tid]/layer_max_value)+1)
         @inbounds r = layer_reds[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
         @inbounds g = layer_greens[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
