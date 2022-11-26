@@ -25,24 +25,21 @@ function chaos_tests(ArrayType::Type{AT}) where AT <: AbstractArray
                           chosen_fx = :naive_disk)
 
     fl = FractalLayer((11,11); ArrayType = ArrayType, config = :fractal_flame,
-                      H_1 = H)
+                      H1 = H)
 
     run!(fl, bounds)
     img = write_image(fl)
 
-#=
     @test color_gt(img[5,5], img[1,1])
-    @test isapprox(img[5,5].r, img[1,1].r) &
-          isapprox(img[5,5].g, img[1,1].g) &
-          isapprox(img[5,5].b, img[1,1].b)
-=#
+    @test isapprox(img[5,5].r, img[4,4].r)
+    @test isapprox(img[5,5].g, img[4,4].g)
+    @test isapprox(img[5,5].b, img[4,4].b)
 
-    println('\n')
-    fl = FractalLayer((11,11); ArrayType = ArrayType, config = :simple, H_1 = H)
+    fl = FractalLayer((11,11); ArrayType = ArrayType, config = :simple, H1 = H)
     run!(fl, bounds)
-    img = write_image(fl; filename = "chaos_check2.png")
-    return fl
-    @test isapprox(img[5,5], img[1,1])
+    img = write_image(fl)
+    @test isapprox(img[5,5], img[4,4])
+    @test !isapprox(img[5,5], img[1,1])
 end
 
 

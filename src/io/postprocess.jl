@@ -23,6 +23,7 @@ function to_canvas!(layer::FractalLayer)
 
     f = FL_canvas_kernel!
     if layer.params.logscale
+        norm_layer!(layer)
         f = FL_logscale_kernel!
     end
 
@@ -81,9 +82,9 @@ end
 
     if layer_max_value != 0
         @inbounds alpha = log10((9*layer_values[tid]/layer_max_value)+1)
-        @inbounds r = layer_reds[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
-        @inbounds g = layer_greens[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
-        @inbounds b = layer_blues[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
+        @inbounds r = layer_reds[tid]^(1/layer_gamma)
+        @inbounds g = layer_greens[tid]^(1/layer_gamma)
+        @inbounds b = layer_blues[tid]^(1/layer_gamma)
         @inbounds a = layer_alphas[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
         @inbounds canvas[tid] = RGBA(r,g,b,a)
     else
@@ -92,7 +93,6 @@ end
 end
 
 function postprocess!(layer::AL) where AL <: AbstractLayer
-    norm_layer!(layer)
     to_canvas!(layer)   
 end
 

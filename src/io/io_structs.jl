@@ -94,7 +94,7 @@ end
 
 # Creating a default call
 function FractalLayer(v, r, g, b, a, c; config = standard,
-                      H_1 = Hutchinson(), H_2 = Hutchinson())
+                      H1 = Hutchinson(), H2 = Hutchinson())
     return FractalLayer(Hutchinson(), Hutchinson(),
                         v, r, g, b, a, c, default_params(FractalLayer,
                                                          config = config,
@@ -107,7 +107,7 @@ function FractalLayer(s; config = :meh, ArrayType=Array, FloatType = Float32,
                       gamma = 2.2, logscale = false, calc_max_value = false,
                       max_value = 1, numcores = 4, numthreads = 256,
                       num_particles = 1000, num_iterations = 1000, dims = 2,
-                      H_1 = Hutchinson(), H_2 = Hutchinson())
+                      H1 = Hutchinson(), H2 = Hutchinson())
     v = ArrayType(zeros(Int,s))
     r = ArrayType(zeros(FloatType,s))
     g = ArrayType(zeros(FloatType,s))
@@ -115,7 +115,7 @@ function FractalLayer(s; config = :meh, ArrayType=Array, FloatType = Float32,
     a = ArrayType(zeros(FloatType,s))
     c = ArrayType(fill(RGBA(FloatType(0),0,0,0), s))
     if config == :standard || config == :fractal_flame
-        return FractalLayer(H_1, H_2, v, r, g, b, a, c,
+        return FractalLayer(H1, H2, v, r, g, b, a, c,
                             default_params(FractalLayer;
                                            ArrayType = ArrayType,
                                            FloatType = FloatType,
@@ -124,7 +124,7 @@ function FractalLayer(s; config = :meh, ArrayType=Array, FloatType = Float32,
                                            num_iterations = num_iterations,
                                            dims = dims))
     else
-        return FractalLayer(H_1, H_2, v, r, g, b, a, c,
+        return FractalLayer(H1, H2, v, r, g, b, a, c,
                             params(FractalLayer;
                                    ArrayType=ArrayType,
                                    FloatType = FloatType,
