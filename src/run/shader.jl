@@ -2,20 +2,19 @@ export run!
 
 function run!(layer::ShaderLayer, bounds; diagnostic = false) 
 
-    if isa(layer.canvas, Array)
+    if layer.params.ArrayType <: Array
         kernel! = shader_kernel!(CPU(), layer.params.numcores)
-    elseif has_cuda_gpu() && isa(layer.canvas, CuArray)
+    elseif has_cuda_gpu() && layer.params.ArrayType <: CuArray
         kernel! = shader_kernel!(CUDADevice(), layer.params.numthreads)
-    elseif has_rocm_gpu() && isa(layer.canvas, ROCArray)
+    elseif has_rocm_gpu() && layer.params.ArrayType <: ROCArray
         kernel! = shader_kernel!(ROCDevice(), layer.params.numthreads)
     end
 
-    wait(kernel!(layer.shader.symbols, Tuple(bounds),
+    wait(kernel!(layer.shader.symbols, layer.canvas, Tuple(bounds),
                  layer.shader.op, ndrange = size(layer.canvas)))
 end
 
-@kernel function shader_kernel!(symbols, layer_reds, layer_greens, layer_blues,
-                                layer_alphas, bounds, op)
+@kernel function shader_kernel!(symbols, canvas, bounds, op)
 
     i, j = @index(Global, NTuple)
     tid = @index(Global, Linear)

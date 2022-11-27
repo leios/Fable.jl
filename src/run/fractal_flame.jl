@@ -156,9 +156,8 @@ function run!(layer::FractalLayer, bounds; diagnostic = false)
         bin_widths[i] = (bounds[i,2]-bounds[i,1])/res[i]
     end
 
-    println("kernel time:")
-    @time wait(iterate!(pts, layer, layer.H1, layer.params.num_iterations,
-                        bounds, bin_widths, layer.H2; diagnostic = diagnostic))
+    wait(iterate!(pts, layer, layer.H1, layer.params.num_iterations,
+                  bounds, bin_widths, layer.H2; diagnostic = diagnostic))
 
     return layer
 

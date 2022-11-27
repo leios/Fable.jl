@@ -155,6 +155,8 @@ function ColorLayer(c::CT, s; ArrayType = Array, FloatType = Float32,
     if isa(c, RGB)
         c = RGBA(c)
     end
+
+    c = RGBA{FloatType}(c)
     return ColorLayer(c, ArrayType(fill(c, s)), params(ColorLayer;
                                                 ArrayType = ArrayType,
                                                 FloatType = FloatType,
@@ -174,9 +176,7 @@ end
 
 function ShaderLayer(shader::Shader, s; ArrayType = Array, FloatType = Float32,
                      numcores = 4, numthreads = 256)
-    return ShaderLayer(shader, ArrayType(zeros(s)), ArrayType(zeros(s)),
-                       ArrayType(zeros(s)),
-                       ArrayType(zeros(s)),
+    return ShaderLayer(shader,
                        ArrayType(fill(RGBA(FloatType(0),0,0,0), s)),
                        params(ShaderLayer; ArrayType = ArrayType,
                                            FloatType = FloatType,
@@ -186,9 +186,7 @@ end
 
 function ShaderLayer(fum::FractalUserMethod, s; ArrayType = Array,
                      FloatType = Float32, numcores = 4, numthreads = 256)
-    return ShaderLayer(Shader(fum), ArrayType(zeros(s)),
-                       ArrayType(zeros(s)), ArrayType(zeros(s)),
-                       ArrayType(zeros(s)),
+    return ShaderLayer(Shader(fum),
                        ArrayType(fill(RGBA(FloatType(0),0,0,0), s)),
                        params(ShaderLayer; ArrayType = ArrayType,
                                            FloatType = FloatType,
