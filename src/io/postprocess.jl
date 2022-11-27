@@ -61,10 +61,10 @@ end
 
     # warp divergence, WOOOoooOOO
     if val > 0
-        @inbounds r = layer_reds[tid]/val
-        @inbounds g = layer_greens[tid]/val
-        @inbounds b = layer_blues[tid]/val
-        @inbounds a = layer_alphas[tid]/val
+        @inbounds r = min(layer_reds[tid]/val,1)
+        @inbounds g = min(layer_greens[tid]/val,1)
+        @inbounds b = min(layer_blues[tid]/val,1)
+        @inbounds a = min(layer_alphas[tid]/val,1)
 
         @inbounds canvas[tid] = RGBA(r,g,b,a)
     else

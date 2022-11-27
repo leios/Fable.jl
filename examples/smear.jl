@@ -1,13 +1,15 @@
 using Fae
 
-function main(num_particles, num_iterations, total_frames, AT;
+function main(num_particles, num_iterations, total_frames, ArrayType;
               output_type = :video)
-    FT = Float32
+    FloatType = Float32
 
     # define image domain
     res = (1080, 1920)
     bounds = [-4.5 4.5; -8 8]
-    layer = FractalLayer(res; AT = AT, logscale = false, FT = FT)
+    layer = FractalLayer(res; ArrayType = ArrayType, FloatType = FloatType,
+                         num_particles = num_particles,
+                         num_iterations = num_iterations)
 
     # defining video parameters
     if output_type == :video
@@ -19,7 +21,7 @@ function main(num_particles, num_iterations, total_frames, AT;
     radius = 1.0
     pos = [-2.0, -2.0]
 
-    ball = define_circle(pos, radius, (1,1,1); AT = AT)
+    ball = define_circle(pos, radius, (1,1,1))
 
     # fractal inputs to track changes in position, scale, and theta for smear 
     object_position = fi("object_position", pos)
@@ -35,6 +37,9 @@ function main(num_particles, num_iterations, total_frames, AT;
     # now turning it into a fractal operator
     smear_transform = fee(Hutchinson, [FractalOperator(smear)],
                           fis; name = "smear", final = true, diagnostic = true)
+
+    layer.H1 = ball
+    layer.H2 = smear_transform
 
     for i = 1:total_frames
 
@@ -55,9 +60,7 @@ function main(num_particles, num_iterations, total_frames, AT;
         theta = set(theta, pi/4)
 
         update_fis!(smear_transform, [object_position, scale, theta])
-        run!(layer, ball, smear_transform, num_particles,
-             num_iterations, bounds, res;
-             AT = AT, FT = FT)
+        run!(layer, bounds)
 
         if output_type == :video
             write_video!(video_out, [layer])

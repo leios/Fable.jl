@@ -35,7 +35,11 @@ function chaos_tests(ArrayType::Type{AT}) where AT <: AbstractArray
     @test isapprox(img[5,5].g, img[4,4].g)
     @test isapprox(img[5,5].b, img[4,4].b)
 
-    fl = FractalLayer((11,11); ArrayType = ArrayType, config = :simple, H1 = H)
+    GC.gc()
+
+    H2 = Fae.define_circle([0.0,0.0], 2.0, [1.0, 1.0, 1.0, 1.0];
+                           chosen_fx = :constant_disk, name = "chaos_test_2")
+    fl = FractalLayer((11,11); ArrayType = ArrayType, config = :simple, H1 = H2)
     run!(fl, bounds)
     img = write_image(fl)
     @test isapprox(img[5,5], img[4,4])

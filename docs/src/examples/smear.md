@@ -46,13 +46,13 @@ So, let's get to it!
 ## Example
 
 To start, I will create a function that use the `num_particles`, and `num_iterations` for the naive chaos game kernel.
-Note in this case, I am also using `AT` for the Array Type (`Array` for CPU or `CuArray` for GPU), and `num_frames` for the total number of frames.
+Note in this case, I am also using `ArrayType` for the Array Type (`Array` for CPU or `CuArray` for GPU), and `num_frames` for the total number of frames.
 Finally, I will create an `output_type` variable that can be either `:video`, or `:image` to output to video (`out.mp4`) or images (`check*.png`):
 
 ```
-using Fae, CUDA
+using Fae, CUDA, AMDGPU
 
-function main(num_particles, num_iterations, total_frames, AT;
+function main(num_particles, num_iterations, total_frames, ArrayType;
               output_type = :video)
 
 ```
@@ -63,7 +63,9 @@ Now I will define the image and video parameters:
     # define image domain
     res = (1080, 1920)
     bounds = [-4.5 4.5; -8 8]
-    layer = FractalLayer(res; AT = AT, logscale = false, FT = FT)
+    layer = FractalLayer(res; ArrayType = ArrayType, FloatType = FloatType,
+                         num_particles = num_particles,
+                         num_iterations = num_iterations)
 
     # defining video parameters
     if output_type == :video
@@ -81,7 +83,7 @@ Now we define the ball:
     radius = 1.0
     pos = [-2.0, -2.0]
 
-    ball = define_circle(pos, radius, (1,1,1); AT = AT)
+    ball = define_circle(pos, radius, (1,1,1))
 ```
 
 And now we start getting ready for the smear frame transformation:
@@ -126,6 +128,14 @@ end
 
 ```
 
+After this, we need to attach the newly generated operators to the `FractalLayer`:
+
+```
+    # attaching each operator to the layer
+    layer.H1 = ball
+    layer.H2 = smear_transform
+```
+
 Finally, we have the animation loop:
 
 ```
@@ -148,9 +158,7 @@ Finally, we have the animation loop:
         theta = set(theta, pi/4)
 
         update_fis!(smear_transform, [object_position, scale, theta])
-        run!(layer, ball, smear_transform, num_particles,
-             num_iterations, bounds, res;
-                       AT = AT, FT = FT)
+        run!(layer, bounds)
 
         if output_type == :video
             write_video!(video_out, [layer])
@@ -188,16 +196,18 @@ If we run `main(10000, 10000, 10, CuArray; output_tupe = :video)`, we will get t
 
 And here is the full code:
 ```
-using Fae, CUDA
+using Fae, CUDA, AMDGPU
 
-function main(num_particles, num_iterations, total_frames, AT;
+function main(num_particles, num_iterations, total_frames, ArrayType;
               output_type = :video)
-    FT = Float32
+    FloatType = Float32
 
     # define image domain
     res = (1080, 1920)
     bounds = [-4.5 4.5; -8 8]
-    layer = FractalLayer(res; AT = AT, logscale = false, FT = FT)
+    layer = FractalLayer(res; ArrayType = ArrayType, FloatType = FloatType,
+                         num_particles = num_particles,
+                         num_iterations = num_iterations)
 
     # defining video parameters
     if output_type == :video
@@ -209,7 +219,7 @@ function main(num_particles, num_iterations, total_frames, AT;
     radius = 1.0
     pos = [-2.0, -2.0]
 
-    ball = define_circle(pos, radius, (1,1,1); AT = AT)
+    ball = define_circle(pos, radius, (1,1,1))
 
     # fractal inputs to track changes in position, scale, and theta for smear 
     object_position = fi("object_position", pos)
@@ -225,6 +235,10 @@ function main(num_particles, num_iterations, total_frames, AT;
     # now turning it into a fractal operator
     smear_transform = fee(Hutchinson, [FractalOperator(smear)], fis;
                           name = "smear", final = true, diagnostic = true)
+
+    # attaching each operator to the layer
+    layer.H1 = ball
+    layer.H2 = smear_transform
 
     for i = 1:total_frames
 
@@ -245,10 +259,7 @@ function main(num_particles, num_iterations, total_frames, AT;
         theta = set(theta, pi/4)
 
         update_fis!(smear_transform, [object_position, scale, theta])
-        #run!(layer, ball, smear_transform, num_particles,
-        run!(layer, ball, num_particles,
-             num_iterations, bounds, res;
-             AT = AT, FT = FT)
+        run!(layer, bounds)
 
         if output_type == :video
             write_video!(video_out, [layer])

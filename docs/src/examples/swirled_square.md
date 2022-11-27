@@ -39,34 +39,38 @@ In this case, each row of the array will define the color of a different quadran
 Now we can define our fractal executable...
 
 ```
-H = define_rectangle(pos, rotation, scale_x, scale_y, colors; AT = AT)
+H = define_rectangle(pos, rotation, scale_x, scale_y, colors)
 ```
 
-Here, `AT` can be either an `Array` or `CuArray` depending whether you would like to run the code on the CPU or (CUDA) GPU.
+Here, `ArrayType` can be either an `Array` or `CuArray` depending whether you would like to run the code on the CPU or (CUDA / AMD) GPU.
 `num_particles` and `num_iterations` are the number of points we are solving with for the chaos game and the number of iterations for each point.
 The higher these numbers are, the better resolved our final image will be.
 Notationally, we are using the variable `H` to designate a Hutchinson operator, which is the mathematical name for a function set.
 
-Finally, we solve the function system with the `fractal_flame(...)` function and write it to an image:
+Finally, we need to attach this function to the layer and run everything with the `run!(...)` function and write it to an image:
 
 ```
-    layer = fractal_flame(H, num_particles, num_iterations,
-                          bounds, res; AT = AT, FT = FT)
+    layer = FractalLayer(res; ArrayType = ArrayType, logscale = false,
+                         FloatType = FloatType, H1 = H,
+                         num_particles = num_particles,
+                         num_iterations = num_iterations)
 
-    filename = "out.png"
-    write_image([layer], filename)
+    run!(layer, bounds)
+
+    write_image([layer]; filename = "out.png")
 
 ```
 
-This should provide the following image:
+Note that the `H1 = H` keyword argument is the one actually defining `H` as the first Hutchinson operator for the `FractalLayer`.
+After running this, we will get the following image:
 
 ![a simple square](res/swirled_square_1.png)
 
 The full code will look like 
 
 ```
-function main(num_particles, num_iterations, AT; dark = true)
-    FT = Float32
+function main(num_particles, num_iterations, ArrayType; dark = true)
+    FloatType = Float32
 
     # Physical space location. 
     bounds = [-4.5 4.5; -8 8]*0.15
@@ -92,14 +96,18 @@ function main(num_particles, num_iterations, AT; dark = true)
                  [1.0, 0, 1.0, 1]]
     end
 
-    H = define_rectangle(pos, rotation, scale_x, scale_y, colors; AT = AT)
+    H = define_rectangle(pos, rotation, scale_x, scale_y, colors)
 
-    layer = fractal_flame(H, num_particles, num_iterations,
-                          bounds, res; AT = AT, FT = FT)
+    layer = FractalLayer(res; ArrayType = ArrayType, logscale = false,
+                         FloatType = FloatType, H1 = H,
+                         num_particles = num_particles,
+                         num_iterations = num_iterations)
 
-    filename = "out.png"
-    write_image([layer], filename;
-                img = fill(RGBA(0,0,0,0), size(layer.values)))
+    run!(layer, bounds)
+
+    write_image(layer; filename = "out.png")
+
+
 end
 
 ```
@@ -130,10 +138,14 @@ The code here does not change significantly, except that we create a `H2` and ad
     H2 = Hutchinson([Flames.swirl],
                     [Fae.Colors.previous],
                     (1.0,);
-                    final = true, diagnostic = true, AT = AT, name = "2")
+                    final = true, diagnostic = true, name = "2")
 
-    layer = fractal_flame(H1, H2, num_particles, num_iterations,
-                          bounds, res; AT = AT, FT = FT)
+    layer = FractalLayer(res; ArrayType = ArrayType, logscale = false,
+                         FloatType = FloatType, H1 = H, H2 = H2,
+                         num_particles = num_particles,
+                         num_iterations = num_iterations)
+
+    run!(layer, bounds)
 ...
 ```
 
@@ -142,7 +154,7 @@ There are a few nuances to point out:
 1. We are using `Fae.Colors.previous`, which simply means that the swirl will use whatever colors were specified in `H1`.
 2. Fractal operators can be called with `fee` or `Hutchinson` and require `Array` or `Tuple` inputs.
 3. `final = true`, means that this is a post processing operation. In other words, `H1` creates the object primitive (square), and `H2` always operates on that square.
-4. We are specifying the Floating Type, `FT`, as `Float32`, but that is not necessary.
+4. We are specifying the Floating Type, `FloatType`, as `Float32`, but that is not necessary.
 
 Once this is run, it should provide the following image:
 
@@ -162,8 +174,13 @@ If we want, we can make `H2` operate on the object, itself, by creating a new fr
 ```
     final_H = fee([H, H2])
 
-    layer = fractal_flame(final_H, num_particles, num_iterations,
-                          bounds, res; AT = AT, FT = FT)
+    layer = FractalLayer(res; ArrayType = ArrayType, logscale = false,
+                         FloatType = FloatType, H1 = final_H
+                         num_particles = num_particles,
+                         num_iterations = num_iterations)
+
+    run!(layer, bounds)
+
 ```
 
 which will create the following image:
@@ -173,8 +190,8 @@ which will create the following image:
 Here, again, is the full code:
 
 ```
-function main(num_particles, num_iterations, AT; dark = true)
-    FT = Float32
+function main(num_particles, num_iterations, ArrayType; dark = true)
+    FloatType = Float32
 
     # Physical space location. 
     bounds = [-4.5 4.5; -8 8]*0.15
@@ -200,15 +217,15 @@ function main(num_particles, num_iterations, AT; dark = true)
                  [1.0, 0, 1.0, 1]]
     end
 
-    H = define_rectangle(pos, rotation, scale_x, scale_y, colors; AT = AT)
+    H = define_rectangle(pos, rotation, scale_x, scale_y, colors; ArrayType = ArrayType)
     H2 = Hutchinson([Flames.swirl],
                     [Fae.Colors.previous],
                     (1.0,);
-                    diagnostic = true, AT = AT, name = "2")
+                    diagnostic = true, ArrayType = ArrayType, name = "2")
     final_H = fee([H, H2])
 
     layer = fractal_flame(final_H, num_particles, num_iterations,
-                          bounds, res; AT = AT, FT = FT)
+                          bounds, res; ArrayType = ArrayType, FloatType = FloatType)
 
     filename = "out.png"
     write_image([layer], filename)

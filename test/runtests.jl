@@ -28,7 +28,10 @@ function run_tests(ArrayTypes)
     for ArrayType in ArrayTypes
         histogram_testsuite(ArrayType)
         random_testsuite(ArrayType)
-        chaos_testsuite(ArrayType)
+        # Note: causes system crashes on AMD
+        if !(ArrayType <: ROCArray)
+            chaos_testsuite(ArrayType)
+        end
         layering_testsuite(ArrayType)
     end
 end
