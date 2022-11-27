@@ -1,24 +1,29 @@
+#------------------------------------------------------------------------------#
+# Test Definitions
+#------------------------------------------------------------------------------#
+
 @kernel function random_test_kernel!(a)
     tid = @index(Global, Linear)
 
     a[tid] = Fae.simple_rand(tid)
 end
 
-
 function random_test!(a; numcores = 4, numthreads = 256)
 
     if isa(a, Array)
         kernel! = random_test_kernel!(CPU(), numcores)
-    else
+    elseif isa(a, CuArray)
         kernel! = random_test_kernel!(CUDADevice(), numthreads)
+    elseif isa(a, ROCArray)
+        kernel! = random_test_kernel!(ROCDevice(), numthreads)
     end
 
     kernel!(a, ndrange = length(a))
 end
 
-@testset "affine transformation tests" begin
+function LCG_tests(ArrayType::Type{AT}) where AT <: AbstractArray
 
-    a = zeros(1024,1024)
+    a = ArrayType(zeros(1024,1024))
 
     threshold = 0.00001
 
@@ -30,20 +35,9 @@ end
 
     @test abs(avg-0.5) < threshold
 
-    if has_cuda_gpu()
-
-        d_a = CuArray(zeros(1024, 1024))
-
-        wait(random_test!(d_a))
-        d_a ./= typemax(UInt)
-
-        avg = sum(d_a)/length(d_a)
-
-        @test abs(avg-0.5) < threshold
-    end
 end
 
-@testset "fid tests" begin
+function fid_tests()
     fnums = Tuple([UInt16(i) for i = 1:7])
     rng = typemax(UInt16)
     fid = Fae.create_fid(fnums, rng)
@@ -79,5 +73,21 @@ end
         offset += ceil(Int, log2(fnums[i]))
     end
 
+end
 
+#------------------------------------------------------------------------------#
+# Testsuite Definition
+#------------------------------------------------------------------------------#
+
+function random_testsuite(ArrayType::Type{AT}) where AT <: AbstractArray
+
+    if ArrayType <: Array
+        @testset "fid tests" begin
+            fid_tests()
+        end
+    end
+
+    @testset "LCG tests for $(string(ArrayType))s" begin
+        LCG_tests(ArrayType)
+    end
 end

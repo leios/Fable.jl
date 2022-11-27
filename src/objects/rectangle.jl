@@ -1,8 +1,7 @@
 export define_rectangle, update_rectangle!
 # Returns back H, colors, and probs for a square
 function define_rectangle(pos::Vector{FT}, theta::FT, scale_x::FT, scale_y,
-                          color; AT = Array,
-                          name = "rectangle",
+                          color; name = "rectangle",
                           diagnostic = false) where FT <: AbstractFloat
 
     fums, fis = define_rectangle_operators(pos, theta, scale_x, scale_y;
@@ -16,17 +15,15 @@ function define_rectangle(pos::Vector{FT}, theta::FT, scale_x::FT, scale_y,
               "maybe improper number of functions?")
     end
     fos = [FractalOperator(fums[i], color_set[i], 0.25) for i = 1:4]
-    return Hutchinson(fos, fis; AT = AT, FT = FT,
-                      name = name, diagnostic = diagnostic)
+    return Hutchinson(fos, fis; name = name, diagnostic = diagnostic)
 end
 
 # Returns back H, colors, and probs for a square
 function define_square(pos::Vector{FT}, theta::FT, scale::FT,
-                       color; AT = Array,
-                       name = "square",
+                       color; name = "square",
                        diagnostic = false) where FT <: AbstractFloat
 
-    return define_rectangle(pos, theta, scale, scale, color; AT = AT,
+    return define_rectangle(pos, theta, scale, scale, color;
                             name = name, diagnostic = diagnostic)
 end
 
@@ -71,18 +68,15 @@ function update_square!(H, pos, theta, scale; fnum = 4)
     update_rectangle!(H, pos, theta, scale, scale, nothing; fnum = fnum)
 end
 
-function update_square!(H::Hutchinson, pos::Vector{F}, theta::F,
-                        scale, color::Union{Array{F}, Nothing};
-                        FT = Float64, AT = Array,
-                        fnum = 4) where F <: AbstractFloat
-    update_rectangle!(H, pos, theta, scale, scale, color; FT = FT, AT = AT,
-                      fnum = fnum)
+function update_square!(H::Hutchinson, pos::Vector{FT}, theta::FT,
+                        scale, color::Union{Array{FT}, Nothing};
+                        fnum = 4) where FT <: AbstractFloat
+    update_rectangle!(H, pos, theta, scale, scale, color; fnum = fnum)
 end
 
-function update_rectangle!(H::Hutchinson, pos::Vector{F}, theta::F,
-                           scale_x, scale_y, color::Union{Array{F}, Nothing};
-                           FT = Float64, AT = Array,
-                           fnum = 4) where F <: AbstractFloat
+function update_rectangle!(H::Hutchinson, pos::Vector{FT}, theta::FT,
+                           scale_x, scale_y, color::Union{Array{FT}, Nothing};
+                           fnum = 4) where FT <: AbstractFloat
 
     p1_x = scale_x*cos(theta) - scale_y*sin(theta) + pos[1]
     p1_y = scale_x*sin(theta) + scale_y*cos(theta) + pos[2]
@@ -102,8 +96,7 @@ function update_rectangle!(H::Hutchinson, pos::Vector{F}, theta::F,
 
     H.symbols = configure_fis!([p1, p2, p3, p4])
     if color != nothing
-        H.color_set = new_color_array([color for i = 1:4], fnum;
-                                      FT = FT, AT = AT)
+        H.color_set = new_color_array([color for i = 1:4], fnum)
     end
 
 end

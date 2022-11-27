@@ -1,6 +1,5 @@
 export define_barnsley, update_barnsley!
-function define_barnsley(color; AT = Array, name = "barnsley",
-                         diagnostic = false, FT = Float32, tilt = 0)
+function define_barnsley(color; name = "barnsley", diagnostic = false, tilt = 0)
     fums, fis = define_barnsley_operators(tilt = tilt)
     if length(color) == 1 || eltype(color) <: Number
         color_set = [create_color(color) for i = 1:4]
@@ -12,8 +11,7 @@ function define_barnsley(color; AT = Array, name = "barnsley",
     end
     prob_set = (0.01, 0.85, 0.07, 0.07)
     fos = [FractalOperator(fums[i], color_set[i], prob_set[i]) for i = 1:4]
-    return Hutchinson(fos, fis; AT = AT, FT = FT,
-                      name = name, diagnostic = diagnostic)
+    return Hutchinson(fos, fis; name = name, diagnostic = diagnostic)
 end
 
 # This specifically returns the fums for a barnsley fern

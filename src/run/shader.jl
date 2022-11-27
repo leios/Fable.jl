@@ -1,37 +1,33 @@
 export run!
 
-function run!(layer::ShaderLayer, res, bounds; numcores = 4, numthreads = 256,
-              name = "ShaderLayer", diagnostic = false) 
+function run!(layer::ShaderLayer, bounds; diagnostic = false) 
 
-    if isa(layer.reds, Array)
-        kernel! = shader_kernel!(CPU(), numcores)
-    elseif has_cuda_gpu() && isa(layer.reds, CuArray)
-        kernel! = shader_kernel!(CUDADevice(), numthreads)
-    elseif has_rocm_gpu() && isa(layer.reds, ROCArray)
-        kernel! = shader_kernel!(ROCDevice(), numthreads)
+    if layer.params.ArrayType <: Array
+        kernel! = shader_kernel!(CPU(), layer.params.numcores)
+    elseif has_cuda_gpu() && layer.params.ArrayType <: CuArray
+        kernel! = shader_kernel!(CUDADevice(), layer.params.numthreads)
+    elseif has_rocm_gpu() && layer.params.ArrayType <: ROCArray
+        kernel! = shader_kernel!(ROCDevice(), layer.params.numthreads)
     end
 
-    wait(kernel!(layer.shader.symbols, layer.reds, layer.greens, layer.blues,
-                 layer.alphas, Tuple(bounds), layer.shader.op, ndrange = res))
+    wait(kernel!(layer.shader.symbols, layer.canvas, Tuple(bounds),
+                 layer.shader.op, ndrange = size(layer.canvas)))
 end
 
-@kernel function shader_kernel!(symbols, layer_reds, layer_greens, layer_blues,
-                                layer_alphas, bounds, op)
+@kernel function shader_kernel!(symbols, canvas, bounds, op)
 
     i, j = @index(Global, NTuple)
     tid = @index(Global, Linear)
     lid = @index(Local, Linear)
     res = @ndrange()
 
-    shared_colors = @localmem eltype(layer_reds) (@groupsize()[1], 4)
+    shared_colors = @localmem eltype(canvas[1]) (@groupsize()[1], 4)
 
     @inbounds y = bounds[1] + (i/res[1])*(bounds[3]-bounds[1])
     @inbounds x = bounds[2] + (j/res[2])*(bounds[4]-bounds[2])
 
     op(shared_colors, y, x, lid, symbols)
 
-    @inbounds layer_reds[tid] = shared_colors[lid, 1]
-    @inbounds layer_greens[tid] = shared_colors[lid, 2]
-    @inbounds layer_blues[tid] = shared_colors[lid, 3]
-    @inbounds layer_alphas[tid] = shared_colors[lid, 4]
+    canvas[tid] = RGBA(shared_colors[lid, 1], shared_colors[lid, 2],
+                       shared_colors[lid, 3], shared_colors[lid, 4])
 end
