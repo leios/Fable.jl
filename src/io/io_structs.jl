@@ -206,8 +206,12 @@ mutable struct VideoParams
 end
 
 function VideoParams(res; framerate = 30, filename = "out.mp4",
-                     encoder_options = (crf=23, preset="medium"))
-    return VideoParams(VideoIO.VideoWriter(filename, RGB{N0f8}, res),
+                     encoder_options = (crf=23,
+                                        preset="medium",
+                                        pixel_format = "yuv420p"))
+    return VideoParams(VideoIO.VideoWriter(filename, RGB{N0f8}, res;
+                                           framerate = framerate,
+                                           encoder_options = encoder_options),
                        zeros(RGB{N0f8}, res), 0)
 end
 

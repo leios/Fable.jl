@@ -13,8 +13,7 @@ function main(num_particles, num_iterations, total_frames, ArrayType;
 
     # defining video parameters
     if output_type == :video
-        video_out = open_video(res; framerate = 30, filename = "out.mp4",
-                               encoder_options = (crf=23, preset="medium"))
+        video_out = open_video(res; framerate = 30, filename = "out.mp4")
     end
 
     # define ball parameters
