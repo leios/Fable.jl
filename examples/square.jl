@@ -34,7 +34,7 @@ function main(num_particles, num_iterations, ArrayType; dark = true)
                     diagnostic = true, name = "2", final = true)
 
     # To combine a different way, use the final_H defined here
-    # final_H = fee([H, H2])
+    # final_H = fee(Hutchinson, [H, H2])
 
     layer = FractalLayer(res; ArrayType = ArrayType, logscale = false,
                          FloatType = FloatType, H1 = H, H2 = H2,

@@ -160,7 +160,7 @@ This is because we operate on two separate sets of points.
 If we want, we can make `H2` operate on the object, itself, by creating a new fractal executable:
 
 ```
-    final_H = fee([H, H2])
+    final_H = fee(Hutchinson, [H, H2])
 
     layer = FractalLayer(res; ArrayType = ArrayType, logscale = false,
                          FloatType = FloatType, H1 = final_H
@@ -205,7 +205,7 @@ function main(num_particles, num_iterations, ArrayType; dark = true)
                     [Shaders.previous],
                     (1.0,);
                     diagnostic = true, ArrayType = ArrayType, name = "2")
-    final_H = fee([H, H2])
+    final_H = fee(Hutchinson, [H, H2])
 
     layer = fractal_flame(final_H, num_particles, num_iterations,
                           bounds, res; ArrayType = ArrayType, FloatType = FloatType)
