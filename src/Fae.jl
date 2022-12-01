@@ -19,6 +19,9 @@ using LinearAlgebra
 using Images
 using VideoIO
 
+# Constants
+global OUTPUT = true
+set_output(tf) = (global OUTPUT = tf)
 
 # KA kernels
 include("math/histogram.jl")

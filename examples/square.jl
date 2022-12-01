@@ -6,7 +6,7 @@ using Fae, Images
 #     CuArray for NVIDIA GPUs
 #     ROCArray for AMD GPUs
 #     Array for parallel CPU 
-function main(num_particles, num_iterations, ArrayType; dark = true)
+function main(num_particles, num_iterations; ArrayType = Array, dark = true)
     FloatType = Float32
 
     # Physical space location. 

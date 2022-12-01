@@ -215,8 +215,18 @@ function VideoParams(res; framerate = 30, filename = "out.mp4",
                        zeros(RGB{N0f8}, res), 0)
 end
 
-open_video(args...; kwargs...) = VideoParams(args...; kwargs...)
+function open_video(args...; kwargs...)
+    if OUTPUT
+        return VideoParams(args...; kwargs...)
+    else
+        return nothing
+    end
+end
 
 function close_video(v::VideoParams)
     close_video_out!(v.writer)
+end
+
+# In the case OUTPUT = false
+function close_video(n::Nothing)
 end

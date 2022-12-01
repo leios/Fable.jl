@@ -1,6 +1,6 @@
 using Fae
 
-function main(num_particles, num_iterations, total_frames; ArrayType = array,
+function main(num_particles, num_iterations, total_frames; ArrayType = Array,
               output_type = :video)
     FloatType = Float32
 

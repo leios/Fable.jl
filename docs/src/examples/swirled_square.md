@@ -63,7 +63,7 @@ After running this, we will get the following image:
 The full code will look like 
 
 ```
-function main(num_particles, num_iterations, ArrayType; dark = true)
+function main(num_particles, num_iterations; ArrayType = Array, dark = true)
     FloatType = Float32
 
     # Physical space location. 
@@ -178,7 +178,7 @@ which will create the following image:
 Here, again, is the full code:
 
 ```
-function main(num_particles, num_iterations, ArrayType; dark = true)
+function main(num_particles, num_iterations; ArrayType = Array, dark = true)
     FloatType = Float32
 
     # Physical space location. 
