@@ -52,7 +52,7 @@ Finally, I will create an `output_type` variable that can be either `:video`, or
 ```
 using Fae, CUDA, AMDGPU
 
-function main(num_particles, num_iterations, total_frames, ArrayType;
+function main(num_particles, num_iterations, total_frames; ArrayType = Array,
               output_type = :video)
 
 ```

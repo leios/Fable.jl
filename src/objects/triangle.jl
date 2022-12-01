@@ -65,7 +65,7 @@ end
 function update_triangle!(H::Hutchinson, A::Vector{FT}, B::Vector{FT},
                           C::Vector{FT}) where FT <: AbstractFloat
 
-    update_triangle!(H, A, B, C, nothing, nothing, nothing)
+    update_triangle!(H, A, B, C, nothing)
 end
 
 function update_triangle!(H::Hutchinson, A::Vector{FT}, B::Vector{FT},
