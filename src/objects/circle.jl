@@ -57,7 +57,7 @@ function define_circle(; position = zeros(FT, 2),
                          chosen_fx = :constant_disk,
                          diagnostic = false) where FT <: AbstractFloat
 
-    fums, fis = define_circle_operators(pos, radius; chosen_fx = chosen_fx,
+    fums, fis = define_circle_operators(position, radius; chosen_fx = chosen_fx,
                                         name = name)
     if length(color) == 1 || eltype(color) <: Number
         color_set = [create_color(color) for i = 1:2]
