@@ -23,7 +23,9 @@ include("histogram_tests.jl")
 include("random_tests.jl")
 include("chaos_tests.jl")
 include("layering_tests.jl")
-include("example_tests.jl")
+
+# Example testsuite is flaky, but can be run locally.
+#include("example_tests.jl")
 
 function run_tests(ArrayTypes)
     for ArrayType in ArrayTypes
@@ -34,7 +36,7 @@ function run_tests(ArrayTypes)
             chaos_testsuite(ArrayType)
         end
         layering_testsuite(ArrayType)
-        example_testsuite(ArrayType)
+        #example_testsuite(ArrayType)
     end
 end
 

@@ -7,7 +7,7 @@ scale_and_translate = @fo function scale_and_translate(x, y;
     y = scale*y + translation[1]
 end
 
-function main(num_particles, num_iterations; ArrayType = Array)
+function barnsley_example(num_particles, num_iterations; ArrayType = Array)
     FloatType = Float32
 
     bounds = [0 10; -8 8]

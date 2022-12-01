@@ -1,6 +1,6 @@
 using Fae, Images
 
-function main(num_particles, num_iterations; ArrayType = Array)
+function layering_example(num_particles, num_iterations; ArrayType = Array)
 
     res = (1080, 1920)
 

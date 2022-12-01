@@ -28,8 +28,9 @@ function layering_tests(ArrayType::Type{AT}) where AT <: AbstractArray
 
     cl = ColorLayer(RGBA(1, 0, 1, 1), res; ArrayType = ArrayType)
     sl = ShaderLayer(test_fum, res; ArrayType = ArrayType)
-    circle = Fae.define_circle([0.0,0.0], 2.0, [0.0, 0.0, 1.0, 1.0];
-                               name = "layering_circle_test")
+    circle = Fae.define_circle(; position = [0.0,0.0], radius = 2.0, 
+                                 color = [0.0, 0.0, 1.0, 1.0],
+                                 name = "layering_circle_test")
     fl = FractalLayer(res; H1 = circle, ArrayType = ArrayType)
 
     layers = [cl, sl, fl]

@@ -4,25 +4,30 @@
 
 function example_tests(ArrayType::Type{AT}) where AT <: AbstractArray
 
-    include("examples/barnsley.jl")
-    main(1000, 1000; ArrayType = ArrayType)
+    include("../examples/barnsley.jl")
+    barnsley_example(1000, 1000; ArrayType = ArrayType)
     @test true
+    main = nothing
 
-    include("examples/layering.jl")
-    main(1000, 1000; ArrayType = ArrayType)
+    include("../examples/layering.jl")
+    layering_example(1000, 1000; ArrayType = ArrayType)
     @test true
+    main = nothing
 
-    include("examples/shader.jl")
-    main(radial; ArrayType = ArrayType)
+    include("../examples/shader.jl")
+    shader_example(radial; ArrayType = ArrayType)
     @test true
+    main = nothing
 
-    include("examples/sierpinski.jl")
-    main(1000, 1000, 10; ArrayType = ArrayType)
+    include("../examples/sierpinski.jl")
+    sierpinski_example(1000, 1000, 10; ArrayType = ArrayType)
     @test true
+    main = nothing
 
-    include("examples/smear.jl")
-    main(1000, 1000, 10; ArrayType = ArrayType)
+    include("../examples/smear.jl")
+    smear_example(1000, 1000, 10; ArrayType = ArrayType)
     @test true
+    main = nothing
 end
 
 #------------------------------------------------------------------------------#

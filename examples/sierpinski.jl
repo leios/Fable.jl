@@ -1,6 +1,7 @@
 using Fae
 
-function main(num_particles, num_iterations, num_frames; ArrayType = Array)
+function sierpinski_example(num_particles, num_iterations, num_frames;
+                            ArrayType = Array)
     FloatType = Float32
 
     bounds = [-1.125 1.125; -2 2]
