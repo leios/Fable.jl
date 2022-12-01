@@ -16,6 +16,7 @@ on:
 
 jobs:
   CI:
+    if: ${{ github.event_name == 'push' || !github.event.pull_request.draft }}
     name: CI
     runs-on: ${{ matrix.os }}
     strategy:
