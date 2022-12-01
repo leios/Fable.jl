@@ -122,7 +122,7 @@ function Hutchinson(Hs::HT; diagnostic = false, name = "",
 end
 
 function Hutchinson()
-    return Hutchinson(null, color_null, [Colors.previous],
+    return Hutchinson(null, color_null, [Shaders.previous],
                       [Flames.identity],
                       Vector{FractalInput}(), Vector{String}(),
                       Tuple(0), Tuple(0), Tuple(1))

@@ -1,5 +1,5 @@
 using Fae, CUDA
-using Fae: Colors
+using Fae: Shaders
 
 function create_sky!(layer, num_particles, num_iterations, reflect_operation;
                      AT = Array, FT = Float32,
@@ -116,9 +116,9 @@ end
 
 function main(num_particles, num_iterations; AT = Array, FT = Float32)
 
-    fo_1 = scale_and_translate(prob = 0.5, color = Fae.Colors.previous,
+    fo_1 = scale_and_translate(prob = 0.5, color = Shaders.previous,
                                translation = (0, 0), scale_y = -1)
-    fo_2 = FractalOperator(Flames.identity, Fae.Colors.previous, 0.5)
+    fo_2 = FractalOperator(Flames.identity, Shaders.previous, 0.5)
     reflect_operation = fee([fo_1, fo_2]; name = "reflect", final = true)
 
     sky_layer = FractalLayer((1080,1920); AT = AT, FT = FT, logscale = false)

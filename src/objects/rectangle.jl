@@ -1,8 +1,12 @@
 export define_rectangle, update_rectangle!
 # Returns back H, colors, and probs for a square
-function define_rectangle(pos::Vector{FT}, theta::FT, scale_x::FT, scale_y,
-                          color; name = "rectangle",
-                          diagnostic = false) where FT <: AbstractFloat
+function define_rectangle(; position = zeros(FT, 2),
+                            theta = 0.0,
+                            scale_x = 1.0,
+                            scale_y = 1.0,
+                            color = Shaders.grey,
+                            name = "rectangle",
+                            diagnostic = false) where FT <: AbstractFloat
 
     fums, fis = define_rectangle_operators(pos, theta, scale_x, scale_y;
                                            name = name)
@@ -19,12 +23,16 @@ function define_rectangle(pos::Vector{FT}, theta::FT, scale_x::FT, scale_y,
 end
 
 # Returns back H, colors, and probs for a square
-function define_square(pos::Vector{FT}, theta::FT, scale::FT,
-                       color; name = "square",
-                       diagnostic = false) where FT <: AbstractFloat
+function define_square(; position = zeros(FT, 2),
+                         theta::FT = 0.0,
+                         scale::FT = 1.0,
+                         color = Shaders.grey,
+                         name = "square",
+                         diagnostic = false) where FT <: AbstractFloat
 
-    return define_rectangle(pos, theta, scale, scale, color;
-                            name = name, diagnostic = diagnostic)
+    return define_rectangle(; position = position, theta = theta,
+                              scale_x = scale, scale_y = scale, color = color,
+                              name = name, diagnostic = diagnostic)
 end
 
 # This specifically returns the fums for a square

@@ -27,7 +27,7 @@ naive_disk = Fae.@fum function naive_disk(x, y; radius = 1, pos = (0,0),
 end
 
 constant_disk = Fae.@fum function constant_disk(x, y; radius = 1, pos = (0,0),
-                                               function_index = 0)
+                                                function_index = 0)
 
     x_temp = (x-pos[2])/radius
     y_temp = (y-pos[1])/radius
@@ -50,9 +50,12 @@ constant_disk = Fae.@fum function constant_disk(x, y; radius = 1, pos = (0,0),
 end
 
 # Returns back H, colors, and probs for a circle
-function define_circle(pos::Vector{FT}, radius::FT, color; name = "circle",
-                       chosen_fx = :constant_disk,
-                       diagnostic = false) where FT <: AbstractFloat
+function define_circle(; position = zeros(FT, 2),
+                         radius = 1.0,
+                         color = Shaders.gray,
+                         name = "circle",
+                         chosen_fx = :constant_disk,
+                         diagnostic = false) where FT <: AbstractFloat
 
     fums, fis = define_circle_operators(pos, radius; chosen_fx = chosen_fx,
                                         name = name)
