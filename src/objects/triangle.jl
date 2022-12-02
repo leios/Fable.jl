@@ -10,13 +10,13 @@ triangle_fill = @fum function triangle_fill(x,y;
     y = midpoint[1] - (y - midpoint[1]) * 0.5
 end
 
-function define_triangle(; A = [FT(sqrt(3)/4), -0.5],
-                           B = [FT(-sqrt(3)/4), 0],
-                           C = [FT(sqrt(3)/4), 0.5],
+function define_triangle(; A = [sqrt(3)/4, -0.5],
+                           B = [-sqrt(3)/4, 0],
+                           C = [sqrt(3)/4, 0.5],
                            color = Shaders.gray,
                            name = "triangle",
                            chosen_fx = :fill,
-                           diagnostic = false) where FT <: AbstractFloat
+                           diagnostic = false)
     fums, fis = define_triangle_operators(A, B, C; name = name)
 
     fnum = 3

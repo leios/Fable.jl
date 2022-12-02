@@ -23,6 +23,7 @@ include("histogram_tests.jl")
 include("random_tests.jl")
 include("chaos_tests.jl")
 include("layering_tests.jl")
+include("object_tests.jl")
 
 # Example testsuite is flaky, but can be run locally.
 #include("example_tests.jl")
@@ -31,11 +32,15 @@ function run_tests(ArrayTypes)
     for ArrayType in ArrayTypes
         histogram_testsuite(ArrayType)
         random_testsuite(ArrayType)
-        # Note: causes system crashes on AMD
+
+        # Note: causes system crashes on AMD (#5)
         if !(ArrayType <: ROCArray)
+            layering_testsuite(ArrayType)
             chaos_testsuite(ArrayType)
+            object_testsuite(ArrayType)
         end
-        layering_testsuite(ArrayType)
+
+        # Note: Passes locally, but not when running Pkg.test (#5)
         #example_testsuite(ArrayType)
     end
 end
