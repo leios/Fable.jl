@@ -13,12 +13,6 @@ To do this, we need to set up Fae with the right parameters:
 
     # Pixel grid
     res = (1080, 1920)
-
-    # parameters for initial square
-    pos = [0.0, 0.0]
-    rotation = pi/4
-    scale_x = 1.0
-    scale_y = 1.0
 ```
 
 Note that this sets up an image resolution, `res`, and a separate camera with physical units, `bounds`, so if we are using a 1920 by 1080 image, the `bounds` can be anything with a 16:9 ratio.
@@ -39,7 +33,7 @@ In this case, each row of the array will define the color of a different quadran
 Now we can define our fractal executable...
 
 ```
-H = define_rectangle(pos, rotation, scale_x, scale_y, colors)
+H = define_square(; position = [0.0, 0.0], rotation = pi.4, color = colors)
 ```
 
 Here, `ArrayType` can be either an `Array` or `CuArray` depending whether you would like to run the code on the CPU or (CUDA / AMD) GPU.
@@ -69,7 +63,7 @@ After running this, we will get the following image:
 The full code will look like 
 
 ```
-function main(num_particles, num_iterations, ArrayType; dark = true)
+function main(num_particles, num_iterations; ArrayType = Array, dark = true)
     FloatType = Float32
 
     # Physical space location. 
@@ -77,12 +71,6 @@ function main(num_particles, num_iterations, ArrayType; dark = true)
 
     # Pixel grid
     res = (1080, 1920)
-
-    # parameters for initial square
-    pos = [0.0, 0.0]
-    rotation = pi/4
-    scale_x = 1.0
-    scale_y = 1.0
 
     if dark
         colors = [[1.0, 0.25, 0.25,1],
@@ -96,7 +84,7 @@ function main(num_particles, num_iterations, ArrayType; dark = true)
                  [1.0, 0, 1.0, 1]]
     end
 
-    H = define_rectangle(pos, rotation, scale_x, scale_y, colors)
+    H = define_square(; position = [0.0, 0.0], rotation = pi/4, colors = colors)
 
     layer = FractalLayer(res; ArrayType = ArrayType, logscale = false,
                          FloatType = FloatType, H1 = H,
@@ -136,7 +124,7 @@ The code here does not change significantly, except that we create a `H2` and ad
 ```
 ...
     H2 = Hutchinson([Flames.swirl],
-                    [Fae.Colors.previous],
+                    [Shaders.previous],
                     (1.0,);
                     final = true, diagnostic = true, name = "2")
 
@@ -151,7 +139,7 @@ The code here does not change significantly, except that we create a `H2` and ad
 
 There are a few nuances to point out:
 
-1. We are using `Fae.Colors.previous`, which simply means that the swirl will use whatever colors were specified in `H1`.
+1. We are using `Shaders.previous`, which simply means that the swirl will use whatever colors were specified in `H1`.
 2. Fractal operators can be called with `fee` or `Hutchinson` and require `Array` or `Tuple` inputs.
 3. `final = true`, means that this is a post processing operation. In other words, `H1` creates the object primitive (square), and `H2` always operates on that square.
 4. We are specifying the Floating Type, `FloatType`, as `Float32`, but that is not necessary.
@@ -172,7 +160,7 @@ This is because we operate on two separate sets of points.
 If we want, we can make `H2` operate on the object, itself, by creating a new fractal executable:
 
 ```
-    final_H = fee([H, H2])
+    final_H = fee(Hutchinson, [H, H2])
 
     layer = FractalLayer(res; ArrayType = ArrayType, logscale = false,
                          FloatType = FloatType, H1 = final_H
@@ -190,7 +178,7 @@ which will create the following image:
 Here, again, is the full code:
 
 ```
-function main(num_particles, num_iterations, ArrayType; dark = true)
+function main(num_particles, num_iterations; ArrayType = Array, dark = true)
     FloatType = Float32
 
     # Physical space location. 
@@ -198,12 +186,6 @@ function main(num_particles, num_iterations, ArrayType; dark = true)
 
     # Pixel grid
     res = (1080, 1920)
-
-    # parameters for initial square
-    pos = [0.0, 0.0]
-    rotation = pi/4
-    scale_x = 1.0
-    scale_y = 1.0
 
     if dark
         colors = [[1.0, 0.25, 0.25,1],
@@ -217,12 +199,13 @@ function main(num_particles, num_iterations, ArrayType; dark = true)
                  [1.0, 0, 1.0, 1]]
     end
 
-    H = define_rectangle(pos, rotation, scale_x, scale_y, colors; ArrayType = ArrayType)
+    H = define_square(; position = [0.0, 0.0], rotation = pi/4, colors = colors,
+                      ArrayType = ArrayType)
     H2 = Hutchinson([Flames.swirl],
-                    [Fae.Colors.previous],
+                    [Shaders.previous],
                     (1.0,);
                     diagnostic = true, ArrayType = ArrayType, name = "2")
-    final_H = fee([H, H2])
+    final_H = fee(Hutchinson, [H, H2])
 
     layer = fractal_flame(final_H, num_particles, num_iterations,
                           bounds, res; ArrayType = ArrayType, FloatType = FloatType)

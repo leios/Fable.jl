@@ -1,12 +1,14 @@
 using Fae, Images
 
-function main(num_particles, num_iterations; ArrayType = Array)
+function layering_example(num_particles, num_iterations; ArrayType = Array)
 
     res = (1080, 1920)
 
     bounds = [-4.5 4.5; -8 8]*0.15
 
-    square = define_rectangle([0.0,0.0], pi/4, 1.0, 1.0, RGBA(1,0,1))
+    square = define_rectangle(position = [0.0,0.0],
+                              rotation = pi/4,
+                              color = RGBA(1,0,1))
     flayer = FractalLayer(res; ArrayType = ArrayType, H1 = square,
                           num_particles = num_particles,
                           num_iterations = num_iterations)

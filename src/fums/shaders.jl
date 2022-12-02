@@ -1,6 +1,6 @@
-export Colors, create_color
+export Shaders, create_color
 
-module Colors
+module Shaders
 
 import Fae.@fum
 
@@ -13,6 +13,15 @@ custom = @fum function custom(; red = 0, green = 0, blue = 0, alpha = 0)
     blue = blue
     alpha = alpha
 end
+
+gray = @fum function gray()
+    red = 0.5
+    green = 0.5
+    blue = 0.5
+    alpha = 1
+end
+
+grey = gray
 
 red = @fum function red()
     red = 1
@@ -52,10 +61,10 @@ function create_color(a::Union{Array, Tuple, RGB, RGBA})
                            string(round(a[2]; digits=4))*
                            string(round(a[3]; digits=4))
             choice = replace(choice, "." => "_")
-            return Colors.custom(red = a[1],
-                                 green = a[2],
-                                 blue = a[3],
-                                 alpha = 1, name = choice)
+            return Shaders.custom(red = a[1],
+                                  green = a[2],
+                                  blue = a[3],
+                                  alpha = 1, name = choice)
         elseif length(a) == 4
             if a[4] > 0
                 choice = "_" * string(round(a[1]; digits=4))*
@@ -63,12 +72,12 @@ function create_color(a::Union{Array, Tuple, RGB, RGBA})
                                string(round(a[3]; digits=4))*
                                string(round(a[4]; digits=4))
                 choice = replace(choice, "." => "_")
-                return Colors.custom(red = a[1],
-                                     green = a[2],
-                                     blue = a[3],
-                                     alpha = a[4], name = choice)
+                return Shaders.custom(red = a[1],
+                                      green = a[2],
+                                      blue = a[3],
+                                      alpha = a[4], name = choice)
             else
-                return Colors.previous
+                return Shaders.previous
             end
         else
             error("Colors must have either 3 or 4 elements!")
@@ -78,10 +87,10 @@ function create_color(a::Union{Array, Tuple, RGB, RGBA})
                        string(round(a.g; digits=4))*
                        string(round(a.b; digits=4))
         choice = replace(choice, "." => "_")
-        return Colors.custom(red = a.r,
-                             green = a.g,
-                             blue = a.b,
-                             alpha = 1, name = choice)
+        return Shaders.custom(red = a.r,
+                              green = a.g,
+                              blue = a.b,
+                              alpha = 1, name = choice)
     elseif isa(a, RGBA)
         choice = "_" * string(round(a.r; digits=4))*
                        string(round(a.g; digits=4))*
@@ -89,12 +98,12 @@ function create_color(a::Union{Array, Tuple, RGB, RGBA})
                        string(round(a.alpha; digits=4))
         choice = replace(choice, "." => "_")
         if a.alpha > 0
-            return Colors.custom(red = a.r,
-                                 green = a.g,
-                                 blue = a.b,
-                                 alpha = a.alpha, name = choice)
+            return Shaders.custom(red = a.r,
+                                  green = a.g,
+                                  blue = a.b,
+                                  alpha = a.alpha, name = choice)
         else
-                return Colors.previous
+                return Shaders.previous
         end
     else
         error("Element " * string(i) * " of color array is a " *

@@ -6,7 +6,8 @@ using Fae, Images
 #     CuArray for NVIDIA GPUs
 #     ROCArray for AMD GPUs
 #     Array for parallel CPU 
-function main(num_particles, num_iterations, ArrayType; dark = true)
+function square_example(num_particles, num_iterations;
+                        ArrayType = Array, dark = true)
     FloatType = Float32
 
     # Physical space location. 
@@ -14,12 +15,6 @@ function main(num_particles, num_iterations, ArrayType; dark = true)
 
     # Pixel grid
     res = (1080, 1920)
-
-    # parameters for initial square
-    pos = [0.0, 0.0]
-    rotation = pi/4
-    scale_x = 1.0
-    scale_y = 1.0
 
     if dark
         colors = [[1.0, 0.25, 0.25,1],
@@ -33,14 +28,14 @@ function main(num_particles, num_iterations, ArrayType; dark = true)
                  [1.0, 0, 1.0, 1]]
     end
 
-    H = define_rectangle(pos, rotation, scale_x, scale_y, colors)
+    H = define_square(; position = [0.0, 0.0], rotation = pi/4,  color = colors)
     H2 = Hutchinson([Flames.swirl],
-                    [Fae.Colors.previous],
+                    [Shaders.previous],
                     (1.0,);
                     diagnostic = true, name = "2", final = true)
 
     # To combine a different way, use the final_H defined here
-    # final_H = fee([H, H2])
+    # final_H = fee(Hutchinson, [H, H2])
 
     layer = FractalLayer(res; ArrayType = ArrayType, logscale = false,
                          FloatType = FloatType, H1 = H, H2 = H2,

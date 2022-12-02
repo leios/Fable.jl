@@ -21,8 +21,9 @@ end
 function chaos_tests(ArrayType::Type{AT}) where AT <: AbstractArray
     bounds = [-2 2;-2 2]
 
-    H = Fae.define_circle([0.0,0.0], 2.0, [1.0, 1.0, 1.0, 1.0];
-                          chosen_fx = :naive_disk, name = "chaos_test")
+    H = Fae.define_circle(; position = [0.0,0.0], radius = 2.0, 
+                            color = [1.0, 1.0, 1.0, 1.0],
+                            chosen_fx = :naive_disk, name = "chaos_test")
 
     fl = FractalLayer((11,11); ArrayType = ArrayType, config = :fractal_flame,
                       H1 = H)
@@ -37,7 +38,8 @@ function chaos_tests(ArrayType::Type{AT}) where AT <: AbstractArray
 
     GC.gc()
 
-    H2 = Fae.define_circle([0.0,0.0], 2.0, [1.0, 1.0, 1.0, 1.0];
+    H2 = Fae.define_circle(; position = [0.0,0.0], radius = 2.0,
+                             color = [1.0, 1.0, 1.0, 1.0],
                            chosen_fx = :constant_disk, name = "chaos_test_2")
     fl = FractalLayer((11,11); ArrayType = ArrayType, config = :simple, H1 = H2)
     run!(fl, bounds)

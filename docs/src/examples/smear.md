@@ -52,7 +52,7 @@ Finally, I will create an `output_type` variable that can be either `:video`, or
 ```
 using Fae, CUDA, AMDGPU
 
-function main(num_particles, num_iterations, total_frames, ArrayType;
+function main(num_particles, num_iterations, total_frames; ArrayType = Array,
               output_type = :video)
 
 ```
@@ -80,17 +80,17 @@ Now we define the ball:
 
 ```
     # define ball parameters
-    radius = 1.0
-    pos = [-2.0, -2.0]
-
-    ball = define_circle(pos, radius, (1,1,1))
+    position = [-2.0, -2.0]
+    ball = define_circle(; position = position,
+                           radius = 1.0,
+                           color = (1,1,1))
 ```
 
 And now we start getting ready for the smear frame transformation:
 
 ```
     # fractal inputs to track changes in position, scale, and theta for smear 
-    object_position = fi("object_position", pos)
+    object_position = fi("object_position", position)
     scale = fi("scale", (1,1))
     theta = fi("theta", 0)
 
@@ -216,10 +216,7 @@ function main(num_particles, num_iterations, total_frames, ArrayType;
     end
 
     # define ball parameters
-    radius = 1.0
-    pos = [-2.0, -2.0]
-
-    ball = define_circle(pos, radius, (1,1,1))
+    ball = define_circle(; position = [-2.0, -2.0], radius = 1.0, (1,1,1))
 
     # fractal inputs to track changes in position, scale, and theta for smear 
     object_position = fi("object_position", pos)

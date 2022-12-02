@@ -1,10 +1,4 @@
-using Fae, Images, CUDA
-using Fae: Colors
-
-if has_cuda_gpu()
-    using CUDAKernels
-    CUDA.allowscalar(false)
-end
+using Fae
 
 scale_and_translate = @fo function scale_and_translate(x, y;
                                                        translation = (0,0),
@@ -13,16 +7,15 @@ scale_and_translate = @fo function scale_and_translate(x, y;
     y = scale*y + translation[1]
 end
 
-function main()
-    AT = CuArray
-    FT = Float32
+function barnsley_example(num_particles, num_iterations; ArrayType = Array)
+    FloatType = Float32
 
-    num_particles = 1000
-    num_iterations = 1000
     bounds = [0 10; -8 8]
     res = (1080, 1920)
 
-    layer = FractalLayer(res; AT = AT, FT = FT)
+    layer = FractalLayer(res; ArrayType = ArrayType, FloatType = FloatType,
+                         num_particles = num_particles,
+                         num_iterations = num_iterations)
 
     pos = [0, 0.]
     color = [1., 1, 1, 1]
@@ -33,24 +26,20 @@ function main()
     color_3 = [0.,1,0,1]
     color_4 = [0.,0,1,1]
 
-    H = define_barnsley([color_1, color_2, color_3, color_4];
-                        AT = AT, diagnostic=true, tilt = -0.04)
+    H = define_barnsley(; color = [color_1, color_2, color_3, color_4],
+                          diagnostic=true, tilt = -0.04)
     H.prob_set = (0.01, 0.5, 0.245, 0.245)
 
-    fo_1 = scale_and_translate(prob = 0.5, color = Fae.Colors.previous,
+    fo_1 = scale_and_translate(prob = 0.5, color = Shaders.previous,
                                translation = (0.5, 0.5), scale = 0.5)
-    fo_2 = FractalOperator(Flames.identity, Fae.Colors.magenta, 0.5)
+    fo_2 = FractalOperator(Flames.identity, Shaders.magenta, 0.5)
 
-    H2 = fee([fo_1, fo_2]; name = "2", final = true)
+    H2 = fee(Hutchinson, [fo_1, fo_2]; name = "2", final = true)
 
-    #println(fo_1, '\n', fo_2)
+    layer.H1 = H
+    layer.H2 = H2
 
-    run!(layer, H, H2, num_particles, num_iterations,
-         bounds, res; AT = AT, FT = FT)
+    run!(layer, bounds)
 
-    filename = "check.png"
-
-    @time write_image([layer], filename)
+    @time write_image([layer], filename = "out.png")
 end
-
-main()

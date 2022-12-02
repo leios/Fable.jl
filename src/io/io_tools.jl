@@ -96,7 +96,7 @@ function write_image(layer;
     img .= Array(layer.canvas)
 
     reset!(layer)
-    if isnothing(filename)
+    if isnothing(filename) || !OUTPUT
         return img
     else
         save(filename, img)
@@ -119,7 +119,7 @@ function write_image(layers::Vector{AL};
     img .= Array(layers[1].canvas)
 
     reset!(layers)
-    if isnothing(filename)
+    if isnothing(filename) || !OUTPUT
         return img
     else
         save(filename, img)
@@ -138,9 +138,22 @@ function write_video!(v::VideoParams,
 
     v.frame .= Array(layers[1].canvas)
 
-    write(v.writer, v.frame)
+    if OUTPUT
+        write(v.writer, v.frame)
+    end
     zero!(v.frame)
     reset!(layers)
     println(v.frame_count)
     v.frame_count += 1
+end
+
+# in the case OUTPUT = false
+function write_video!(n::Nothing, layers::Vector{AL}) where AL <: AbstractLayer
+    postprocess!(layers[1])
+    for i = 2:length(layers)
+        post_process!(layers[i])
+        wait(mix_layers!(layers[1], layers[i]; mode = :simple))
+    end
+
+    reset!(layers)
 end

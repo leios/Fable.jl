@@ -1,4 +1,4 @@
-name: Documentation
+name: CI
 
 on:
   pull_request:
@@ -15,7 +15,34 @@ on:
     tags: '*'
 
 jobs:
-  build:
+  CI:
+    if: ${{ github.event_name == 'push' || !github.event.pull_request.draft }}
+    name: CI
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - '1.7'
+          #- '1' # automatically expands to the latest stable 1.x release of Julia.
+        os:
+          - ubuntu-latest
+          - macOS-latest
+          - windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/julia-runtest@v1
+      - uses: julia-actions/julia-processcoverage@v1
+      - uses: codecov/codecov-action@v2
+        with:
+          file: ./lcov.info
+          flags: Pkg.test
+          name: codecov-umbrella
+
+  docs:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push' || !github.event.pull_request.draft }}
     steps:

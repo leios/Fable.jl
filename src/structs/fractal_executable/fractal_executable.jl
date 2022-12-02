@@ -23,7 +23,7 @@ function new_color_array(color_array; diagnostic = false)
     if eltype(color_array) <: Number
        return [create_color(color_array)]
     else
-        temp_array = [Colors.previous for i = 1:length(color_array)]
+        temp_array = [Shaders.previous for i = 1:length(color_array)]
         for i = 1:length(color_array)
             temp_array[i] = create_color(color_array[i])
         end

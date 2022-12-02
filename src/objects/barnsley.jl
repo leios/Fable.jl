@@ -1,5 +1,8 @@
 export define_barnsley, update_barnsley!
-function define_barnsley(color; name = "barnsley", diagnostic = false, tilt = 0)
+function define_barnsley(; color = Shaders.grey,
+                           name = "barnsley",
+                           diagnostic = false,
+                           tilt = 0)
     fums, fis = define_barnsley_operators(tilt = tilt)
     if length(color) == 1 || eltype(color) <: Number
         color_set = [create_color(color) for i = 1:4]

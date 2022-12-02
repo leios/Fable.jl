@@ -9,7 +9,7 @@ end
 FractalOperator() = FractalOperator(FractalUserMethod(), FractalUserMethod(), 0)
 
 FractalOperator(f::FractalUserMethod) = FractalOperator(f,
-                                                        Colors.previous,
+                                                        Shaders.previous,
                                                         1)
 FractalUserMethod(f::FractalOperator) = f.op
 
@@ -43,17 +43,17 @@ macro fo(ex...)
                     if length(color) < 3 || length(color) > 4
                         error("Colors must have 3 or 4 elements!")
                     elseif length(color) == 3
-                        color = Colors.custom(red = color[1], green = color[2],
+                        color = Shaders.custom(red = color[1], green = color[2],
                                               blue = color[3], alpha = 1)
                     elseif length(color) == 4
-                        color = Colors.custom(red = color[1], green = color[2],
+                        color = Shaders.custom(red = color[1], green = color[2],
                                               blue = color[3], alpha = color[4])
                     end
                 elseif isa(color, RGB)
-                    color = Colors.custom(red = color.r, green = color.g,
+                    color = Shaders.custom(red = color.r, green = color.g,
                                           blue = color.b, alpha = 1)
                 elseif isa(color, RGBA)
-                    color = Colors.custom(red = color.r, green = color.g,
+                    color = Shaders.custom(red = color.r, green = color.g,
                                           blue = color.b, alpha = color.alpha)
                 end
             elseif(kwargs[i].args[1] == :prob)

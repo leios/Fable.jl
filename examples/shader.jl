@@ -9,8 +9,8 @@ radial = @fum function radial(y, x; origin = (0,0))
     alpha = min(1, 1/r)
 end
 
-function main(fum; res = (1080,1920), ArrayType = Array,
-              filename = "out.png")
+function shader_example(fum; res = (1080,1920), ArrayType = Array,
+                        filename = "out.png")
 
     bounds = [-4.5 4.5; -8 8] * 0.25
 
