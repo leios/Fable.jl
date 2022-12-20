@@ -11,6 +11,9 @@ mutable struct FractalLayer <: AbstractLayer
     blues::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
     alphas::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
     canvas::Union{Array{C}, CuArray{C}, ROCArray{C}} where C <: RGBA
+    position::Tuple
+    size::Tuple
+    ppu::Int
     params::NamedTuple
 end
 
@@ -55,29 +58,32 @@ end
 
 
 # Creating a default call
-function FractalLayer(v, r, g, b, a, c; config = standard,
+function FractalLayer(v, r, g, b, a, c, position, size, ppu; config = standard,
                       H1 = Hutchinson(), H2 = Hutchinson())
     return FractalLayer(Hutchinson(), Hutchinson(),
-                        v, r, g, b, a, c, default_params(FractalLayer,
-                                                         config = config,
-                                                         ArrayType = typeof(v),
-                                                         FloatType = eltype(v)))
+                        v, r, g, b, a, c, position, size, ppu,
+                        default_params(FractalLayer,
+                                       config = config,
+                                       ArrayType = typeof(v),
+                                       FloatType = eltype(v)))
 end
 
 # Create a blank, black image of size s
-function FractalLayer(s; config = :meh, ArrayType=Array, FloatType = Float32,
+function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
+                      size = (0.9, 1.6), position = (0.0, 0.0), ppu = 1200,
                       gamma = 2.2, logscale = false, calc_max_value = false,
                       max_value = 1, numcores = 4, numthreads = 256,
                       num_particles = 1000, num_iterations = 1000, dims = 2,
                       H1 = Hutchinson(), H2 = Hutchinson())
-    v = ArrayType(zeros(Int,s))
-    r = ArrayType(zeros(FloatType,s))
-    g = ArrayType(zeros(FloatType,s))
-    b = ArrayType(zeros(FloatType,s))
-    a = ArrayType(zeros(FloatType,s))
-    c = ArrayType(fill(RGBA(FloatType(0),0,0,0), s))
+    res = (size[1]*ppu, size[2]*ppu)
+    v = ArrayType(zeros(Int,res))
+    r = ArrayType(zeros(FloatType,res))
+    g = ArrayType(zeros(FloatType,res))
+    b = ArrayType(zeros(FloatType,res))
+    a = ArrayType(zeros(FloatType,res))
+    c = ArrayType(fill(RGBA(FloatType(0),0,0,0), res))
     if config == :standard || config == :fractal_flame
-        return FractalLayer(H1, H2, v, r, g, b, a, c,
+        return FractalLayer(H1, H2, v, r, g, b, a, c, position, size, ppu,
                             default_params(FractalLayer;
                                            ArrayType = ArrayType,
                                            FloatType = FloatType,
@@ -86,7 +92,7 @@ function FractalLayer(s; config = :meh, ArrayType=Array, FloatType = Float32,
                                            num_iterations = num_iterations,
                                            dims = dims))
     else
-        return FractalLayer(H1, H2, v, r, g, b, a, c,
+        return FractalLayer(H1, H2, v, r, g, b, a, c, position, size, ppu,
                             params(FractalLayer;
                                    ArrayType=ArrayType,
                                    FloatType = FloatType,
