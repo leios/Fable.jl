@@ -1,6 +1,6 @@
 export run!
 
-function run!(layer::ShaderLayer, bounds; diagnostic = false) 
+function run!(layer::ShaderLayer; diagnostic = false) 
 
     if layer.params.ArrayType <: Array
         kernel! = shader_kernel!(CPU(), layer.params.numcores)
@@ -10,7 +10,12 @@ function run!(layer::ShaderLayer, bounds; diagnostic = false)
         kernel! = shader_kernel!(ROCDevice(), layer.params.numthreads)
     end
 
-    wait(kernel!(layer.shader.symbols, layer.canvas, Tuple(bounds),
+    bounds = (layer.position[1] - 0.5 * layer.size[1],
+              layer.position[1] + 0.5 * layer.size[1],
+              layer.position[2] - 0.5 * layer.size[2],
+              layer.position[2] + 0.5 * layer.size[2])
+
+    wait(kernel!(layer.shader.symbols, layer.canvas, bounds,
                  layer.shader.op, ndrange = size(layer.canvas)))
 end
 

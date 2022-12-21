@@ -144,7 +144,7 @@ end
     end
 end
 
-function run!(layer::FractalLayer, bounds; diagnostic = false)
+function run!(layer::FractalLayer; diagnostic = false)
 
     res = size(layer.canvas)
     pts = Points(layer.params.num_particles; FloatType = eltype(layer.reds),
@@ -155,6 +155,11 @@ function run!(layer::FractalLayer, bounds; diagnostic = false)
     for i = 1:length(bin_widths)
         bin_widths[i] = (bounds[i,2]-bounds[i,1])/res[i]
     end
+
+    bounds = (layer.position[1] - 0.5 * layer.size[1],
+              layer.position[1] + 0.5 * layer.size[1],
+              layer.position[2] - 0.5 * layer.size[2],
+              layer.position[2] + 0.5 * layer.size[2])
 
     wait(iterate!(pts, layer, layer.H1, layer.params.num_iterations,
                   bounds, bin_widths, layer.H2; diagnostic = diagnostic))

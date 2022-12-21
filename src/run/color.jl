@@ -1,6 +1,6 @@
 export run!
 
-function run!(layer::ColorLayer, bounds; diagnostic = false) 
+function run!(layer::ColorLayer; diagnostic = false) 
 
     if layer.params.ArrayType <: Array
         kernel! = color_kernel!(CPU(), layer.params.numcores)
