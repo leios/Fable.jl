@@ -156,10 +156,7 @@ function run!(layer::FractalLayer; diagnostic = false)
         bin_widths[i] = (bounds[i,2]-bounds[i,1])/res[i]
     end
 
-    bounds = (layer.position[1] - 0.5 * layer.size[1],
-              layer.position[1] + 0.5 * layer.size[1],
-              layer.position[2] - 0.5 * layer.size[2],
-              layer.position[2] + 0.5 * layer.size[2])
+    bounds = find_bounds(layer)
 
     wait(iterate!(pts, layer, layer.H1, layer.params.num_iterations,
                   bounds, bin_widths, layer.H2; diagnostic = diagnostic))

@@ -10,10 +10,7 @@ function run!(layer::ShaderLayer; diagnostic = false)
         kernel! = shader_kernel!(ROCDevice(), layer.params.numthreads)
     end
 
-    bounds = (layer.position[1] - 0.5 * layer.size[1],
-              layer.position[1] + 0.5 * layer.size[1],
-              layer.position[2] - 0.5 * layer.size[2],
-              layer.position[2] + 0.5 * layer.size[2])
+    bounds = find_bounds(layer)
 
     wait(kernel!(layer.shader.symbols, layer.canvas, bounds,
                  layer.shader.op, ndrange = size(layer.canvas)))
