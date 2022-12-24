@@ -10,24 +10,19 @@ struct Overlap
 end
 
 function find_bounds(layer)
-    return (layer.position[1] - 0.5 * layer.size[1],
-            layer.position[1] + 0.5 * layer.size[1],
-            layer.position[2] - 0.5 * layer.size[2],
-            layer.position[2] + 0.5 * layer.size[2])
+    return (ymin = layer.position[1] - 0.5 * layer.size[1],
+            ymax = layer.position[1] + 0.5 * layer.size[1],
+            xmin = layer.position[2] - 0.5 * layer.size[2],
+            xmax = layer.position[2] + 0.5 * layer.size[2])
 end
 
+# Note: currently returns ndrange for layer_1, but this might not be right...
 function find_overlap(layer_1::AL1, layer_2::AL2)  where {AL1 <: AbstractLayer,
                                                           AL2 <: AbstractLayer}
-    ppu = layer_1.ppu
-
-    # TODO: scale if different PPUs
-    if layer_1.ppu != layer_2.ppu
-        error("Layer Pixel count Per Unit (PPU) not the same!")
-    end
 
     # Returning early if size and position is the same
     if layer_1.size == layer_2.size && layer_1.position == layer_2.position
-        return Overlap(layer_1.size, (1,1), (1,1))
+        return Overlap(size(layer_1.canvas), (1,1), (1,1))
     end
 
     # finding boundaries of each canvas
@@ -35,40 +30,38 @@ function find_overlap(layer_1::AL1, layer_2::AL2)  where {AL1 <: AbstractLayer,
     bounds_2 = find_bounds(layer_2)
 
     # finding overlap region and starting indices
-    ymin = max(bounds_1[1], bounds_2[1])
-    xmin = max(bounds_1[3], bounds_2[3])
+    ymin = max(bounds_1.ymin, bounds_2.ymin)
+    xmin = max(bounds_1.xmin, bounds_2.xmin)
 
-    start_index_1 = [0,0]
-    start_index_2 = [0,0]
-
-    if bounds_2[2] > bounds_1[2]
-        ymax = bounds_2[2]
-        start_index_1[1] = 1
-        start_index_2[1] = bounds_2[2] - ymin
-    else
-        ymax = bounds_1[2]
-        start_index_1[1] = bounds_1[2] - ymin
-        start_index_2[1] = 1
-    end
-
-    if bounds_2[4] > bounds_1[4]
-        xmax = bounds_2[4]
-        start_index_1[2] = 1
-        start_index_2[2] = bounds_2[4] - ymin
-    else
-        ymax = bounds_1[4]
-        start_index_1[2] = bounds_1[4] - ymin
-        start_index_2[2] = 1
-    end
+    ymax = min(bounds_1.ymax, bounds_2.ymax)
+    xmax = min(bounds_1.xmax, bounds_2.xmax)
 
     if xmax < xmin || ymax < ymin
         @warn("No overlap between layers...")
         return nothing
     end
 
-    return Overlap(((ymax - ymin)*ppu, (xmax-xmin)*ppu), 
+    start_index_1 = [1, 1]
+    start_index_2 = [1, 1]
+
+    if ymin > bounds_1.ymin
+        start_index_1[1] = floor(Int, layer_1.ppu * (ymin - bounds_1.ymin)) + 1
+    end
+    if xmin > bounds_1.xmin
+        start_index_1[2] = floor(Int, layer_1.ppu * (xmin - bounds_1.xmin)) + 1
+    end
+
+    if ymin > bounds_2.ymin
+        start_index_2[1] = floor(Int, layer_2.ppu * (ymin - bounds_2.ymin)) + 1
+    end
+    if xmin > bounds_2.xmin
+        start_index_2[2] = floor(Int, layer_2.ppu * (xmin - bounds_2.xmin)) + 1
+    end
+
+    return Overlap((floor(Int, (ymax - ymin)*layer_1.ppu), 
+                    floor(Int, (xmax - xmin)*layer_1.ppu)), 
                    Tuple(start_index_1),
-                   Tuple(start_index_1))
+                   Tuple(start_index_2))
 
 end
 

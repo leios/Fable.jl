@@ -17,7 +17,7 @@ function ShaderLayer(shader::Shader;
                      FloatType = Float32,
                      numcores = 4,
                      numthreads = 256)
-    res = (size[1]*ppu, size[2]*ppu)
+    res = (ceil(Int, size[1]*ppu), ceil(Int, size[2]*ppu))
 
     return ShaderLayer(shader,
                        ArrayType(fill(RGBA(FloatType(0),0,0,0), res)),

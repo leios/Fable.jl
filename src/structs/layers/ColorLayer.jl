@@ -17,7 +17,7 @@ function ColorLayer(c::CT;
                     FloatType = Float32,
                     numcores = 4,
                     numthreads = 256) where CT <: Union{RGB, RGBA}
-    res = (size[1]*ppu, size[2]*ppu)
+    res = (ceil(Int,size[1]*ppu), ceil(Int,size[2]*ppu))
     if isa(c, RGB)
         c = RGBA(c)
     end

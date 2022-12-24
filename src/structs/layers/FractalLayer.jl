@@ -75,7 +75,7 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                       max_value = 1, numcores = 4, numthreads = 256,
                       num_particles = 1000, num_iterations = 1000, dims = 2,
                       H1 = Hutchinson(), H2 = Hutchinson())
-    res = (size[1]*ppu, size[2]*ppu)
+    res = (ceil(Int, size[1]*ppu), ceil(Int, size[2]*ppu))
     v = ArrayType(zeros(Int,res))
     r = ArrayType(zeros(FloatType,res))
     g = ArrayType(zeros(FloatType,res))
