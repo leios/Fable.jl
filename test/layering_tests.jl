@@ -43,6 +43,49 @@ function layering_tests(ArrayType::Type{AT}) where AT <: AbstractArray
     @test isapprox(img[1,1], RGBA(1.0, 0.0, 1.0, 1.0))
     @test isapprox(img[11,1], RGBA(1.0, 1.0, 1.0, 1.0))
     @test isapprox(img[5,5], RGBA(0.0, 0.0, 1.0, 1.0))
+
+    black = RGBA(0,0,0,1)
+    white = RGBA(1,1,1,1)
+
+    position_offsets = ((5, 5), (5, -5), (-5, -5), (-5, 5),
+                        (0, 5), (0, -5), (5, 0), (-5, 0))
+
+    # colors at edges of color layer
+    expected_colors = ((white, white, white, black),
+                       (white, black, white, white),
+                       (black, white, white, white),
+                       (white, white, black, white),
+                       (white, white, black, black),
+                       (black, black, white, white),
+                       (white, black, white, black),
+                       (black, white, black, white))
+
+    default_position = (0,0)
+    default_ppu = 1
+    default_size = (10,10)
+
+    # Offset grid with centered 1 and 2 at LR, LL, UL, UR, D, U, L, R
+    cl1 = ColorLayer(white;
+                     ppu = default_ppu,
+                     position = default_position,
+                     world_size = default_size)
+
+    for i = 1:length(position_offsets)
+        new_position = (position_offsets[i][1], position_offsets[i][2])
+        cl2 = ColorLayer(black;
+                         ppu = default_ppu,
+                         position = new_position,
+                         world_size = default_size)
+
+        img = write_image([cl1, cl2])
+
+        @test img[1,1] == expected_colors[i][1]
+        @test img[end,1] == expected_colors[i][2]
+        @test img[1,end] == expected_colors[i][3]
+        @test img[end,end] == expected_colors[i][4]
+    end
+
+
 end
 
 # TODO: Figure out appropriate indices for this test

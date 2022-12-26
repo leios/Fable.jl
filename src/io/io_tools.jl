@@ -11,6 +11,9 @@ end
 function mix_layers!(layer_1::AL1, layer_2::AL2, overlap::Overlap;
                      mode = :simple) where {AL1 <: AbstractLayer,
                                             AL2 <: AbstractLayer}
+    if layer_1.ppu !== layer_2.ppu
+        error("Pixels per unit between layer 1 and 2 are not the same!")
+    end
 
     if mode == :simple
         f = simple_layer_kernel!
@@ -99,8 +102,13 @@ function reset!(layer::AL) where AL <: AbstractLayer
     zero!(layer)
 end
 
+function reset!(layer::ColorLayer)
+    layer.canvas .= layer.color
+end
+
 function write_image(layer;
                      filename::Union{Nothing, String} = nothing,
+                     reset = true,
                      img = fill(RGBA(0,0,0),
                                 size(layer.canvas))) where AL <: AbstractLayer
 
@@ -108,7 +116,9 @@ function write_image(layer;
 
     img .= Array(layer.canvas)
 
-    reset!(layer)
+    if reset
+        reset!(layer)
+    end
     if isnothing(filename) || !OUTPUT
         return img
     else
@@ -120,6 +130,7 @@ end
 
 function write_image(layers::Vector{AL};
                      filename::Union{Nothing, String} = nothing,
+                     reset = true,
                      img = fill(RGBA(0,0,0,0),
                                 size(layers[1].canvas))) where AL<:AbstractLayer
 
@@ -131,7 +142,9 @@ function write_image(layers::Vector{AL};
 
     img .= Array(layers[1].canvas)
 
-    reset!(layers)
+    if reset
+        reset!(layers)
+    end
     if isnothing(filename) || !OUTPUT
         return img
     else
@@ -141,7 +154,8 @@ function write_image(layers::Vector{AL};
 end
 
 function write_video!(v::VideoParams,
-                      layers::Vector{AL}) where AL <: AbstractLayer
+                      layers::Vector{AL};
+                      reset = true) where AL <: AbstractLayer
  
     postprocess!(layers[1])
     for i = 2:length(layers)
@@ -155,18 +169,23 @@ function write_video!(v::VideoParams,
         write(v.writer, v.frame)
     end
     zero!(v.frame)
-    reset!(layers)
+    if reset
+        reset!(layers)
+    end
     println(v.frame_count)
     v.frame_count += 1
 end
 
 # in the case OUTPUT = false
-function write_video!(n::Nothing, layers::Vector{AL}) where AL <: AbstractLayer
+function write_video!(n::Nothing, layers::Vector{AL};
+                      reset = true) where AL <: AbstractLayer
     postprocess!(layers[1])
     for i = 2:length(layers)
         post_process!(layers[i])
         wait(mix_layers!(layers[1], layers[i]; mode = :simple))
     end
 
-    reset!(layers)
+    if reset
+        reset!(layers)
+    end
 end
