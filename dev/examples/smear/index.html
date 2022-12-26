@@ -4,9 +4,11 @@
 function main(num_particles, num_iterations, total_frames; ArrayType = Array,
               output_type = :video)
 </code></pre><p>Now I will define the image and video parameters:</p><pre><code class="nohighlight hljs">    # define image domain
+    world_size = (9, 16)
+    ppu = 1920 / 16
     res = (1080, 1920)
-    bounds = [-4.5 4.5; -8 8]
-    layer = FractalLayer(res; ArrayType = ArrayType, FloatType = FloatType,
+    layer = FractalLayer(; ArrayType = ArrayType, FloatType = FloatType,
+                         world_size = world_size, ppu = ppu,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
 
@@ -68,7 +70,7 @@ end
         theta = set(theta, pi/4)
 
         update_fis!(smear_transform, [object_position, scale, theta])
-        run!(layer, bounds)
+        run!(layer)
 
         if output_type == :video
             write_video!(video_out, [layer])
@@ -83,30 +85,34 @@ end
 </code></pre><p>This does 4 things:</p><ol><li>It updates the circle at every step.</li><li>It re<code>set</code>s the <code>object_position</code>, <code>scale</code>, and <code>theta</code> for the <code>smear_trasnform</code>.</li><li>It outputs to either video or image.</li><li>It sets the canvas values back to 0 for the next frame</li></ol><p>Once this is done, all we need to do is close the video (if we were outputting to video at all:</p><pre><code class="nohighlight hljs">    if (output_type == :video)
         close_video(video_out)
     end
-</code></pre><p>If we run <code>main(10000, 10000, 10, CuArray; output_tupe = :video)</code>, we will get the following video:</p><p><video src="../res/smear.mp4" controls="true" title="smear_video"><a href="../res/smear.mp4">smear_video</a></video></p><h2 id="Just-the-code"><a class="docs-heading-anchor" href="#Just-the-code">Just the code</a><a id="Just-the-code-1"></a><a class="docs-heading-anchor-permalink" href="#Just-the-code" title="Permalink"></a></h2><p>And here is the full code:</p><pre><code class="nohighlight hljs">using Fae, CUDA, AMDGPU
+</code></pre><p>If we run <code>main(10000, 10000, 10, CuArray; output_tupe = :video)</code>, we will get the following video:</p><p><video src="../res/smear.mp4" controls="true" title="smear_video"><a href="../res/smear.mp4">smear_video</a></video></p><h2 id="Just-the-code"><a class="docs-heading-anchor" href="#Just-the-code">Just the code</a><a id="Just-the-code-1"></a><a class="docs-heading-anchor-permalink" href="#Just-the-code" title="Permalink"></a></h2><p>And here is the full code:</p><pre><code class="nohighlight hljs">using Fae
 
-function main(num_particles, num_iterations, total_frames, ArrayType;
-              output_type = :video)
+function smear_example(num_particles, num_iterations, total_frames;
+                       ArrayType = Array, output_type = :video)
     FloatType = Float32
 
     # define image domain
+    world_size = (9, 16)
+    ppu = 1920 / 16
     res = (1080, 1920)
-    bounds = [-4.5 4.5; -8 8]
-    layer = FractalLayer(res; ArrayType = ArrayType, FloatType = FloatType,
+    layer = FractalLayer(; ArrayType = ArrayType, FloatType = FloatType,
+                         world_size = world_size, ppu = ppu,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
 
     # defining video parameters
     if output_type == :video
-        video_out = open_video(res; framerate = 30, filename = &quot;out.mp4&quot;,
-                               encoder_options = (crf=23, preset=&quot;medium&quot;))
+        video_out = open_video(res; framerate = 30, filename = &quot;out.mp4&quot;)
     end
 
     # define ball parameters
-    ball = define_circle(; position = [-2.0, -2.0], radius = 1.0, (1,1,1))
+    position = [-2.0, -2.0]
+    ball = define_circle(; position = position,
+                           radius = 1.0,
+                           color = (1,1,1))
 
     # fractal inputs to track changes in position, scale, and theta for smear 
-    object_position = fi(&quot;object_position&quot;, pos)
+    object_position = fi(&quot;object_position&quot;, position)
     scale = fi(&quot;scale&quot;, (1,1))
     theta = fi(&quot;theta&quot;, 0)
 
@@ -117,10 +123,9 @@ function main(num_particles, num_iterations, total_frames, ArrayType;
                                       scale = scale, theta = theta)
 
     # now turning it into a fractal operator
-    smear_transform = fee(Hutchinson, [FractalOperator(smear)], fis;
-                          name = &quot;smear&quot;, final = true, diagnostic = true)
+    smear_transform = fee(Hutchinson, [FractalOperator(smear)],
+                          fis; name = &quot;smear&quot;, final = true, diagnostic = true)
 
-    # attaching each operator to the layer
     layer.H1 = ball
     layer.H2 = smear_transform
 
@@ -143,7 +148,7 @@ function main(num_particles, num_iterations, total_frames, ArrayType;
         theta = set(theta, pi/4)
 
         update_fis!(smear_transform, [object_position, scale, theta])
-        run!(layer, bounds)
+        run!(layer)
 
         if output_type == :video
             write_video!(video_out, [layer])
@@ -160,4 +165,5 @@ function main(num_particles, num_iterations, total_frames, ArrayType;
         close_video(video_out)
     end
 
-end</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../swirled_square/">« Rotating Square</a><a class="docs-footer-nextpage" href="../../research_directions/">Research Directions »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Friday 2 December 2022 18:05">Friday 2 December 2022</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end
+</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../swirled_square/">« Rotating Square</a><a class="docs-footer-nextpage" href="../../research_directions/">Research Directions »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Monday 26 December 2022 12:27">Monday 26 December 2022</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
