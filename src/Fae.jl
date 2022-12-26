@@ -48,8 +48,12 @@ include("objects/triangle.jl")
 include("objects/barnsley.jl")
 include("objects/lollipeople.jl")
 
-# 
-include("io/io_structs.jl")
+# IO
+include("structs/layers/layers.jl")
+include("structs/layers/FractalLayer.jl")
+include("structs/layers/ColorLayer.jl")
+include("structs/layers/ShaderLayer.jl")
+include("structs/VideoParams.jl")
 include("io/postprocess.jl")
 include("io/io_tools.jl")
 

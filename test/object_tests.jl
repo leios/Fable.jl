@@ -4,9 +4,6 @@
 #------------------------------------------------------------------------------#
 
 function square_tests(ArrayType::Type{AT}) where AT <: AbstractArray
-    res = (10,10)
-    bounds = [-2 2; -2 2]
-
     color_array = [[1.0, 0, 0, 1],
                    [0.0, 1, 0, 1],
                    [0.0, 0, 1, 1],
@@ -15,9 +12,10 @@ function square_tests(ArrayType::Type{AT}) where AT <: AbstractArray
     square = Fae.define_square(; position = [0.0,0.0], scale = 4.0,
                                  color = color_array,
                                  name = "square_test")
-    fl = FractalLayer(res; H1 = square, ArrayType = ArrayType)
+    fl = FractalLayer(; H1 = square, ArrayType = ArrayType,
+                      world_size = (4,4), ppu = 2.5)
 
-    run!(fl, bounds)
+    run!(fl)
 
     img = write_image(fl)
 
@@ -29,9 +27,6 @@ function square_tests(ArrayType::Type{AT}) where AT <: AbstractArray
 end
 
 function triangle_tests(ArrayType::Type{AT}) where AT <: AbstractArray
-    res = (11,11)
-    bounds = [-0.5 0.5; -0.5 0.5]
-
     color_array = [[1.0, 0, 0, 1],
                    [0.0, 1, 0, 1],
                    [0.0, 0, 1, 1],
@@ -39,9 +34,10 @@ function triangle_tests(ArrayType::Type{AT}) where AT <: AbstractArray
 
     triangle = Fae.define_triangle(; color = color_array,
                                      name = "triangle_test")
-    fl = FractalLayer(res; H1 = triangle, ArrayType = ArrayType)
+    fl = FractalLayer(; H1 = triangle, ArrayType = ArrayType,
+                      world_size = (1,1), ppu =  11)
 
-    run!(fl, bounds)
+    run!(fl)
 
     img = write_image(fl)
 

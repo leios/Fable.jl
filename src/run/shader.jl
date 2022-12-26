@@ -1,6 +1,6 @@
 export run!
 
-function run!(layer::ShaderLayer, bounds; diagnostic = false) 
+function run!(layer::ShaderLayer; diagnostic = false) 
 
     if layer.params.ArrayType <: Array
         kernel! = shader_kernel!(CPU(), layer.params.numcores)
@@ -10,7 +10,9 @@ function run!(layer::ShaderLayer, bounds; diagnostic = false)
         kernel! = shader_kernel!(ROCDevice(), layer.params.numthreads)
     end
 
-    wait(kernel!(layer.shader.symbols, layer.canvas, Tuple(bounds),
+    bounds = find_bounds(layer)
+
+    wait(kernel!(layer.shader.symbols, layer.canvas, bounds,
                  layer.shader.op, ndrange = size(layer.canvas)))
 end
 
@@ -23,8 +25,8 @@ end
 
     shared_colors = @localmem eltype(canvas[1]) (@groupsize()[1], 4)
 
-    @inbounds y = bounds[1] + (i/res[1])*(bounds[3]-bounds[1])
-    @inbounds x = bounds[2] + (j/res[2])*(bounds[4]-bounds[2])
+    @inbounds y = bounds.ymin + (i/res[1])*(bounds.ymax - bounds.ymin)
+    @inbounds x = bounds.xmin + (j/res[2])*(bounds.xmax - bounds.xmin)
 
     op(shared_colors, y, x, lid, symbols)
 

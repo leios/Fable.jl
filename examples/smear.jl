@@ -5,9 +5,11 @@ function smear_example(num_particles, num_iterations, total_frames;
     FloatType = Float32
 
     # define image domain
+    world_size = (9, 16)
+    ppu = 1920 / 16
     res = (1080, 1920)
-    bounds = [-4.5 4.5; -8 8]
-    layer = FractalLayer(res; ArrayType = ArrayType, FloatType = FloatType,
+    layer = FractalLayer(; ArrayType = ArrayType, FloatType = FloatType,
+                         world_size = world_size, ppu = ppu,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
 
@@ -59,7 +61,7 @@ function smear_example(num_particles, num_iterations, total_frames;
         theta = set(theta, pi/4)
 
         update_fis!(smear_transform, [object_position, scale, theta])
-        run!(layer, bounds)
+        run!(layer)
 
         if output_type == :video
             write_video!(video_out, [layer])

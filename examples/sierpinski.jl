@@ -4,10 +4,8 @@ function sierpinski_example(num_particles, num_iterations, num_frames;
                             ArrayType = Array)
     FloatType = Float32
 
-    bounds = [-1.125 1.125; -2 2]
-    res = (1080, 1920)
-
-    layer = FractalLayer(res; ArrayType = ArrayType, logscale = false,
+    layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
+                         world_size = (2.25, 4), ppu = 1920/4,
                          FloatType = FloatType, num_iterations = num_iterations,
                          num_particles = num_particles)
 
@@ -52,7 +50,7 @@ function sierpinski_example(num_particles, num_iterations, num_frames;
 
         layer.H1 = final_H
 
-        Fae.run!(layer, bounds)
+        Fae.run!(layer)
 
         filename = "check"*lpad(i-1,5,"0")*".png"
 

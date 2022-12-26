@@ -9,14 +9,18 @@ To do this, we need to set up Fae with the right parameters:
 
 ```
     # Physical space location. 
-    bounds = [-4.5 4.5; -8 8]*0.15
+    world_size = (9*0.15, 16*0.15)
 
-    # Pixel grid
-    res = (1080, 1920)
+    # Pixels per unit space
+    # The aspect ratio is 16x9, so if we want 1920x1080, we can say we want...
+    ppu = 1920/world_size[2]
+
 ```
 
-Note that this sets up an image resolution, `res`, and a separate camera with physical units, `bounds`, so if we are using a 1920 by 1080 image, the `bounds` can be anything with a 16:9 ratio.
-Here, we also set the position, `pos`, the `rotation`, and scaling factors in x and y, `scale_x` and `scale_y`.
+Right now, this part of the API is in flux, but we need some sort of physical world to hold the objects in, so we set this to be some size (`world_size = (9*0.15, 16*0.15)`).
+We also define the *Pixels Per Unit* or `ppu` value.
+The resolution should be the `world_size * ppu`, so if we want a 1920x1080 image, we need to set the ppu accordingly (here we set it as `1920/world_size[2]`).
+This will be replaced with a camera struct eventually.
 
 Now we need to define a color.
 This can be done by passing in an array or tuple (such as `color = [1.0, 0, 0, 1]` for red), or as an array of arrays or tuples, like:
@@ -44,12 +48,13 @@ Notationally, we are using the variable `H` to designate a Hutchinson operator, 
 Finally, we need to attach this function to the layer and run everything with the `run!(...)` function and write it to an image:
 
 ```
-    layer = FractalLayer(res; ArrayType = ArrayType, logscale = false,
+    layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
+                         world_size = world_size, ppu = ppu,
                          FloatType = FloatType, H1 = H,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
 
-    run!(layer, bounds)
+    run!(layer)
 
     write_image([layer]; filename = "out.png")
 
@@ -63,14 +68,16 @@ After running this, we will get the following image:
 The full code will look like 
 
 ```
-function main(num_particles, num_iterations; ArrayType = Array, dark = true)
+function square_example(num_particles, num_iterations;
+                        ArrayType = Array, dark = true)
     FloatType = Float32
 
     # Physical space location. 
-    bounds = [-4.5 4.5; -8 8]*0.15
+    world_size = (9*0.15, 16*0.15)
 
-    # Pixel grid
-    res = (1080, 1920)
+    # Pixels per unit space
+    # The aspect ratio is 16x9, so if we want 1920x1080, we can say we want...
+    ppu = 1920/world_size[2]
 
     if dark
         colors = [[1.0, 0.25, 0.25,1],
@@ -84,19 +91,19 @@ function main(num_particles, num_iterations; ArrayType = Array, dark = true)
                  [1.0, 0, 1.0, 1]]
     end
 
-    H = define_square(; position = [0.0, 0.0], rotation = pi/4, colors = colors)
+    H = define_square(; position = [0.0, 0.0], rotation = pi/4,  color = colors)
 
-    layer = FractalLayer(res; ArrayType = ArrayType, logscale = false,
+    layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
+                         world_size = world_size, ppu = ppu,
                          FloatType = FloatType, H1 = H,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
 
-    run!(layer, bounds)
+    run!(layer)
 
     write_image(layer; filename = "out.png")
-
-
 end
+
 
 ```
 
@@ -133,7 +140,7 @@ The code here does not change significantly, except that we create a `H2` and ad
                          num_particles = num_particles,
                          num_iterations = num_iterations)
 
-    run!(layer, bounds)
+    run!(layer)
 ...
 ```
 
@@ -167,7 +174,7 @@ If we want, we can make `H2` operate on the object, itself, by creating a new fr
                          num_particles = num_particles,
                          num_iterations = num_iterations)
 
-    run!(layer, bounds)
+    run!(layer)
 
 ```
 
@@ -178,14 +185,16 @@ which will create the following image:
 Here, again, is the full code:
 
 ```
-function main(num_particles, num_iterations; ArrayType = Array, dark = true)
+function square_example(num_particles, num_iterations;
+                        ArrayType = Array, dark = true)
     FloatType = Float32
 
     # Physical space location. 
-    bounds = [-4.5 4.5; -8 8]*0.15
+    world_size = (9*0.15, 16*0.15)
 
-    # Pixel grid
-    res = (1080, 1920)
+    # Pixels per unit space
+    # The aspect ratio is 16x9, so if we want 1920x1080, we can say we want...
+    ppu = 1920/world_size[2]
 
     if dark
         colors = [[1.0, 0.25, 0.25,1],
@@ -199,19 +208,24 @@ function main(num_particles, num_iterations; ArrayType = Array, dark = true)
                  [1.0, 0, 1.0, 1]]
     end
 
-    H = define_square(; position = [0.0, 0.0], rotation = pi/4, colors = colors,
-                      ArrayType = ArrayType)
+    H = define_square(; position = [0.0, 0.0], rotation = pi/4,  color = colors)
     H2 = Hutchinson([Flames.swirl],
                     [Shaders.previous],
                     (1.0,);
-                    diagnostic = true, ArrayType = ArrayType, name = "2")
-    final_H = fee(Hutchinson, [H, H2])
+                    diagnostic = true, name = "2", final = true)
 
-    layer = fractal_flame(final_H, num_particles, num_iterations,
-                          bounds, res; ArrayType = ArrayType, FloatType = FloatType)
+    # To combine a different way, use the final_H defined here
+    # final_H = fee(Hutchinson, [H, H2])
 
-    filename = "out.png"
-    write_image([layer], filename)
+    layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
+                         world_size = world_size, ppu = ppu,
+                         FloatType = FloatType, H1 = H, H2 = H2,
+                         num_particles = num_particles,
+                         num_iterations = num_iterations)
+
+    run!(layer)
+
+    write_image(layer; filename = "out.png")
 end
 
 ```
