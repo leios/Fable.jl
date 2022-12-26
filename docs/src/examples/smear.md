@@ -61,9 +61,11 @@ Now I will define the image and video parameters:
 
 ```
     # define image domain
+    world_size = (9, 16)
+    ppu = 1920 / 16
     res = (1080, 1920)
-    bounds = [-4.5 4.5; -8 8]
-    layer = FractalLayer(res; ArrayType = ArrayType, FloatType = FloatType,
+    layer = FractalLayer(; ArrayType = ArrayType, FloatType = FloatType,
+                         world_size = world_size, ppu = ppu,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
 
@@ -158,7 +160,7 @@ Finally, we have the animation loop:
         theta = set(theta, pi/4)
 
         update_fis!(smear_transform, [object_position, scale, theta])
-        run!(layer, bounds)
+        run!(layer)
 
         if output_type == :video
             write_video!(video_out, [layer])
@@ -196,30 +198,34 @@ If we run `main(10000, 10000, 10, CuArray; output_tupe = :video)`, we will get t
 
 And here is the full code:
 ```
-using Fae, CUDA, AMDGPU
+using Fae
 
-function main(num_particles, num_iterations, total_frames, ArrayType;
-              output_type = :video)
+function smear_example(num_particles, num_iterations, total_frames;
+                       ArrayType = Array, output_type = :video)
     FloatType = Float32
 
     # define image domain
+    world_size = (9, 16)
+    ppu = 1920 / 16
     res = (1080, 1920)
-    bounds = [-4.5 4.5; -8 8]
-    layer = FractalLayer(res; ArrayType = ArrayType, FloatType = FloatType,
+    layer = FractalLayer(; ArrayType = ArrayType, FloatType = FloatType,
+                         world_size = world_size, ppu = ppu,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
 
     # defining video parameters
     if output_type == :video
-        video_out = open_video(res; framerate = 30, filename = "out.mp4",
-                               encoder_options = (crf=23, preset="medium"))
+        video_out = open_video(res; framerate = 30, filename = "out.mp4")
     end
 
     # define ball parameters
-    ball = define_circle(; position = [-2.0, -2.0], radius = 1.0, (1,1,1))
+    position = [-2.0, -2.0]
+    ball = define_circle(; position = position,
+                           radius = 1.0,
+                           color = (1,1,1))
 
     # fractal inputs to track changes in position, scale, and theta for smear 
-    object_position = fi("object_position", pos)
+    object_position = fi("object_position", position)
     scale = fi("scale", (1,1))
     theta = fi("theta", 0)
 
@@ -230,10 +236,9 @@ function main(num_particles, num_iterations, total_frames, ArrayType;
                                       scale = scale, theta = theta)
 
     # now turning it into a fractal operator
-    smear_transform = fee(Hutchinson, [FractalOperator(smear)], fis;
-                          name = "smear", final = true, diagnostic = true)
+    smear_transform = fee(Hutchinson, [FractalOperator(smear)],
+                          fis; name = "smear", final = true, diagnostic = true)
 
-    # attaching each operator to the layer
     layer.H1 = ball
     layer.H2 = smear_transform
 
@@ -256,7 +261,7 @@ function main(num_particles, num_iterations, total_frames, ArrayType;
         theta = set(theta, pi/4)
 
         update_fis!(smear_transform, [object_position, scale, theta])
-        run!(layer, bounds)
+        run!(layer)
 
         if output_type == :video
             write_video!(video_out, [layer])
@@ -274,4 +279,5 @@ function main(num_particles, num_iterations, total_frames, ArrayType;
     end
 
 end
+
 ```

@@ -10,11 +10,9 @@ end
 function barnsley_example(num_particles, num_iterations; ArrayType = Array)
     FloatType = Float32
 
-    bounds = [0 10; -8 8]
-    res = (1080, 1920)
-
-    layer = FractalLayer(res; ArrayType = ArrayType, FloatType = FloatType,
-                         num_particles = num_particles,
+    layer = FractalLayer(; ArrayType = ArrayType, FloatType = FloatType,
+                         world_size = (10, 16), position = (5, 0),
+                         ppu = 1920/16, num_particles = num_particles,
                          num_iterations = num_iterations)
 
     pos = [0, 0.]
@@ -39,7 +37,7 @@ function barnsley_example(num_particles, num_iterations; ArrayType = Array)
     layer.H1 = H
     layer.H2 = H2
 
-    run!(layer, bounds)
+    run!(layer)
 
     @time write_image([layer], filename = "out.png")
 end
