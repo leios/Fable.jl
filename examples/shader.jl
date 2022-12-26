@@ -12,11 +12,10 @@ end
 function shader_example(fum; res = (1080,1920), ArrayType = Array,
                         filename = "out.png")
 
-    bounds = [-4.5 4.5; -8 8] * 0.25
+    layer = ShaderLayer(fum; ArrayType = ArrayType, world_size = (9/4, 4),
+                        ppu = 1920/4)
 
-    layer = ShaderLayer(fum, res; ArrayType = ArrayType)
-
-    run!(layer, bounds)
+    run!(layer)
 
     write_image(layer; filename = filename)
 end

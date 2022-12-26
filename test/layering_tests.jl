@@ -24,19 +24,19 @@ end
 
 function layering_tests(ArrayType::Type{AT}) where AT <: AbstractArray
 
-    res = (11,11)
-    bounds = [-2 2; -2 2]
-
-    cl = ColorLayer(RGBA(1, 0, 1, 1), res; ArrayType = ArrayType)
-    sl = ShaderLayer(test_fum, res; ArrayType = ArrayType)
+    cl = ColorLayer(RGBA(1, 0, 1, 1); world_size = (4, 4), ppu = 11/4,
+                    ArrayType = ArrayType)
+    sl = ShaderLayer(test_fum;  world_size = (4, 4), ppu = 11/4,
+                     ArrayType = ArrayType)
     circle = Fae.define_circle(; position = [0.0,0.0], radius = 2.0, 
                                  color = [0.0, 0.0, 1.0, 1.0],
                                  name = "layering_circle_test")
-    fl = FractalLayer(res; H1 = circle, ArrayType = ArrayType)
+    fl = FractalLayer(; world_size = (4,4), ppu = 11/4, H1 = circle,
+                      ArrayType = ArrayType)
 
     layers = [cl, sl, fl]
 
-    run!(layers, bounds)
+    run!(layers)
 
     img = write_image(layers)
 
@@ -59,8 +59,8 @@ function overlap_tests()
     @test overlap.start_index_2 == (1,1)
 
     # inbedded test
-    cl1 = ColorLayer(RGB(0,0,0); ppu = 1, size = (15, 15))
-    cl2 = ColorLayer(RGB(0,0,0); ppu = 1, size = (10, 10))
+    cl1 = ColorLayer(RGB(0,0,0); ppu = 1, world_size = (15, 15))
+    cl2 = ColorLayer(RGB(0,0,0); ppu = 1, world_size = (10, 10))
 
     overlap = find_overlap(cl1, cl2)
 
@@ -69,8 +69,8 @@ function overlap_tests()
     @test overlap.start_index_2 == (1, 1)
 
     # different ppus
-    cl1 = ColorLayer(RGB(0,0,0); ppu = 2, size = (10, 10))
-    cl2 = ColorLayer(RGB(0,0,0); ppu = 3, size = (15, 15))
+    cl1 = ColorLayer(RGB(0,0,0); ppu = 2, world_size = (10, 10))
+    cl2 = ColorLayer(RGB(0,0,0); ppu = 3, world_size = (15, 15))
 
     overlap = find_overlap(cl1, cl2)
 
@@ -103,7 +103,7 @@ function overlap_tests()
     cl1 = ColorLayer(RGB(0,0,0);
                      ppu = default_ppu,
                      position = default_position,
-                     size = default_size)
+                     world_size = default_size)
 
     for shift in shifts
         for i = 1:length(position_offsets)
@@ -112,7 +112,7 @@ function overlap_tests()
             cl2 = ColorLayer(RGB(0,0,0);
                              ppu = default_ppu,
                              position = new_position,
-                             size = default_size)
+                             world_size = default_size)
             overlap = find_overlap(cl1, cl2)
 
             @test overlap.range == expected_ranges[i]
@@ -140,13 +140,14 @@ function bounds_tests()
     # random tests
     for i = 1:10
         position = Tuple(rand(2) * 10 .- 5)
-        size = Tuple(rand(2)*100)
-        cl = ColorLayer(RGB(0,0,0); position = position, size = size, ppu = 1)
+        world_size = Tuple(rand(2)*100)
+        cl = ColorLayer(RGB(0,0,0); position = position,
+                        world_size = world_size, ppu = 1)
         bounds = find_bounds(cl)
-        expected_bounds = (position[1] - size[1]*0.5,
-                           position[1] + size[1]*0.5,
-                           position[2] - size[2]*0.5,
-                           position[2] + size[2]*0.5)
+        expected_bounds = (position[1] - world_size[1]*0.5,
+                           position[1] + world_size[1]*0.5,
+                           position[2] - world_size[2]*0.5,
+                           position[2] + world_size[2]*0.5)
         @test Bool(floor(sum(values(bounds) .== expected_bounds)/4))
     end
 end

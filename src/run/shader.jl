@@ -25,8 +25,8 @@ end
 
     shared_colors = @localmem eltype(canvas[1]) (@groupsize()[1], 4)
 
-    @inbounds y = bounds[1] + (i/res[1])*(bounds[3]-bounds[1])
-    @inbounds x = bounds[2] + (j/res[2])*(bounds[4]-bounds[2])
+    @inbounds y = bounds.ymin + (i/res[1])*(bounds.ymax - bounds.ymin)
+    @inbounds x = bounds.xmin + (j/res[2])*(bounds.xmax - bounds.xmin)
 
     op(shared_colors, y, x, lid, symbols)
 

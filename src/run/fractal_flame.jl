@@ -16,12 +16,12 @@ export run!
 # couldn't figure out how to get an n-dim version working for GPU
 @inline function on_image(p_y, p_x, bounds, dims)
     flag = true
-    if p_y < bounds[1] || p_y > bounds[3] ||
+    if p_y < bounds.ymin || p_y > bounds.ymax ||
        p_y == NaN || p_y == Inf
         flag = false
     end
 
-    if p_x < bounds[2] || p_x > bounds[4] ||
+    if p_x < bounds.xmin || p_x > bounds.xmax ||
        p_x == NaN || p_x == Inf
         flag = false
     end
@@ -31,7 +31,7 @@ end
 function iterate!(ps::Points, pxs::FractalLayer, H::Hutchinson, n,
                   bounds, bin_widths, H2::Hutchinson; diagnostic = false)
 
-    max_range = maximum(bounds)*10
+    max_range = maximum(values(bounds))*10
     if isa(ps.positions, Array)
         kernel! = naive_chaos_kernel!(CPU(), pxs.params.numcores)
     elseif has_cuda_gpu() && isa(ps.positions, CuArray)
@@ -47,7 +47,7 @@ function iterate!(ps::Points, pxs::FractalLayer, H::Hutchinson, n,
     kernel!(ps.positions, n, H.op, H.cop, H.prob_set, H.symbols, H.fnums,
             H2.op, H2.cop, H2.symbols, H2.prob_set, H2.fnums,
             pxs.values, pxs.reds, pxs.greens, pxs.blues, pxs.alphas, 
-            Tuple(bounds), Tuple(bin_widths), pxs.params.num_ignore, max_range,
+            bounds, Tuple(bin_widths), pxs.params.num_ignore, max_range,
             ndrange=size(ps.positions)[1])
 end
 
@@ -147,13 +147,14 @@ end
 function run!(layer::FractalLayer; diagnostic = false)
 
     res = size(layer.canvas)
+    bounds = find_bounds(layer)
     pts = Points(layer.params.num_particles; FloatType = eltype(layer.reds),
                  dims = layer.params.dims,
                  ArrayType = typeof(layer.reds), bounds = bounds)
 
-    bin_widths = zeros(size(bounds)[1])
+    bin_widths = zeros(div(length(values(bounds)),2))
     for i = 1:length(bin_widths)
-        bin_widths[i] = (bounds[i,2]-bounds[i,1])/res[i]
+        bin_widths[i] = (bounds[i*2]-bounds[i*2-1])/res[i]
     end
 
     bounds = find_bounds(layer)

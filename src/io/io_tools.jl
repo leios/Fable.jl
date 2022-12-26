@@ -4,6 +4,14 @@ function mix_layers!(layer_1::AL1, layer_2::AL2;
                      mode = :simple) where {AL1 <: AbstractLayer,
                                             AL2 <: AbstractLayer}
 
+    overlap = find_overlap(layer_1, layer_2)
+    mix_layers!(layer_1, layer_2, overlap)
+end
+
+function mix_layers!(layer_1::AL1, layer_2::AL2, overlap::Overlap;
+                     mode = :simple) where {AL1 <: AbstractLayer,
+                                            AL2 <: AbstractLayer}
+
     if mode == :simple
         f = simple_layer_kernel!
     else
@@ -18,23 +26,28 @@ function mix_layers!(layer_1::AL1, layer_2::AL2;
         kernel! = f(ROCDevice(), layer_1.params.numthreads)
     end
 
-    kernel!(layer_1.canvas, layer_2.canvas, ndrange = size(layer_1.canvas))
+    kernel!(layer_1.canvas, layer_2.canvas,
+            overlap.start_index_1, overlap.start_index_2,
+            ndrange = overlap.range)
 
 end
 
-@kernel function simple_layer_kernel!(canvas_1, canvas_2)
+@kernel function simple_layer_kernel!(canvas_1, canvas_2,
+                                      start_index_1, start_index_2)
 
-    tid = @index(Global, Linear)
+    tid = @index(Global, Cartesian)
+    idx_1 = CartesianIndex(Tuple(tid) .+ Tuple(start_index_1) .- (1,1))
+    idx_2 = CartesianIndex(Tuple(tid) .+ Tuple(start_index_2) .- (1,1))
 
-    @inbounds r = canvas_1[tid].r*(1-canvas_2[tid].alpha) +
-                  canvas_2[tid].r*canvas_2[tid].alpha
-    @inbounds g = canvas_1[tid].g*(1-canvas_2[tid].alpha) +
-                  canvas_2[tid].g*canvas_2[tid].alpha
-    @inbounds b = canvas_1[tid].b*(1-canvas_2[tid].alpha) +
-                  canvas_2[tid].b*canvas_2[tid].alpha
-    @inbounds a = max(canvas_1[tid].alpha, canvas_2[tid].alpha)
+    @inbounds r = canvas_1[idx_1].r*(1-canvas_2[idx_2].alpha) +
+                  canvas_2[idx_2].r*canvas_2[idx_2].alpha
+    @inbounds g = canvas_1[idx_1].g*(1-canvas_2[idx_2].alpha) +
+                  canvas_2[idx_2].g*canvas_2[idx_2].alpha
+    @inbounds b = canvas_1[idx_1].b*(1-canvas_2[idx_2].alpha) +
+                  canvas_2[idx_2].b*canvas_2[idx_2].alpha
+    @inbounds a = max(canvas_1[idx_1].alpha, canvas_2[idx_2].alpha)
 
-    @inbounds canvas_1[tid] = RGBA(r,g,b,a)
+    @inbounds canvas_1[idx_1] = RGBA(r,g,b,a)
 end
 
 function create_canvas(s; ArrayType = Array)

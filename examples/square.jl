@@ -11,10 +11,11 @@ function square_example(num_particles, num_iterations;
     FloatType = Float32
 
     # Physical space location. 
-    bounds = [-4.5 4.5; -8 8]*0.15
+    world_size = (9*0.15, 16*0.15)
 
-    # Pixel grid
-    res = (1080, 1920)
+    # Pixels per unit space
+    # The aspect ratio is 16x9, so if we want 1920x1080, we can say we want...
+    ppu = 1920/world_size[2]
 
     if dark
         colors = [[1.0, 0.25, 0.25,1],
@@ -37,12 +38,13 @@ function square_example(num_particles, num_iterations;
     # To combine a different way, use the final_H defined here
     # final_H = fee(Hutchinson, [H, H2])
 
-    layer = FractalLayer(res; ArrayType = ArrayType, logscale = false,
+    layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
+                         world_size = world_size, ppu = ppu,
                          FloatType = FloatType, H1 = H, H2 = H2,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
 
-    run!(layer, bounds)
+    run!(layer)
 
     write_image(layer; filename = "out.png")
 end

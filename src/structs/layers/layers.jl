@@ -9,11 +9,16 @@ struct Overlap
     start_index_2::Tuple
 end
 
+# TODO: higher dimensions...
+function find_bounds(position, world_size)
+    return (ymin = position[1] - 0.5 * world_size[1],
+            ymax = position[1] + 0.5 * world_size[1],
+            xmin = position[2] - 0.5 * world_size[2],
+            xmax = position[2] + 0.5 * world_size[2])
+end
+
 function find_bounds(layer)
-    return (ymin = layer.position[1] - 0.5 * layer.size[1],
-            ymax = layer.position[1] + 0.5 * layer.size[1],
-            xmin = layer.position[2] - 0.5 * layer.size[2],
-            xmax = layer.position[2] + 0.5 * layer.size[2])
+    return find_bounds(layer.position, layer.world_size)
 end
 
 # Note: currently returns ndrange for layer_1, but this might not be right...
@@ -21,7 +26,8 @@ function find_overlap(layer_1::AL1, layer_2::AL2)  where {AL1 <: AbstractLayer,
                                                           AL2 <: AbstractLayer}
 
     # Returning early if size and position is the same
-    if layer_1.size == layer_2.size && layer_1.position == layer_2.position
+    if layer_1.world_size == layer_2.world_size &&
+       layer_1.position == layer_2.position
         return Overlap(size(layer_1.canvas), (1,1), (1,1))
     end
 
