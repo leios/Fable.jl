@@ -85,6 +85,12 @@ function layering_tests(ArrayType::Type{AT}) where AT <: AbstractArray
         @test img[end,end] == expected_colors[i][4]
     end
 
+    # Testing image layers
+    il = ImageLayer(cl.canvas)
+    write_image(il; filename = "check.png", reset = false)
+    il2 = ImageLayer("check.png")
+
+    @test il.canvas == il2.canvas
 
 end
 
