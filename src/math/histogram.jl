@@ -4,7 +4,7 @@
     bin = ceil(Int, (input_y - bounds[1]) / bin_widths[1])
 
     slab = size(histogram_output)[1]
-    bin += Int(ceil(Int,((input_x) - bounds[3]) / bin_widths[2])*slab)
+    bin += Int(ceil(Int,((input_x) - bounds[3]) / bin_widths[2])*slab) - 1
 
     return bin
 
@@ -20,7 +20,7 @@ end
     for i = 2:dims
         slab *= size(histogram_output)[i-1]
         b_index += 2
-        bin += Int(ceil(Int,(((input[tid, i]) - bounds[b_index]) / bin_widths[i])-1)*slab)
+        bin += Int(ceil(Int,(((input[tid, i]) - bounds[b_index]) / bin_widths[i])-1)*slab) - 1
     end
 
     return bin

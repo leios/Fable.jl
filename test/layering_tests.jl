@@ -218,7 +218,7 @@ function rescaling_tests(ArrayType::Type{AT}) where AT <: AbstractArray
     @test img_1[1, end]   == black
     @test img_1[end, end] == white
 
-    cl2 = ColorLayer(white, ppu = 0.5, world_size = (5,5),
+    cl2 = ColorLayer(white, ppu = 0.2, world_size = (5,5),
                      position = (0,0), ArrayType = ArrayType)
 
     img_2 = write_image([cl, cl2])
