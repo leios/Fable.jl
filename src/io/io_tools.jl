@@ -38,7 +38,7 @@ function mix_layers!(layer_1::AL1, layer_2::AL2, overlap::Overlap; op = +,
     else
         bounds_2 = find_bounds(layer_2)
         kernel!(layer_1.canvas, layer_2.canvas, overlap.bounds, bounds_2,
-                overlap.start_index_1, overlap.start_index_2, op,
+                layer_2.ppu, overlap.start_index_1, overlap.start_index_2, op,
                 ndrange = overlap.range)
     end
 
@@ -73,7 +73,7 @@ end
     @inbounds y = bounds.ymin + (tid[1]/res[1])*(bounds.ymax - bounds.ymin)
     @inbounds x = bounds.xmin + (tid[2]/res[2])*(bounds.xmax - bounds.xmin)
 
-    idx_2 = find_bin(canvas_2, x, y, bounds_2, ppu_2)
+    idx_2 = find_bin(canvas_2, x, y, bounds_2, (1/ppu_2, 1/ppu_2))
 
     @inbounds r = op(canvas_1[idx_1].r*(1-canvas_2[idx_2].alpha),
                      canvas_2[idx_2].r*canvas_2[idx_2].alpha)
