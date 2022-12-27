@@ -8,15 +8,17 @@ function mix_layers!(layer_1::AL1, layer_2::AL2;
     mix_layers!(layer_1, layer_2, overlap)
 end
 
-function mix_layers!(layer_1::AL1, layer_2::AL2, overlap::Overlap;
+function mix_layers!(layer_1::AL1, layer_2::AL2, overlap::Overlap; op = +,
                      mode = :simple) where {AL1 <: AbstractLayer,
                                             AL2 <: AbstractLayer}
-    if layer_1.ppu !== layer_2.ppu
-        error("Pixels per unit between layer 1 and 2 are not the same!")
-    end
-
     if mode == :simple
-        f = simple_layer_kernel!
+        if layer_1.ppu != layer_2.ppu
+            @warn("Pixels per unit between layer 1 and 2 are not the same!
+                   Rescaling second layer...")
+            f = simple_rescale_kernel!
+        else
+            f = simple_layer_kernel!
+        end
     else
         error("Mixing mode ", string(mode), " not found!")
     end
@@ -29,28 +31,60 @@ function mix_layers!(layer_1::AL1, layer_2::AL2, overlap::Overlap;
         kernel! = f(ROCDevice(), layer_1.params.numthreads)
     end
 
-    kernel!(layer_1.canvas, layer_2.canvas,
-            overlap.start_index_1, overlap.start_index_2,
-            ndrange = overlap.range)
+    if layer_1.ppu == layer_2.ppu
+        kernel!(layer_1.canvas, layer_2.canvas,
+                overlap.start_index_1, overlap.start_index_2, op,
+                ndrange = overlap.range)
+    else
+        bounds_2 = find_bounds(layer_2)
+        kernel!(layer_1.canvas, layer_2.canvas, overlap.bounds, bounds_2,
+                layer_2.ppu, overlap.start_index_1, overlap.start_index_2, op,
+                ndrange = overlap.range)
+    end
 
 end
 
 @kernel function simple_layer_kernel!(canvas_1, canvas_2,
-                                      start_index_1, start_index_2)
+                                      start_index_1, start_index_2, op)
 
     tid = @index(Global, Cartesian)
     idx_1 = CartesianIndex(Tuple(tid) .+ Tuple(start_index_1) .- (1,1))
     idx_2 = CartesianIndex(Tuple(tid) .+ Tuple(start_index_2) .- (1,1))
 
-    @inbounds r = canvas_1[idx_1].r*(1-canvas_2[idx_2].alpha) +
-                  canvas_2[idx_2].r*canvas_2[idx_2].alpha
-    @inbounds g = canvas_1[idx_1].g*(1-canvas_2[idx_2].alpha) +
-                  canvas_2[idx_2].g*canvas_2[idx_2].alpha
-    @inbounds b = canvas_1[idx_1].b*(1-canvas_2[idx_2].alpha) +
-                  canvas_2[idx_2].b*canvas_2[idx_2].alpha
+    @inbounds r = op(canvas_1[idx_1].r*(1-canvas_2[idx_2].alpha),
+                     canvas_2[idx_2].r*canvas_2[idx_2].alpha)
+    @inbounds g = op(canvas_1[idx_1].g*(1-canvas_2[idx_2].alpha),
+                     canvas_2[idx_2].g*canvas_2[idx_2].alpha)
+    @inbounds b = op(canvas_1[idx_1].b*(1-canvas_2[idx_2].alpha),
+                     canvas_2[idx_2].b*canvas_2[idx_2].alpha)
     @inbounds a = max(canvas_1[idx_1].alpha, canvas_2[idx_2].alpha)
 
     @inbounds canvas_1[idx_1] = RGBA(r,g,b,a)
+end
+
+@kernel function simple_rescale_kernel!(canvas_1, canvas_2,
+                                        bounds, bounds_2, ppu_2,
+                                        start_index_1, start_index_2, op)
+    tid = @index(Global, Cartesian)
+    idx_1 = CartesianIndex(Tuple(tid) .+ Tuple(start_index_1) .- (1,1))
+
+    res = @ndrange()
+
+    @inbounds y = bounds.ymin + (tid[1]/res[1])*(bounds.ymax - bounds.ymin)
+    @inbounds x = bounds.xmin + (tid[2]/res[2])*(bounds.xmax - bounds.xmin)
+
+    idx_2 = find_bin(canvas_2, x, y, bounds_2, (1/ppu_2, 1/ppu_2))
+
+    @inbounds r = op(canvas_1[idx_1].r*(1-canvas_2[idx_2].alpha),
+                     canvas_2[idx_2].r*canvas_2[idx_2].alpha)
+    @inbounds g = op(canvas_1[idx_1].g*(1-canvas_2[idx_2].alpha),
+                     canvas_2[idx_2].g*canvas_2[idx_2].alpha)
+    @inbounds b = op(canvas_1[idx_1].b*(1-canvas_2[idx_2].alpha),
+                     canvas_2[idx_2].b*canvas_2[idx_2].alpha)
+    @inbounds a = max(canvas_1[idx_1].alpha, canvas_2[idx_2].alpha)
+
+    @inbounds canvas_1[idx_1] = RGBA(r,g,b,a)
+
 end
 
 function create_canvas(s; ArrayType = Array)

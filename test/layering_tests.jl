@@ -201,6 +201,43 @@ function bounds_tests()
     end
 end
 
+function rescaling_tests(ArrayType::Type{AT}) where AT <: AbstractArray
+
+    black = RGBA(0,0,0,1)
+    white = RGBA(1,1,1,1)
+
+    cl = ColorLayer(black; ppu = 1, world_size = (10,10), ArrayType = ArrayType)
+
+    cl2 = ColorLayer(white; ppu = 2, world_size = (10,10),
+                     position = (5,5), ArrayType = ArrayType)
+
+    img_1 = write_image([cl, cl2])
+
+    @test img_1[1, 1]     == black
+    @test img_1[end, 1]   == black
+    @test img_1[1, end]   == black
+    @test img_1[end, end] == white
+
+    cl2 = ColorLayer(white, ppu = 0.2, world_size = (5,5),
+                     position = (0,0), ArrayType = ArrayType)
+
+    img_2 = write_image([cl, cl2])
+
+    @test img_2[1, 1]     == black
+    @test img_2[end, 1]   == black
+    @test img_2[1, end]   == black
+    @test img_2[end, end] == black
+    @test img_2[5,5] == white
+
+    cl2 = ColorLayer(white, ppu = 0.5, world_size = (10,10),
+                     position = (5,5), ArrayType = ArrayType)
+
+    img_3 = write_image([cl, cl2])
+
+    @test img_1 == img_3
+
+end
+
 #------------------------------------------------------------------------------#
 # Testsuite
 #------------------------------------------------------------------------------#
@@ -215,6 +252,7 @@ function layering_testsuite(ArrayType::Type{AT}) where AT <: AbstractArray
 
     @testset "Layering tests for $(string(ArrayType))s" begin
         layering_tests(ArrayType)
+        rescaling_tests(ArrayType)
     end
 
 end

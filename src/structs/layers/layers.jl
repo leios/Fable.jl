@@ -7,6 +7,7 @@ struct Overlap
     range::Tuple
     start_index_1::Tuple
     start_index_2::Tuple
+    bounds::NamedTuple
 end
 
 # TODO: higher dimensions...
@@ -28,7 +29,7 @@ function find_overlap(layer_1::AL1, layer_2::AL2)  where {AL1 <: AbstractLayer,
     # Returning early if size and position is the same
     if layer_1.world_size == layer_2.world_size &&
        layer_1.position == layer_2.position
-        return Overlap(size(layer_1.canvas), (1,1), (1,1))
+        return Overlap(size(layer_1.canvas), (1,1), (1,1), find_bounds(layer_1))
     end
 
     # finding boundaries of each canvas
@@ -67,7 +68,8 @@ function find_overlap(layer_1::AL1, layer_2::AL2)  where {AL1 <: AbstractLayer,
     return Overlap((floor(Int, (ymax - ymin)*layer_1.ppu), 
                     floor(Int, (xmax - xmin)*layer_1.ppu)), 
                    Tuple(start_index_1),
-                   Tuple(start_index_2))
+                   Tuple(start_index_2),
+                   (ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax))
 
 end
 
