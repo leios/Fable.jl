@@ -8,7 +8,7 @@ function mix_layers!(layer_1::AL1, layer_2::AL2;
     mix_layers!(layer_1, layer_2, overlap)
 end
 
-function mix_layers!(layer_1::AL1, layer_2::AL2, overlap::Overlap;
+function mix_layers!(layer_1::AL1, layer_2::AL2, overlap::Overlap; op = +,
                      mode = :simple) where {AL1 <: AbstractLayer,
                                             AL2 <: AbstractLayer}
     if layer_1.ppu !== layer_2.ppu
@@ -30,24 +30,24 @@ function mix_layers!(layer_1::AL1, layer_2::AL2, overlap::Overlap;
     end
 
     kernel!(layer_1.canvas, layer_2.canvas,
-            overlap.start_index_1, overlap.start_index_2,
+            overlap.start_index_1, overlap.start_index_2, op,
             ndrange = overlap.range)
 
 end
 
 @kernel function simple_layer_kernel!(canvas_1, canvas_2,
-                                      start_index_1, start_index_2)
+                                      start_index_1, start_index_2, op)
 
     tid = @index(Global, Cartesian)
     idx_1 = CartesianIndex(Tuple(tid) .+ Tuple(start_index_1) .- (1,1))
     idx_2 = CartesianIndex(Tuple(tid) .+ Tuple(start_index_2) .- (1,1))
 
-    @inbounds r = canvas_1[idx_1].r*(1-canvas_2[idx_2].alpha) +
-                  canvas_2[idx_2].r*canvas_2[idx_2].alpha
-    @inbounds g = canvas_1[idx_1].g*(1-canvas_2[idx_2].alpha) +
-                  canvas_2[idx_2].g*canvas_2[idx_2].alpha
-    @inbounds b = canvas_1[idx_1].b*(1-canvas_2[idx_2].alpha) +
-                  canvas_2[idx_2].b*canvas_2[idx_2].alpha
+    @inbounds r = op(canvas_1[idx_1].r*(1-canvas_2[idx_2].alpha),
+                     canvas_2[idx_2].r*canvas_2[idx_2].alpha)
+    @inbounds g = op(canvas_1[idx_1].g*(1-canvas_2[idx_2].alpha),
+                     canvas_2[idx_2].g*canvas_2[idx_2].alpha)
+    @inbounds b = op(canvas_1[idx_1].b*(1-canvas_2[idx_2].alpha),
+                     canvas_2[idx_2].b*canvas_2[idx_2].alpha)
     @inbounds a = max(canvas_1[idx_1].alpha, canvas_2[idx_2].alpha)
 
     @inbounds canvas_1[idx_1] = RGBA(r,g,b,a)
