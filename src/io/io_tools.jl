@@ -189,3 +189,16 @@ function write_video!(n::Nothing, layers::Vector{AL};
         reset!(layers)
     end
 end
+
+function write_image(img::Array{CT};
+                     filename::Union{Nothing, String} = nothing
+                    ) where CT <: Union{RGB, RGBA}
+
+    if isnothing(filename) || !OUTPUT
+        return img
+    else
+        save(filename, img)
+        println(filename)
+    end
+
+end

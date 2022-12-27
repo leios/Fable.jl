@@ -5,3 +5,6 @@ function run!(layers::Vector{AbstractLayer}; diagnostic = false)
         run!(layers[i]; diagnostic = diagnostic)
     end
 end
+
+function run!(layer::AbstractLayer; diagnostic = false)
+end
