@@ -1,5 +1,5 @@
 export AbstractLayer, default_params, params, update_params!, find_overlap,
-       find_bounds, PostProcess
+       find_bounds, AbstractPostProcess
 
 abstract type AbstractLayer end;
 abstract type AbstractPostProcess end;
