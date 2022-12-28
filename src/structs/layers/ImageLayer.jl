@@ -6,10 +6,12 @@ mutable struct ImageLayer <: AbstractLayer
     world_size::Tuple
     ppu::Number
     params::NamedTuple
+    postprocessing_steps::Vector{APP} where APP <: AbstractPostProcess
 end
 
 # dynamically sets ppu based on world_size
 function ImageLayer(img;
+                    postprocessing_steps = Vector{AbstractPostProcess}([]),
                     position = (0.0, 0.0),
                     ppu = 1200,
                     ArrayType = Array,
@@ -24,11 +26,13 @@ function ImageLayer(img;
                              ArrayType = ArrayType,
                              FloatType = FloatType,
                              numcores = numcores,
-                             numthreads = numthreads))
+                             numthreads = numthreads),
+                      postprocessing_steps)
 
 end
 
 function ImageLayer(filename::String;
+                    postprocessing_steps = Vector{AbstractPostProcess}([]),
                     position = (0.0, 0.0),
                     ppu = 1,
                     ArrayType = Array,
@@ -43,6 +47,7 @@ function ImageLayer(filename::String;
                       ArrayType = ArrayType,
                       FloatType = FloatType,
                       numcores = numcores,
-                      numthreads = numthreads)
+                      numthreads = numthreads,
+                      postprocessing_steps = postprocessing_steps)
 
 end

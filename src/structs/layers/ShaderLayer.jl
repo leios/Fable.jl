@@ -7,9 +7,11 @@ mutable struct ShaderLayer <: AbstractLayer
     world_size::Tuple
     ppu::Number
     params::NamedTuple
+    postprocessing_steps::Vector{APP} where APP <: AbstractPostProcess
 end
 
 function ShaderLayer(shader::Shader;
+                     postprocessing_steps = Vector{AbstractPostProcess}([]),
                      world_size = (0.9, 1.6),
                      position = (0.0, 0.0),
                      ppu = 1200,
@@ -28,11 +30,13 @@ function ShaderLayer(shader::Shader;
                               ArrayType = ArrayType,
                               FloatType = FloatType,
                               numcores = numcores,
-                              numthreads = numthreads))
+                              numthreads = numthreads),
+                       postprocessing_steps)
 
 end
 
 function ShaderLayer(fum::FractalUserMethod;
+                     postprocessing_steps = Vector{AbstractPostProcess}([]),
                      world_size = (0.9, 1.6),
                      position = (0.0, 0.0),
                      ppu = 1200,
@@ -51,6 +55,7 @@ function ShaderLayer(fum::FractalUserMethod;
                               ArrayType = ArrayType,
                               FloatType = FloatType,
                               numcores = numcores,
-                              numthreads = numthreads))
+                              numthreads = numthreads),
+                       postprocessing_steps)
 
 end

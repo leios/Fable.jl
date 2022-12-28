@@ -50,12 +50,12 @@ include("objects/lollipeople.jl")
 
 # IO
 include("structs/layers/layers.jl")
+include("io/postprocess/postprocess.jl")
 include("structs/layers/FractalLayer.jl")
 include("structs/layers/ColorLayer.jl")
 include("structs/layers/ImageLayer.jl")
 include("structs/layers/ShaderLayer.jl")
 include("structs/VideoParams.jl")
-include("io/postprocess.jl")
 include("io/io_tools.jl")
 
 # Main file

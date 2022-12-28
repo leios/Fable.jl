@@ -7,9 +7,11 @@ mutable struct ColorLayer <: AbstractLayer
     world_size::Tuple
     ppu::Number
     params::NamedTuple
+    postprocessing_steps::Vector{APP} where APP <: AbstractPostProcess
 end
 
 function ColorLayer(c::CT;
+                    postprocessing_steps = Vector{AbstractPostProcess}([]),
                     world_size = (0.9, 1.6),
                     position = (0.0, 0.0),
                     ppu = 1200,
@@ -32,6 +34,7 @@ function ColorLayer(c::CT;
                              ArrayType = ArrayType,
                              FloatType = FloatType,
                              numcores = numcores,
-                             numthreads = numthreads))
+                             numthreads = numthreads),
+                      postprocessing_steps)
 
 end

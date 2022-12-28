@@ -1,7 +1,8 @@
 export AbstractLayer, default_params, params, update_params!, find_overlap,
-       find_bounds
+       find_bounds, PostProcess
 
 abstract type AbstractLayer end;
+abstract type AbstractPostProcess end;
 
 struct Overlap
     range::Tuple
