@@ -1,4 +1,4 @@
-export postprocess!, intensity, perspective_intensity, simple_intensity
+export postprocess!, intensity, perceptive_intensity, simple_intensity
 
 function postprocess!(layer::AL) where AL <: AbstractLayer
     for postprocess in layer.postprocessing_steps
@@ -21,9 +21,9 @@ end
 end
 
 @inline function simple_intensity(c::CT) where CT <: Union{RGB}
-   return (c.r + c.g + c.b)/3
+   return (c.r/3) + (c.g/3) + (c.b/3)
 end
 
 @inline function simple_intensity(c::CT) where CT <: Union{RGBA}
-   return c.alpha * (c.r + c.g + c.b)/3
+   return c.alpha * ((c.r/3) + (c.g/3) + (c.b/3))
 end
