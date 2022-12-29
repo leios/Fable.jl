@@ -14,7 +14,7 @@ end
 function Filter(filter)
 end
 
-function filter!(layer::AL) where AL <: AbstractLayer
+function filter!(layer::AL, filter_params::Filter) where AL <: AbstractLayer
 end
 
 @kernel function filter_kernel!(canvas, filter)

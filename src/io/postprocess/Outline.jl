@@ -11,7 +11,7 @@ end
 function Outline(color::CT; linewidth = 1) where CT <: Union{RGB, RGBA}
 end
 
-function outline!(layer::AL) where AL <: AbstractLayer
+function outline!(layer::AL, outline_params::Outline) where AL <: AbstractLayer
 end
 
 @kernel function ouline_kernel!(canvas, gauss_filter, sobel_filter,

@@ -58,6 +58,9 @@ include("structs/layers/ShaderLayer.jl")
 include("structs/VideoParams.jl")
 include("io/io_tools.jl")
 
+# PostProcessing
+include("io/postprocess/Clip.jl")
+
 # Main file
 include("run/run.jl")
 include("run/fractal_flame.jl")
