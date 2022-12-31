@@ -34,9 +34,9 @@ function iterate!(ps::Points, pxs::FractalLayer, H::Hutchinson, n,
     max_range = maximum(values(bounds))*10
     if isa(ps.positions, Array)
         kernel! = naive_chaos_kernel!(CPU(), pxs.params.numcores)
-    elseif has_cuda_gpu() && isa(ps.positions, CuArray)
+    elseif has_cuda_gpu() && layer.params.ArrayType <: CuArray
         kernel! = naive_chaos_kernel!(CUDADevice(), pxs.params.numthreads)
-    elseif has_rocm_gpu() && isa(ps.positions, ROCArray)
+    elseif has_rocm_gpu() && layer.params.ArrayType <: ROCArray
         kernel! = naive_chaos_kernel!(ROCDevice(), pxs.params.numthreads)
     end
 
@@ -150,7 +150,7 @@ function run!(layer::FractalLayer; diagnostic = false)
     bounds = find_bounds(layer)
     pts = Points(layer.params.num_particles; FloatType = eltype(layer.reds),
                  dims = layer.params.dims,
-                 ArrayType = typeof(layer.reds), bounds = bounds)
+                 ArrayType = layer.params.ArrayType, bounds = bounds)
 
     bin_widths = zeros(div(length(values(bounds)),2))
     for i = 1:length(bin_widths)

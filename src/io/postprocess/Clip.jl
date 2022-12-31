@@ -15,11 +15,11 @@ end
 
 function clip!(layer::AL, clip_params::Clip) where AL <: AbstractLayer
 
-    if isa(layer.canvas, Array)
+    if layer.params.ArrayType <: Array
         kernel! = clip_kernel!(CPU(), layer.params.numcores)
-    elseif has_cuda_gpu() && isa(layer.canvas, CuArray)
+    elseif has_cuda_gpu() && layer.params.ArrayType <: CuArray
         kernel! = clip_kernel!(CUDADevice(), layer.params.numthreads)
-    elseif has_rocm_gpu() && isa(layer.canvas, ROCArray)
+    elseif has_rocm_gpu() && layer.params.ArrayType <: ROCArray
         kernel! = clip_kernel!(ROCDevice(), layer.params.numthreads)
     end
 

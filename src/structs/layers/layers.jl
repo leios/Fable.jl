@@ -29,8 +29,6 @@ end
     filter_xmin = floor(Int, index[2] - 0.5*world_size_2[2])+1
     filter_xmax = floor(Int, index[2] + 0.5*world_size_2[2])
 
-    println(filter_ymin, '\t', filter_ymax, '\t', filter_xmin, '\t', filter_xmax)
-
     ymin = max(filter_ymin, 1)
     xmin = max(filter_xmin, 1)
 
