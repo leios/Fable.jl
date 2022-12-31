@@ -23,6 +23,39 @@ function find_bounds(layer)
     return find_bounds(layer.position, layer.world_size)
 end
 
+@inline function find_overlap(index, world_size_1, world_size_2)
+    filter_ymin = floor(Int, index[1] - 0.5*world_size_2[1])+1
+    filter_ymax = floor(Int, index[1] + 0.5*world_size_2[1])
+    filter_xmin = floor(Int, index[2] - 0.5*world_size_2[2])+1
+    filter_xmax = floor(Int, index[2] + 0.5*world_size_2[2])
+
+    println(filter_ymin, '\t', filter_ymax, '\t', filter_xmin, '\t', filter_xmax)
+
+    ymin = max(filter_ymin, 1)
+    xmin = max(filter_xmin, 1)
+
+    ymax = min(filter_ymax, world_size_1[1])
+    xmax = min(filter_xmax, world_size_1[2])
+
+    if filter_ymin < 1
+        # note: the 2 is because it is 1 + (1 - filter_ymin)
+        filter_ymin = 2 - filter_ymin
+    else
+        filter_ymin = 1
+    end
+
+    if filter_xmin < 1
+        filter_xmin = 2 - filter_xmin
+    else
+        filter_xmin = 1
+    end
+
+    return Overlap((ymax - ymin + 1, xmax - xmin + 1), (ymin, xmin),
+                   (filter_ymin, filter_xmin),
+                   (ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax))
+
+end
+
 # Note: currently returns ndrange for layer_1, but this might not be right...
 function find_overlap(layer_1::AL1, layer_2::AL2)  where {AL1 <: AbstractLayer,
                                                           AL2 <: AbstractLayer}
