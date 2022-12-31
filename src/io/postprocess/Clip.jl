@@ -23,7 +23,8 @@ function clip!(layer::AL, clip_params::Clip) where AL <: AbstractLayer
     end
 
     wait(kernel!(layer.canvas, clip_params.intensity_function,
-                 clip_params.threshold, clip_params.color))
+                 clip_params.threshold, clip_params.color;
+                 ndrange = size(layer.canvas)))
     
     return nothing
 
