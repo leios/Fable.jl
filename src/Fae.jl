@@ -60,6 +60,9 @@ include("io/io_tools.jl")
 
 # PostProcessing
 include("io/postprocess/Clip.jl")
+include("io/postprocess/Filter.jl")
+include("io/postprocess/Sobel.jl")
+include("io/postprocess/Outline.jl")
 
 # Main file
 include("run/run.jl")

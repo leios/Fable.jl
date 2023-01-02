@@ -7,7 +7,7 @@ mutable struct Filter <: AbstractPostProcess
 end
 
 function gaussian(x,y, sigma)
-    return (1/(2*pi*sigma*sigma)*exp(-((x*x + y*y)/(2*sigma*sigma)))
+    return (1/(2*pi*sigma*sigma))*exp(-((x*x + y*y)/(2*sigma*sigma)))
 end
 
 function Blur(; filter_size = 3, color = RGB(0,0,0), ArrayType = Array,
