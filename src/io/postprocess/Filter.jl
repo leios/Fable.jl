@@ -4,6 +4,7 @@ mutable struct Filter <: AbstractPostProcess
     op::Function
     filter::AT where AT <: Union{Array, CuArray, ROCArray}
     color::CT where CT <: Union{RGB, RGBA}
+    intensity_function::Function
 end
 
 function gaussian(x,y, sigma)
@@ -11,13 +12,13 @@ function gaussian(x,y, sigma)
 end
 
 function Blur(; filter_size = 3, color = RGB(0,0,0), ArrayType = Array,
-                sigma = 0.25)
+                sigma = 0.25, intensity_function = simple_intensity)
     return Gaussian(; filter_size = filter_size, color = color,
                       ArrayType = ArrayType)
 end
 
 function Gaussian(; filter_size = 3, color = RGB(0,0,0), ArrayType = Array,
-                    sigma = 0.25)
+                    sigma = 0.25, intensity_function = simple_intensity)
     filter = zeros(filter_size, filter_size)
     for i = 1:filter_size
         y = -1 + 2*(i-1)/(filter_size-1) 
@@ -26,11 +27,12 @@ function Gaussian(; filter_size = 3, color = RGB(0,0,0), ArrayType = Array,
             filter[i,j] = gaussian(x, y, sigma)
         end
     end
-    return ArrayType(filter)
+    return Filter(filter!, ArrayType(filter), color, intensity_function)
 end
 
-function Filter(filter; color = RGB(0,0,0))
-    return Filter(filter!, filter, color)
+function Filter(filter; color = RGB(0,0,0),
+                intensity_function = simple_intensity)
+    return Filter(filter!, filter, color, intensity_function)
 end
 
 function filter!(layer::AL, filter_params::Filter) where AL <: AbstractLayer
@@ -49,13 +51,14 @@ function filter!(layer::AL, filter_params::Filter) where AL <: AbstractLayer
     end
 
     wait(kernel!(layer.canvas, filter_params.filter,
-                 filter_params.color; ndrange = size(layer.canvas)))
+                 filter_params.intensity_function, filter_params.color;
+                 ndrange = size(layer.canvas)))
     
     return nothing
 
 end
 
-@kernel function filter_kernel!(canvas, filter, c)
+@kernel function filter_kernel!(canvas, filter, intensity_function, c)
 
     tid = @index(Global, Cartesian)
 
@@ -63,8 +66,8 @@ end
 
     for i = 1:overlap.range[1]
         for j = 1:overlap.range[2]
-            val = canvas[overlap.start_index_1[1] + i - 1,
-                         overlap.start_index_1[2] + j - 1] *
+            val = intensity_function(canvas[overlap.start_index_1[1] + i - 1,
+                                            overlap.start_index_1[2] + j - 1]) *
                   filter[overlap.start_index_2[1] + i - 1,
                          overlap.start_index_2[2] + j - 1]
         end

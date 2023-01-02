@@ -18,7 +18,7 @@ function Outline(; linewidth = 1,
                    ) where CT <: Union{RGB, RGBA}
     sobel = Sobel(; color = RGBA(1.0, 1.0, 1.0, 1.0),
                     canvas_size = canvas_size,
-                    Arraytype = ArrayType)
+                    ArrayType = ArrayType)
     gauss_filter = Blur(; color = RGBA(1.0, 1.0, 1.0, 1.0),
                           filter_size = 3*linewidth,
                           ArrayType = ArrayType,
