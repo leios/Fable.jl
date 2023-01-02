@@ -1,4 +1,4 @@
-export Filter, Blur, Sobel
+export Filter, Blur, Gaussian
 
 mutable struct Filter <: AbstractPostProcess
     op::Function
@@ -47,7 +47,10 @@ function filter!(layer::AL, filter_params::Filter) where AL <: AbstractLayer
 
     if !(typeof(filter_params.filter) <: layer.params.ArrayType)
         @warn("filter array type not the same as canvas! Converting filter to canvas type...")
-        filter_params.filter = layer.params.ArrayType(filter)
+        filter_params = Filter(filter_params.op,
+                               layer.params.ArrayType(filter_params.filter),
+                               filter_params.color,
+                               filter_params.intensity_function)
     end
 
     wait(kernel!(layer.canvas, filter_params.filter,
@@ -75,7 +78,7 @@ end
 
     val = val / (overlap.range[1]*overlap.range[2])
 
-    val = max(val, 1)
+    val = min(val, 1)
 
     canvas[tid] = c*val + canvas[tid]*(val-1)
 end

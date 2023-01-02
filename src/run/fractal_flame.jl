@@ -28,16 +28,16 @@ export run!
     return flag
 end
 
-function iterate!(ps::Points, pxs::FractalLayer, H::Hutchinson, n,
+function iterate!(ps::Points, layer::FractalLayer, H::Hutchinson, n,
                   bounds, bin_widths, H2::Hutchinson; diagnostic = false)
 
     max_range = maximum(values(bounds))*10
     if isa(ps.positions, Array)
-        kernel! = naive_chaos_kernel!(CPU(), pxs.params.numcores)
+        kernel! = naive_chaos_kernel!(CPU(), layer.params.numcores)
     elseif has_cuda_gpu() && layer.params.ArrayType <: CuArray
-        kernel! = naive_chaos_kernel!(CUDADevice(), pxs.params.numthreads)
+        kernel! = naive_chaos_kernel!(CUDADevice(), layer.params.numthreads)
     elseif has_rocm_gpu() && layer.params.ArrayType <: ROCArray
-        kernel! = naive_chaos_kernel!(ROCDevice(), pxs.params.numthreads)
+        kernel! = naive_chaos_kernel!(ROCDevice(), layer.params.numthreads)
     end
 
     if diagnostic
@@ -46,8 +46,8 @@ function iterate!(ps::Points, pxs::FractalLayer, H::Hutchinson, n,
 
     kernel!(ps.positions, n, H.op, H.cop, H.prob_set, H.symbols, H.fnums,
             H2.op, H2.cop, H2.symbols, H2.prob_set, H2.fnums,
-            pxs.values, pxs.reds, pxs.greens, pxs.blues, pxs.alphas, 
-            bounds, Tuple(bin_widths), pxs.params.num_ignore, max_range,
+            layer.values, layer.reds, layer.greens, layer.blues, layer.alphas, 
+            bounds, Tuple(bin_widths), layer.params.num_ignore, max_range,
             ndrange=size(ps.positions)[1])
 end
 
