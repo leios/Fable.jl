@@ -13,6 +13,18 @@ function clip_example(num_particles, num_iterations; ArrayType = Array)
     write_image(fl; filename = "clip_out.png")
 end
 
+function identity_example(num_particles, num_iterations, ArrayType = Array)
+    circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
+
+    identity = Identity()
+
+    fl = FractalLayer(; H1 = circle, ArrayType = ArrayType,
+                        postprocessing_steps = [identity])
+
+    run!(fl)
+    write_image(fl; filename = "identity_out.png")
+end
+
 function blur_example(num_particles, num_iterations; ArrayType = Array)
     circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
 

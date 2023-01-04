@@ -38,6 +38,17 @@ function clip_tests(ArrayType::Type{AT}) where AT <: AbstractArray
 
 end
 
+function filter_tests(ArrayType::Type{AT}) where AT <: AbstractArray
+    identity = Identity()
+    cl = ColorLayer(RGB(0.2, 0.2, 0.2); world_size = (3, 3), ppu = 1,
+                    postprocessing_steps = [identity])
+
+    img = write_image(cl)
+    for i = 1:length(img)
+        @test img[i] == RGBA{Float32}(0.2, 0.2, 0.2, 1.0)
+    end
+end
+
 #------------------------------------------------------------------------------#
 # Testsuite
 #------------------------------------------------------------------------------#
@@ -45,6 +56,7 @@ function postprocess_testsuite(ArrayType::Type{AT}) where AT <: AbstractArray
 
     @testset "Postprocess tests for $(string(ArrayType))s" begin
         clip_tests(ArrayType)
+        filter_tests(ArrayType)
     end
 
 end

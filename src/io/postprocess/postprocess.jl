@@ -1,9 +1,26 @@
 export postprocess!, intensity, perceptive_intensity, simple_intensity
 
 function postprocess!(layer::AL) where AL <: AbstractLayer
-    for postprocess in layer.postprocessing_steps
-        postprocess.op(layer, postprocess)
+    for i = 1:length(layer.postprocessing_steps)
+        if !layer.postprocessing_steps[i].initialized
+            @info("initializing " *
+                  string(typeof(layer.postprocessing_steps[i])) * "!")
+            initialize!(layer.postprocessing_steps[i], layer)
+        end
+        layer.postprocessing_steps[i].op(layer, layer.postprocessing_steps[i])
     end
+end
+
+@inline function clip(c::CT, val::Number) where CT <: RGB
+    return CT(min(c.r, val), min(c.g, val), min(c.b, val))
+end
+
+@inline function clip(c::CT, val::Number) where CT <: RGBA
+    return CT(min(c.r, val), min(c.g, val), min(c.b, val), min(c.alpha, val))
+end
+
+@inline function clip(c::Number, val::Number)
+    return min(c, val)
 end
 
 @inline function intensity(c::CT;

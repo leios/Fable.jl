@@ -6,11 +6,12 @@ struct Clip <: AbstractPostProcess
     intensity_function::Function
     threshold::Number
     color::CT where CT <: Union{RGB, RGBA}
+    initialized::Bool
 end
 
 function Clip(; threshold = 0.5, color = RGB(0,0,0),
                 intensity_function = simple_intensity, clip_op = >)
-    return Clip(clip!, clip_op, intensity_function, threshold, color)
+    return Clip(clip!, clip_op, intensity_function, threshold, color, true)
 end
 
 function clip!(layer::AL, clip_params::Clip) where AL <: AbstractLayer
