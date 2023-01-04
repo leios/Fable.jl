@@ -124,9 +124,10 @@ end
 
 struct CopyToCanvas <: AbstractPostProcess
     op::Function
+    initialized::Bool
 end
 
-CopyToCanvas() = CopyToCanvas(to_canvas!)
+CopyToCanvas() = CopyToCanvas(to_canvas!, true)
 
 function norm_layer!(layer::FractalLayer)
     layer.reds .= norm_component.(layer.reds, layer.values)

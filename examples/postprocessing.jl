@@ -1,4 +1,4 @@
-using Fae
+using Fae, Images
 
 function clip_example(num_particles, num_iterations; ArrayType = Array)
 

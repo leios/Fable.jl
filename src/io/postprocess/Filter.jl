@@ -7,6 +7,10 @@ mutable struct Filter <: AbstractPostProcess
     initialized::Bool
 end
 
+function Filter(op, filter)
+    return Filter(op, filter, nothing, false)
+end
+
 function initialize!(filter::Filter, layer::AL) where AL <: AbstractLayer
     filter.canvas = zeros(eltype(layer.canvas), size(layer.canvas))
 end
@@ -14,7 +18,7 @@ end
 function Identity(; filter_size = 3, ArrayType = Array)
     filter = zeros(filter_size, filter_size)
     idx = ceil(Int, filter_size*0.5)
-    filter[idx, idx] = 1*filter_size*filter_size
+    filter[idx, idx] = 1
 
     return Filter(filter!, ArrayType(filter), nothing, false)
 end
@@ -36,6 +40,8 @@ function Gaussian(; filter_size = 3, ArrayType = Array, sigma = 0.25)
             filter[i,j] = gaussian(x, y, sigma)
         end
     end
+
+    filter ./= sum(filter)
     println(sum(filter))
     return Filter(filter!, ArrayType(filter), nothing, false)
 end
@@ -85,8 +91,6 @@ end
                           overlap.start_index_2[2] + j - 1]
         end
     end
-
-    val = val / prod(size(filter))
 
     val = clip(val, 1)
     canvas_out[tid] = val
