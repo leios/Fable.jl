@@ -28,7 +28,7 @@ end
 function blur_example(num_particles, num_iterations; ArrayType = Array)
     circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
 
-    blur = Blur()
+    blur = Blur(; filter_size = 5)
 
     fl = FractalLayer(; H1 = circle, ArrayType = ArrayType,
                         postprocessing_steps = [blur])

@@ -12,7 +12,12 @@ function Filter(op, filter)
 end
 
 function initialize!(filter::Filter, layer::AL) where AL <: AbstractLayer
-    filter.canvas = zeros(eltype(layer.canvas), size(layer.canvas))
+    ArrayType = layer.params.ArrayType
+    if !(typeof(filter.filter) <: layer.params.ArrayType)
+        @warn("filter array type not the same as canvas! Converting filter to canvas type...")
+        filter.filter = ArrayType(filter.filter)
+    end
+    filter.canvas = ArrayType(zeros(eltype(layer.canvas), size(layer.canvas)))
 end
 
 function Identity(; filter_size = 3, ArrayType = Array)
@@ -42,7 +47,6 @@ function Gaussian(; filter_size = 3, ArrayType = Array, sigma = 0.25)
     end
 
     filter ./= sum(filter)
-    println(sum(filter))
     return Filter(filter!, ArrayType(filter), nothing, false)
 end
 
@@ -60,12 +64,6 @@ function filter!(layer::AL, filter_params::Filter) where AL <: AbstractLayer
         kernel! = filter_kernel!(ROCDevice(), layer.params.numthreads)
     end
 
-    if !(typeof(filter_params.filter) <: layer.params.ArrayType)
-        @warn("filter array type not the same as canvas! Converting filter to canvas type...")
-        filter_params = Filter(filter_params.op,
-                               layer.params.ArrayType(filter_params.filter))
-    end
-
     wait(kernel!(filter_params.canvas, layer.canvas, filter_params.filter;
                  ndrange = size(layer.canvas)))
 
@@ -79,16 +77,18 @@ end
 
     tid = @index(Global, Cartesian)
 
-    overlap = find_overlap(tid, size(canvas), size(filter))
+    (range, start_index_1, start_index_2) = find_overlap(tid,
+                                                         size(canvas),
+                                                         size(filter))
 
     val = zero(eltype(canvas))
 
-    for i = 1:overlap.range[1]
-        for j = 1:overlap.range[2]
-            val += canvas[overlap.start_index_1[1] + i - 1,
-                          overlap.start_index_1[2] + j - 1] *
-                   filter[overlap.start_index_2[1] + i - 1,
-                          overlap.start_index_2[2] + j - 1]
+    for i = 1:range[1]
+        for j = 1:range[2]
+            val += canvas[start_index_1[1] + i - 1,
+                          start_index_1[2] + j - 1] *
+                   filter[start_index_2[1] + i - 1,
+                          start_index_2[2] + j - 1]
         end
     end
 

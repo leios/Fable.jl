@@ -48,9 +48,9 @@ end
         filter_xmin = 1
     end
 
-    return Overlap((ymax - ymin + 1, xmax - xmin + 1), (ymin, xmin),
-                   (filter_ymin, filter_xmin),
-                   (ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax))
+    # range, start_index_1, start_index_2
+    return ((ymax - ymin + 1, xmax - xmin + 1), (ymin, xmin),
+            (filter_ymin, filter_xmin))
 
 end
 
