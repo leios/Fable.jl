@@ -40,7 +40,7 @@ end
 
 function filter_tests(ArrayType::Type{AT}) where AT <: AbstractArray
     identity = Identity()
-    cl = ColorLayer(RGB(0.2, 0.2, 0.2); world_size = (3, 3), ppu = 1,
+    cl = ColorLayer(RGB(0.2, 0.2, 0.2); world_size = (4, 4), ppu = 1,
                     postprocessing_steps = [identity])
 
     img = write_image(cl)

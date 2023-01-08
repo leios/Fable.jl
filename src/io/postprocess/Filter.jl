@@ -21,6 +21,11 @@ function initialize!(filter::Filter, layer::AL) where AL <: AbstractLayer
 end
 
 function Identity(; filter_size = 3, ArrayType = Array)
+    if iseven(filter_size)
+        filter_size = filter_size - 1
+        @warn("filter sizes must be odd! New filter size is " *
+              string(filter_size)*"!")
+    end
     filter = zeros(filter_size, filter_size)
     idx = ceil(Int, filter_size*0.5)
     filter[idx, idx] = 1
@@ -32,11 +37,17 @@ function gaussian(x,y, sigma)
     return (1/(2*pi*sigma*sigma))*exp(-((x*x + y*y)/(2*sigma*sigma)))
 end
 
-function Blur(; filter_size = 3, ArrayType = Array, sigma = 0.25)
-    return Gaussian(; filter_size = filter_size, ArrayType = ArrayType)
+function Blur(; filter_size = 3, ArrayType = Array, sigma = 1.0)
+    return Gaussian(; filter_size = filter_size, ArrayType = ArrayType,
+                      sigma = sigma)
 end
 
-function Gaussian(; filter_size = 3, ArrayType = Array, sigma = 0.25)
+function Gaussian(; filter_size = 3, ArrayType = Array, sigma = 1.0)
+    if iseven(filter_size)
+        filter_size = filter_size - 1
+        @warn("filter sizes must be odd! New filter size is " *
+              string(filter_size)*"!")
+    end
     filter = zeros(filter_size, filter_size)
     for i = 1:filter_size
         y = -1 + 2*(i-1)/(filter_size-1) 
@@ -85,13 +96,13 @@ end
 
     for i = 1:range[1]
         for j = 1:range[2]
-            val += canvas[start_index_1[1] + i - 1,
-                          start_index_1[2] + j - 1] *
-                   filter[start_index_2[1] + i - 1,
-                          start_index_2[2] + j - 1]
+            @inbounds val += canvas[start_index_1[1] + i - 1,
+                                    start_index_1[2] + j - 1] *
+                             filter[start_index_2[1] + i - 1,
+                                    start_index_2[2] + j - 1]
         end
     end
 
-    val = clip(val, 1)
-    canvas_out[tid] = val
+    @inbounds val = clip(val, 1)
+    @inbounds canvas_out[tid] = val
 end

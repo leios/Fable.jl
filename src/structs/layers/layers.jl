@@ -23,6 +23,7 @@ function find_bounds(layer)
     return find_bounds(layer.position, layer.world_size)
 end
 
+# does not return Overlap because it is used inside KA kernels
 @inline function find_overlap(index, world_size_1, world_size_2)
     filter_ymin = floor(Int, index[1] - 0.5*world_size_2[1])+1
     filter_ymax = floor(Int, index[1] + 0.5*world_size_2[1])
@@ -54,7 +55,6 @@ end
 
 end
 
-# Note: currently returns ndrange for layer_1, but this might not be right...
 function find_overlap(layer_1::AL1, layer_2::AL2)  where {AL1 <: AbstractLayer,
                                                           AL2 <: AbstractLayer}
 
