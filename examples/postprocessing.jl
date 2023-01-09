@@ -54,10 +54,10 @@ function sobel_example(num_particles, num_iterations; ArrayType = Array,
 end
 
 function outline_example(num_particles, num_iterations; ArrayType = Array,
-                         filename = "outline_out.png")
+                         filename = "outline_out.png", linewidth = 1)
     circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
 
-    outline = Outline()
+    outline = Outline(; linewidth = linewidth)
 
     fl = FractalLayer(; H1 = circle, ArrayType = ArrayType,
                         postprocessing_steps = [outline])

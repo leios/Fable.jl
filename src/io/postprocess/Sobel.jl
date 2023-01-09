@@ -42,7 +42,12 @@ end
 end
 
 function sobel!(layer::AL, sobel_params::Sobel) where AL <: AbstractLayer
+    sobel!(layer.canvas, layer, sobel_params)
+end
 
+
+function sobel!(output, layer::AL,
+                sobel_params::Sobel) where AL <: AbstractLayer
     if layer.params.ArrayType <: Array
         kernel! = filter_kernel!(CPU(), layer.params.numcores)
         add_kernel! = quad_add!(CPU(), layer.params.numcores)
@@ -54,15 +59,15 @@ function sobel!(layer::AL, sobel_params::Sobel) where AL <: AbstractLayer
         add_kernel! = quad_add!(ROCDevice(), layer.params.numthreads)
     end
 
-    event_x = kernel!(sobel_params.canvas_x, layer.canvas,
+    event_x = kernel!(sobel_params.canvas_x, output,
                       sobel_params.filter_x, ndrange = size(layer.canvas))
-    event_y = kernel!(sobel_params.canvas_y, layer.canvas,
+    event_y = kernel!(sobel_params.canvas_y, output,
                       sobel_params.filter_y, ndrange = size(layer.canvas))
 
     wait(event_x)
     wait(event_y)
 
-    wait(add_kernel!(layer.canvas, sobel_params.canvas_y,
+    wait(add_kernel!(output, sobel_params.canvas_y,
                      sobel_params.canvas_x; ndrange = size(layer.canvas)))
 
     return nothing

@@ -66,6 +66,11 @@ function Filter(filter)
 end
 
 function filter!(layer::AL, filter_params::Filter) where AL <: AbstractLayer
+    filter!(layer.canvas, layer, filter_params)
+end
+
+function filter!(output, layer::AL,
+                 filter_params::Filter) where AL <: AbstractLayer
 
     if isa(layer.canvas, Array)
         kernel! = filter_kernel!(CPU(), layer.params.numcores)
@@ -78,7 +83,7 @@ function filter!(layer::AL, filter_params::Filter) where AL <: AbstractLayer
     wait(kernel!(filter_params.canvas, layer.canvas, filter_params.filter;
                  ndrange = size(layer.canvas)))
 
-    layer.canvas .= filter_params.canvas
+    output .= filter_params.canvas
     
     return nothing
 
