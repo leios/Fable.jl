@@ -1,10 +1,11 @@
 export Outline
 
-struct Outline <: AbstractPostProcess
+mutable struct Outline <: AbstractPostProcess
     op::Function
     gauss_filter::Filter
     sobel::Sobel
     clip::Clip
+    initialized::Bool
 end
 
 function Outline(; linewidth = 1,
@@ -12,19 +13,18 @@ function Outline(; linewidth = 1,
                    intensity_function = simple_intensity,
                    clip_op = >,
                    threshold = 0.5,
-                   ArrayType = Array,
                    sigma = 0.25,
-                   canvas_size = (1080, 1920),
                    ) where CT <: Union{RGB, RGBA}
-    sobel = Sobel(; color = RGBA(1.0, 1.0, 1.0, 1.0),
-                    canvas_size = canvas_size,
-                    ArrayType = ArrayType)
-    gauss_filter = Blur(; color = RGBA(1.0, 1.0, 1.0, 1.0),
-                          filter_size = 3*linewidth,
-                          ArrayType = ArrayType,
-                          sigma = sigma)
-    clip = Clip(; color = color, threshold = threshold)
+    sobel = Sobel()
+    gauss_filter = Blur(; filter_size = 3*linewidth, sigma = sigma)
+    clip = Clip(; color = color, threshold = threshold, clip_op = clip_op)
     return Outline(outline!, gauss_filter, sobel, clip)
+end
+
+function initialize!(o::Outline, layer::AL) where AL <: AbstractLayer
+    initialize!(o.gauss_filter, layer)
+    initialize!(o.sobel, layer)
+    o.initialized = true
 end
 
 function outline!(layer::AL, outline_params::Outline) where AL <: AbstractLayer

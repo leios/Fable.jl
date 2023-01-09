@@ -103,6 +103,5 @@ end
         end
     end
 
-    @inbounds val = clip(val, 1)
     @inbounds canvas_out[tid] = val
 end
