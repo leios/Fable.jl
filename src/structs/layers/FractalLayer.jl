@@ -63,7 +63,7 @@ function FractalLayer(v, r, g, b, a, c, position, world_size, ppu;
                       postprocessing_steps = Vector{AbstractPostProcess}([]),
                       config = standard,
                       H1 = Hutchinson(), H2 = Hutchinson())
-    postprocessing_steps = vcat(postprocessing_steps, [CopyToCanvas()])
+    postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
     return FractalLayer(Hutchinson(), Hutchinson(),
                         v, r, g, b, a, c, position, world_size, ppu,
                         default_params(FractalLayer,
@@ -82,7 +82,7 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                       numcores = 4, numthreads = 256,
                       num_particles = 1000, num_iterations = 1000, dims = 2,
                       H1 = Hutchinson(), H2 = Hutchinson())
-    postprocessing_steps = vcat(postprocessing_steps, [CopyToCanvas()])
+    postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
     res = (ceil(Int, world_size[1]*ppu), ceil(Int, world_size[2]*ppu))
     v = ArrayType(zeros(Int,res))
     r = ArrayType(zeros(FloatType,res))
@@ -124,9 +124,10 @@ end
 
 struct CopyToCanvas <: AbstractPostProcess
     op::Function
+    initialized::Bool
 end
 
-CopyToCanvas() = CopyToCanvas(to_canvas!)
+CopyToCanvas() = CopyToCanvas(to_canvas!, true)
 
 function norm_layer!(layer::FractalLayer)
     layer.reds .= norm_component.(layer.reds, layer.values)
@@ -143,7 +144,7 @@ function norm_component(color, value)
     end
 end
 
-function to_canvas!(layer::FractalLayer)
+function to_canvas!(layer::FractalLayer, canvas_params::CopyToCanvas)
 
     f = FL_canvas_kernel!
     if layer.params.logscale

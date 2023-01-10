@@ -50,12 +50,12 @@ constant_disk = Fae.@fum function constant_disk(x, y; radius = 1, pos = (0,0),
 end
 
 # Returns back H, colors, and probs for a circle
-function define_circle(; position = zeros(FT, 2),
+function define_circle(; position = [0.0, 0.0],
                          radius = 1.0,
                          color = Shaders.gray,
                          name = "circle",
                          chosen_fx = :constant_disk,
-                         diagnostic = false) where FT <: AbstractFloat
+                         diagnostic = false)
 
     fums, fis = define_circle_operators(position, radius; chosen_fx = chosen_fx,
                                         name = name)

@@ -143,7 +143,7 @@ end
 function write_image(layer;
                      filename::Union{Nothing, String} = nothing,
                      reset = true,
-                     img = fill(RGBA(0,0,0),
+                     img = fill(RGBA{Float32}(0,0,0),
                                 size(layer.canvas))) where AL <: AbstractLayer
 
     postprocess!(layer)
@@ -165,7 +165,7 @@ end
 function write_image(layers::Vector{AL};
                      filename::Union{Nothing, String} = nothing,
                      reset = true,
-                     img = fill(RGBA(0,0,0,0),
+                     img = fill(RGBA{Float32}(0,0,0,0),
                                 size(layers[1].canvas))) where AL<:AbstractLayer
 
     postprocess!(layers[1])
