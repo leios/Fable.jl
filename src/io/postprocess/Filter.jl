@@ -48,13 +48,17 @@ function Gaussian(; filter_size = 3, ArrayType = Array, sigma = 1.0)
         @warn("filter sizes must be odd! New filter size is " *
               string(filter_size)*"!")
     end
-    filter = zeros(filter_size, filter_size)
-    for i = 1:filter_size
-        y = -1 + 2*(i-1)/(filter_size-1) 
-        for j = 1:filter_size
-            x = -1 + 2*(j-1)/(filter_size-1) 
-            filter[i,j] = gaussian(x, y, sigma)
+    if filter_size > 1
+        filter = zeros(filter_size, filter_size)
+        for i = 1:filter_size
+            y = -1 + 2*(i-1)/(filter_size-1) 
+            for j = 1:filter_size
+                x = -1 + 2*(j-1)/(filter_size-1) 
+                filter[i,j] = gaussian(x, y, sigma)
+            end
         end
+    else
+        filter = [1.0]
     end
 
     filter ./= sum(filter)

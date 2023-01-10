@@ -20,8 +20,11 @@ function Outline(; linewidth = 1,
                    ) where CT <: Union{RGB, RGBA}
     sobel = Sobel()
     if linewidth > 1
-        gauss_filter = Blur(; filter_size = floor(Int, 3*linewidth),
-                            sigma = sigma)
+        filter_size = floor(Int, 3*linewidth)
+        if iseven(filter_size)
+            filter_size += 1
+        end
+        gauss_filter = Blur(; filter_size = filter_size, sigma = sigma)
     else
         gauss_filter = nothing
     end
