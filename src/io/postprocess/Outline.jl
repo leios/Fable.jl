@@ -8,13 +8,14 @@ mutable struct Outline <: AbstractPostProcess
     threshold::Number
     color::CT where CT <: Union{RGB, RGBA}
     canvas::AT where AT <: Union{Array, CuArray, ROCArray, Nothing}
+    object_outline::Bool
     initialized::Bool
 end
 
 function Outline(; linewidth = 1,
                    color = RGBA(1.0, 1.0, 1.0, 1.0),
                    intensity_function = simple_intensity,
-                   clip_op = >,
+                   object_outline = false,
                    threshold = 0.5,
                    sigma = 1,
                    ) where CT <: Union{RGB, RGBA}
@@ -29,7 +30,7 @@ function Outline(; linewidth = 1,
         gauss_filter = nothing
     end
     return Outline(outline!, gauss_filter, sobel, intensity_function,
-                   threshold, color, nothing, false)
+                   threshold, color, nothing, object_outline, false)
 end
 
 function initialize!(o::Outline, layer::AL) where AL <: AbstractLayer
@@ -38,6 +39,10 @@ function initialize!(o::Outline, layer::AL) where AL <: AbstractLayer
     end
     initialize!(o.sobel, layer)
     o.canvas = copy(layer.canvas)
+    if o.object_outline
+        clip_params = Clip(threshold = 0.0, color = RGBA(1,1,1,1))
+        clip!(o.canvas, layer, clip_params)
+    end
     o.initialized = true
 end
 

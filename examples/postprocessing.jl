@@ -55,10 +55,11 @@ end
 
 function outline_example(num_particles, num_iterations; ArrayType = Array,
                          filename = "outline_out.png", linewidth = 1,
-                         threshold = 0.5)
+                         threshold = 0.5, object_outline = false)
     circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
 
-    outline = Outline(; linewidth = linewidth, threshold = threshold)
+    outline = Outline(; linewidth = linewidth, threshold = threshold,
+                        object_outline = object_outline)
 
     fl = FractalLayer(; H1 = circle, ArrayType = ArrayType,
                         postprocessing_steps = [outline])

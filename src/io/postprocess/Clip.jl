@@ -13,12 +13,16 @@ function Clip(op, clip_op, intensity_function, threshold, color)
     return Clip(op, clip_op, intensity_function, threshold, color, true)
 end
 
-function Clip(; threshold = 0.5, color = RGB(0,0,0),
+function Clip(; threshold = 0.5, color = RGBA(0,0,0,1),
                 intensity_function = simple_intensity, clip_op = >)
     return Clip(clip!, clip_op, intensity_function, threshold, color, true)
 end
 
 function clip!(layer::AL, clip_params::Clip) where AL <: AbstractLayer
+    clip!(layer.canvas, layer, clip_params)
+end
+
+function clip!(output, layer::AL, clip_params::Clip) where AL <: AbstractLayer
 
     if layer.params.ArrayType <: Array
         kernel! = clip_kernel!(CPU(), layer.params.numcores)
@@ -28,7 +32,7 @@ function clip!(layer::AL, clip_params::Clip) where AL <: AbstractLayer
         kernel! = clip_kernel!(ROCDevice(), layer.params.numthreads)
     end
 
-    wait(kernel!(layer.canvas, clip_params.clip_op,
+    wait(kernel!(output, layer.canvas, clip_params.clip_op,
                  clip_params.intensity_function,
                  clip_params.threshold, clip_params.color;
                  ndrange = size(layer.canvas)))
@@ -37,9 +41,9 @@ function clip!(layer::AL, clip_params::Clip) where AL <: AbstractLayer
 
 end
 
-@kernel function clip_kernel!(canvas, clip_op, intensity_function, threshold, c)
+@kernel function clip_kernel!(output, canvas, clip_op, intensity_function, threshold, c)
     tid = @index(Global, Linear)
     if clip_op(intensity_function(canvas[tid]), threshold)
-        canvas[tid] = c
+        output[tid] = c
     end
 end
