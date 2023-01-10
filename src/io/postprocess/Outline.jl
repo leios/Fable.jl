@@ -16,7 +16,7 @@ function Outline(; linewidth = 1,
                    color = RGBA(1.0, 1.0, 1.0, 1.0),
                    intensity_function = simple_intensity,
                    object_outline = false,
-                   threshold = 0.5,
+                   threshold = 1/(linewidth*linewidth+1),
                    sigma = 1,
                    ) where CT <: Union{RGB, RGBA}
     sobel = Sobel()
@@ -29,6 +29,7 @@ function Outline(; linewidth = 1,
     else
         gauss_filter = nothing
     end
+
     return Outline(outline!, gauss_filter, sobel, intensity_function,
                    threshold, color, nothing, object_outline, false)
 end
@@ -39,10 +40,15 @@ function initialize!(o::Outline, layer::AL) where AL <: AbstractLayer
     end
     initialize!(o.sobel, layer)
     o.canvas = copy(layer.canvas)
+
     if o.object_outline
+        # Note, needs improvement:
+        # if we just want to output the object outlines, we just create a layer 
+        # where all values are RGBA(1,1,1,1) if there is any color at all
         clip_params = Clip(threshold = 0.0, color = RGBA(1,1,1,1))
         clip!(o.canvas, layer, clip_params)
     end
+
     o.initialized = true
 end
 
@@ -75,6 +81,7 @@ end
 @kernel function ridge_kernel!(canvas, intensity_function, threshold, c)
     tid = @index(Global, Linear)
     if intensity_function(canvas[tid]) > threshold
+        # Note, needs improvement:
         # because we have the sobel filtered image and the new alpha should
         # be related to the *change* in each quantity, we just take the max...
         new_alpha = max(c.r, c.g, c.b, c.alpha)

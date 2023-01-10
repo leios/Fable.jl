@@ -14,7 +14,7 @@ end
 function initialize!(filter::Filter, layer::AL) where AL <: AbstractLayer
     ArrayType = layer.params.ArrayType
     if !(typeof(filter.filter) <: layer.params.ArrayType)
-        @warn("filter array type not the same as canvas! Converting filter to canvas type...")
+        @info("filter array type not the same as canvas!\nConverting filter to canvas type...")
         filter.filter = ArrayType(filter.filter)
     end
     filter.canvas = ArrayType(zeros(eltype(layer.canvas), size(layer.canvas)))
