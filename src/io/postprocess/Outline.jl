@@ -12,7 +12,7 @@ mutable struct Outline <: AbstractPostProcess
 end
 
 function Outline(; linewidth = 1,
-                   color = RGB(1.0, 1.0, 1.0),
+                   color = RGBA(1.0, 1.0, 1.0, 1.0),
                    intensity_function = simple_intensity,
                    clip_op = >,
                    threshold = 0.5,
@@ -70,7 +70,8 @@ end
 @kernel function ridge_kernel!(canvas, intensity_function, threshold, c)
     tid = @index(Global, Linear)
     if intensity_function(canvas[tid]) > threshold
-        canvas[tid] = RGBA(c)
+        new_alpha = max(c.r, c.g, c.b, c.alpha)
+        canvas[tid] = RGBA(c.r, c.g, c.b, c.alpha*new_alpha)
     else
         canvas[tid] = RGBA(0,0,0,0)
     end
