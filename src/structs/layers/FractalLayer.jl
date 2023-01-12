@@ -27,13 +27,13 @@ function default_params(a::Type{FractalLayer}; config = :standard,
         return (numthreads = 256, numcores = 4, gamma = 2.2, logscale = false,
                 calc_max_value = false, max_value = 1, ArrayType = ArrayType,
                 FloatType = FloatType, num_ignore = 20, dims = dims,
-                num_particles = num_particles, 
+                solver_type = :semi_random, num_particles = num_particles,
                 num_iterations = num_iterations)
     elseif config == :fractal_flame
         return (numthreads = 256, numcores = 4, gamma = 2.2, logscale = true,
                 calc_max_value = true, max_value = 1, ArrayType = ArrayType,
                 FloatType = FloatType, num_ignore = 20, dims = dims,
-                num_particles = num_particles, 
+                solver_type = :semi_random, num_particles = num_particles,
                 num_iterations = num_iterations)
     end
 end
@@ -42,7 +42,7 @@ function params(a::Type{FractalLayer}; numthreads = 256, numcores = 4,
                 ArrayType = Array, FloatType = Float32,
                 logscale = false, gamma = 2.2, calc_max_value = false,
                 max_value = 1, num_ignore = 20, num_particles = 1000,
-                num_iterations = 1000, dims = 2)
+                num_iterations = 1000, dims = 2, solver_type = :semi_random)
     return (numthreads = numthreads,
             numcores = numcores,
             ArrayType = ArrayType,
@@ -54,7 +54,8 @@ function params(a::Type{FractalLayer}; numthreads = 256, numcores = 4,
             num_ignore = num_ignore,
             num_particles = num_particles,
             num_iterations = num_iterations,
-            dims = dims)
+            dims = dims,
+            solver_type = solver_type)
 end
 
 
@@ -62,10 +63,9 @@ end
 function FractalLayer(v, r, g, b, a, c, position, world_size, ppu;
                       postprocessing_steps = Vector{AbstractPostProcess}([]),
                       config = standard,
-                      H1 = Hutchinson(), H2 = Hutchinson())
+                      H1 = Hutchinson(), H2 = nothing)
     postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
-    return FractalLayer(Hutchinson(), Hutchinson(),
-                        v, r, g, b, a, c, position, world_size, ppu,
+    return FractalLayer(H1, H2, v, r, g, b, a, c, position, world_size, ppu,
                         default_params(FractalLayer,
                                        config = config,
                                        ArrayType = typeof(v),
@@ -81,7 +81,8 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                       calc_max_value = false, max_value = 1,
                       numcores = 4, numthreads = 256,
                       num_particles = 1000, num_iterations = 1000, dims = 2,
-                      H1 = Hutchinson(), H2 = Hutchinson())
+                      H1 = Hutchinson(), H2 = nothing,
+                      solver_type = :semi_random)
     postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
     res = (ceil(Int, world_size[1]*ppu), ceil(Int, world_size[2]*ppu))
     v = ArrayType(zeros(Int,res))
@@ -113,7 +114,8 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                                    numthreads = numthreads,
                                    num_particles = num_particles,
                                    num_iterations = num_iterations,
-                                   dims = dims),
+                                   dims = dims,
+                                   solver_type = solver_type),
                             postprocessing_steps)
     end
 end

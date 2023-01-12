@@ -29,26 +29,207 @@ export run!
 end
 
 function iterate!(ps::Points, layer::FractalLayer, H::Hutchinson, n,
-                  bounds, bin_widths, H2::Hutchinson; diagnostic = false)
+                  bounds, bin_widths, H2::Union{Nothing, Hutchinson};
+                  diagnostic = false)
+    if !isnothing(H2) && layer.params.solver_type == :semi_random
+        fx = semi_random_chaos_kernel!
+    else
+        fx = naive_chaos_kernel!
+    end
 
     max_range = maximum(values(bounds))*10
     if isa(ps.positions, Array)
-        kernel! = naive_chaos_kernel!(CPU(), layer.params.numcores)
+        kernel! = fx(CPU(), layer.params.numcores)
     elseif has_cuda_gpu() && layer.params.ArrayType <: CuArray
-        kernel! = naive_chaos_kernel!(CUDADevice(), layer.params.numthreads)
+        kernel! = fx(CUDADevice(), layer.params.numthreads)
     elseif has_rocm_gpu() && layer.params.ArrayType <: ROCArray
-        kernel! = naive_chaos_kernel!(ROCDevice(), layer.params.numthreads)
+        kernel! = fx(ROCDevice(), layer.params.numthreads)
     end
 
     if diagnostic
-        println(H.symbols)
+        println("H1 symbols:\n", H.symbols)
+        if !isnothing(H2)
+            println("H2 symbols:\n", H2.symbols)
+        end
     end
 
-    kernel!(ps.positions, n, H.op, H.cop, H.prob_set, H.symbols, H.fnums,
-            H2.op, H2.cop, H2.symbols, H2.prob_set, H2.fnums,
-            layer.values, layer.reds, layer.greens, layer.blues, layer.alphas, 
-            bounds, Tuple(bin_widths), layer.params.num_ignore, max_range,
-            ndrange=size(ps.positions)[1])
+    if isnothing(H2)
+        kernel!(ps.positions, n, H.op, H.cop, H.prob_set, H.symbols, H.fnums,
+                layer.values, layer.reds, layer.greens,
+                layer.blues, layer.alphas, 
+                bounds, Tuple(bin_widths), layer.params.num_ignore, max_range,
+                ndrange=size(ps.positions)[1])
+    else
+        kernel!(ps.positions, n, H.op, H.cop, H.prob_set, H.symbols, H.fnums,
+                H2.op, H2.cop, H2.symbols, H2.prob_set, H2.fnums,
+                layer.values, layer.reds, layer.greens,
+                layer.blues, layer.alphas, 
+                bounds, Tuple(bin_widths), layer.params.num_ignore, max_range,
+                ndrange=size(ps.positions)[1])
+    end
+end
+
+@kernel function naive_chaos_kernel!(points, n, H1, H1_clrs, H1_probs,
+                                     H1_symbols, H1_fnums,
+                                     layer_values, layer_reds, layer_greens,
+                                     layer_blues, layer_alphas, bounds,
+                                     bin_widths, num_ignore, max_range)
+
+    tid = @index(Global,Linear)
+    lid = @index(Local, Linear)
+
+    @uniform dims = size(points)[2]
+
+    @uniform FT = eltype(layer_reds)
+
+    @uniform gs = @groupsize()[1]
+    shared_tile = @localmem FT (gs, 2)
+    shared_colors = @localmem FT (gs, 4)
+
+    seed = quick_seed(tid)
+    fid = create_fid(H1_probs, H1_fnums, seed)
+
+    offset = 1
+
+    for i = 1:n
+        for k = 1:4
+            @inbounds shared_colors[lid,k] = 0
+        end
+
+        # quick way to tell if in range to be calculated or not
+        sketchy_sum = 0
+        for i = 1:dims
+            @inbounds sketchy_sum += abs(shared_tile[lid,i])
+        end
+
+        if sketchy_sum < max_range
+            if length(H1_fnums) > 1 || H1_fnums[1] > 1
+                seed = simple_rand(seed)
+                fid = create_fid(H1_probs, H1_fnums, seed)
+            else
+                fid = 1
+            end
+
+            H1(shared_tile, lid, H1_symbols, fid)
+            H1_clrs(shared_colors, shared_tile, lid, H1_symbols, fid)
+
+            @inbounds on_img_flag = on_image(shared_tile[lid,1],
+                                             shared_tile[lid,2],
+                                             bounds, dims)
+            if i > num_ignore && on_img_flag
+
+                @inbounds bin = find_bin(layer_values, shared_tile[lid,1],
+                                         shared_tile[lid,2], bounds,
+                                         bin_widths)
+                if bin > 0 && bin < length(layer_values)
+
+                    @inbounds @atomic layer_values[bin] += 1
+                    @inbounds @atomic layer_reds[bin] +=
+                                  shared_colors[lid, 1] *
+                                  shared_colors[lid, 4]
+                    @inbounds @atomic layer_greens[bin] +=
+                                  shared_colors[lid, 2] *
+                                  shared_colors[lid, 4]
+                    @inbounds @atomic layer_blues[bin] +=
+                                  shared_colors[lid, 3] *
+                                  shared_colors[lid, 4]
+                    @inbounds @atomic layer_alphas[bin] += shared_colors[lid, 4]
+                end
+            end
+        end
+    end
+
+    for i = 1:dims
+        @inbounds points[tid,i] = shared_tile[lid,i]
+    end
+
+end
+
+@kernel function semi_random_chaos_kernel!(points, n, H1, H1_clrs, H1_probs,
+                                           H1_symbols, H1_fnums, H2, H2_clrs,
+                                           H2_symbols, H2_probs, H2_fnums,
+                                           layer_values, layer_reds,
+                                           layer_greens,
+                                           layer_blues, layer_alphas, bounds,
+                                           bin_widths, num_ignore, max_range)
+
+    tid = @index(Global,Linear)
+    lid = @index(Local, Linear)
+
+    @uniform dims = size(points)[2]
+
+    @uniform FT = eltype(layer_reds)
+
+    @uniform gs = @groupsize()[1]
+    shared_tile = @localmem FT (gs, 4)
+    shared_colors = @localmem FT (gs, 4)
+
+    seed = quick_seed(tid)
+    fid = create_fid(H1_probs, H1_fnums, seed)
+
+    offset = 1
+
+    for i = 1:n
+        for k = 1:4
+            @inbounds shared_colors[lid,k] = 0
+        end
+
+        # quick way to tell if in range to be calculated or not
+        sketchy_sum = 0
+        for i = 1:dims
+            @inbounds sketchy_sum += abs(shared_tile[lid,i])
+        end
+
+        if sketchy_sum < max_range
+            if length(H1_fnums) > 1 || H1_fnums[1] > 1
+                seed = simple_rand(seed)
+                fid = create_fid(H1_probs, H1_fnums, seed)
+            else
+                fid = 1
+            end
+
+            H1(shared_tile, lid, H1_symbols, fid)
+            H1_clrs(shared_colors, shared_tile, lid, H1_symbols, fid)
+
+            for j = 1:length(H2_fnums)
+                for fid_2 = 1:H2_fnums[j]
+
+                    H2(shared_tile, lid, H2_symbols, fid_2)
+                    H2_clrs(shared_colors, shared_tile, lid, H2_symbols, fid_2)
+
+                    @inbounds on_img_flag = on_image(shared_tile[lid,3],
+                                                     shared_tile[lid,4],
+                                                     bounds, dims)
+                    if i > num_ignore && on_img_flag
+
+                        @inbounds bin = find_bin(layer_values,
+                                                 shared_tile[lid,3],
+                                                 shared_tile[lid,4], bounds,
+                                                 bin_widths)
+                        if bin > 0 && bin < length(layer_values)
+    
+                            @inbounds @atomic layer_values[bin] += 1
+                            @inbounds @atomic layer_reds[bin] +=
+                                          shared_colors[lid, 1] *
+                                          shared_colors[lid, 4]
+                            @inbounds @atomic layer_greens[bin] +=
+                                          shared_colors[lid, 2] *
+                                          shared_colors[lid, 4]
+                            @inbounds @atomic layer_blues[bin] +=
+                                          shared_colors[lid, 3] *
+                                          shared_colors[lid, 4]
+                            @inbounds @atomic layer_alphas[bin] +=
+                                          shared_colors[lid, 4]
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    for i = 1:dims
+        @inbounds points[tid,i] = shared_tile[lid,i]
+    end
 end
 
 @kernel function naive_chaos_kernel!(points, n, H1, H1_clrs, H1_probs,
@@ -68,10 +249,6 @@ end
     @uniform gs = @groupsize()[1]
     shared_tile = @localmem FT (gs, 4)
     shared_colors = @localmem FT (gs, 4)
-
-    for i = 1:dims
-        @inbounds shared_colors[lid,i] = 0
-    end
 
     seed = quick_seed(tid)
     fid = create_fid(H1_probs, H1_fnums, seed)
@@ -142,7 +319,9 @@ end
     for i = 1:dims
         @inbounds points[tid,i] = shared_tile[lid,i]
     end
+
 end
+
 
 function run!(layer::FractalLayer; diagnostic = false)
 
