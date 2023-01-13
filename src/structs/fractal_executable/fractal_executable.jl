@@ -34,7 +34,7 @@ end
 
 function configure_colors(fums::Vector{FractalUserMethod},
                           fis::Vector; name = "", diagnostic = false,
-                          final = false, evaluate = true)
+                          post = false, evaluate = true)
 
     fx_string = ""
     if evaluate
@@ -73,7 +73,7 @@ function configure_colors(fums::Vector{FractalUserMethod},
         fx_string *= "_clr[tid, 2] += green \n"
         fx_string *= "_clr[tid, 3] += blue \n"
         fx_string *= "_clr[tid, 4] += alpha \n"
-        if final
+        if post
             fx_string *= "_clr[tid, 1] *= 0.5 \n"
             fx_string *= "_clr[tid, 2] *= 0.5 \n"
             fx_string *= "_clr[tid, 3] *= 0.5 \n"
@@ -98,7 +98,7 @@ end
 function configure_colors(fums::Vector{FractalUserMethod},
                           fis::Vector, fnums::Vector;
                           name = "", diagnostic = false,
-                          final = false, evaluate = true)
+                          post = false, evaluate = true)
     fx_string = "@inline function color_"*name*"(_clr, _p, tid, symbols, fid)\n"
     fx_string *= "x = _p[tid, 2] \n"
     fx_string *= "y = _p[tid, 1] \n"
@@ -125,7 +125,7 @@ function configure_colors(fums::Vector{FractalUserMethod},
         fx_string *= "choice = UInt((fid & bitmask) >> bit_offset) + 1\n"
 
         temp_string = configure_colors(fums[f_range], fis;
-                                       evaluate = false, final = final)
+                                       evaluate = false, post = post)
         fx_string *= temp_string
         fx_string *= "fx_count += 1\n"
         fx_offset += fnums[i]
@@ -137,7 +137,7 @@ function configure_colors(fums::Vector{FractalUserMethod},
     fx_string *= "_clr[tid, 3] += (blue / fx_count) \n"
     fx_string *= "_clr[tid, 4] += (alpha / fx_count) \n"
 
-    if final
+    if post
         fx_string *= "_clr[tid, 1] *= 0.5 \n"
         fx_string *= "_clr[tid, 2] *= 0.5 \n"
         fx_string *= "_clr[tid, 3] *= 0.5 \n"

@@ -11,13 +11,16 @@ mutable struct Hutchinson <: FractalExecutable
     prob_set::Union{NTuple, Tuple}
     symbols::Union{NTuple, Tuple}
     fnums::Union{NTuple, Tuple}
+    post::Bool
+    chain::Bool
 end
 
 fee(H::Type{Hutchinson}, args...; kwargs...) = Hutchinson(args...; kwargs...)
 
 # This will update the symbols and prob set for combined fees
-function update!(final_H::Hutchinson, Hs::HT; diagnostic = false, name = "",
-                 final = false) where HT <: Union{Vector{Hutchinson},
+function update!(post_H::Hutchinson, Hs::HT; diagnostic = false, name = "",
+                 post = false,
+                 chain = false) where HT <: Union{Vector{Hutchinson},
                                                   Tuple{Hutchinson}}
 
     symbols = [Hs[1].symbols[i] for i = 1:length(Hs[1].symbols)]
@@ -31,23 +34,23 @@ function update!(final_H::Hutchinson, Hs::HT; diagnostic = false, name = "",
         symbols = vcat(symbols, temp_symbols)
     end
 
-    final_H.symbols = Tuple(symbols)
-    final_H.prob_set = Tuple(prob_set)
+    post_H.symbols = Tuple(symbols)
+    post_H.prob_set = Tuple(prob_set)
 
     if diagnostic
-        println("combined color set:\n", final_H.color_set)
-        println("combined fractal User Methods:\n", final_H.fum_set)
-        println("combined fractal inputs:\n", final_H.fi_set)
-        println("combined names:\n", final_H.name_set)
-        println("combined probabilities:\n", final_H.prob_set)
-        println("combined symbols:\n", final_H.symbols)
-        println("combined function numbers:\n", final_H.fnums)
+        println("combined color set:\n", post_H.color_set)
+        println("combined fractal User Methods:\n", post_H.fum_set)
+        println("combined fractal inputs:\n", post_H.fi_set)
+        println("combined names:\n", post_H.name_set)
+        println("combined probabilities:\n", post_H.prob_set)
+        println("combined symbols:\n", post_H.symbols)
+        println("combined function numbers:\n", post_H.fnums)
     end
 
 end
 
-function Hutchinson(Hs::HT; diagnostic = false, name = "",
-                    final = false) where HT <: Union{Vector{Hutchinson},
+function Hutchinson(Hs::HT; diagnostic = false, name = "", chain = false,
+                    post = false) where HT <: Union{Vector{Hutchinson},
                                                      Tuple{Hutchinson}}
     color_set = Hs[1].color_set
     fum_set = Hs[1].fum_set
@@ -101,9 +104,9 @@ function Hutchinson(Hs::HT; diagnostic = false, name = "",
     end
     new_H = configure_hutchinson(fum_set, fi_set, fnums;
                                  name = name, diagnostic = diagnostic,
-                                 final = final)
+                                 post = post, chain = chain)
     new_colors = configure_colors(color_set, fi_set, fnums; name = name,
-                                  diagnostic = diagnostic, final = final)
+                                  diagnostic = diagnostic, post = post)
 
     if diagnostic
         println("combined fractal User Methods:\n", fum_set)
@@ -118,31 +121,35 @@ function Hutchinson(Hs::HT; diagnostic = false, name = "",
 
     return Hutchinson(new_H, new_colors,
                       color_set, fum_set, fi_set, name_set, Tuple(prob_set),
-                      Tuple(symbols), Tuple(fnums))
+                      Tuple(symbols), Tuple(fnums), post, chain)
 end
 
 function Hutchinson()
     return Hutchinson(null, color_null, [Shaders.previous],
                       [Flames.identity],
                       Vector{FractalInput}(), Vector{String}(),
-                      Tuple(0), Tuple(0), Tuple(1))
+                      Tuple(0), Tuple(0), Tuple(1), false, false)
 end
 
 function configure_hutchinson(fos::Vector{FractalOperator},
-                              fis::Vector; name = "",
-                              diagnostic = false, final = false)
-    configure_hutchinson(FractalUserMethod.(fos), fis;
-                          name = name, diagnostic = diagnostic, final = final)
+                              fis::Vector; name = "", chain = false,
+                              diagnostic = false, post = false)
+    configure_hutchinson(FractalUserMethod.(fos), fis; chain = chain,
+                          name = name, diagnostic = diagnostic, post = post)
 end
 
 function configure_hutchinson(fums::Vector{FractalUserMethod},
                               fis::Vector; name = "", diagnostic = false,
-                              final = false, evaluate = true)
+                              post = false, evaluate = true, chain = false)
 
     fx_string = ""
     if evaluate
         fx_string = "@inline function H_"*name*"(_p, tid, symbols, choice)\n"
-        fx_string *= "x = _p[tid, 2] \n y = _p[tid, 1] \n"
+        if chain
+            fx_string *= "x = _p[tid, 4] \n y = _p[tid, 3] \n"
+        else
+            fx_string *= "x = _p[tid, 2] \n y = _p[tid, 1] \n"
+        end
     end
 
     for i = 1:length(fis)
@@ -167,7 +174,7 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
     fx_string *= "end\n"
 
     if evaluate
-        if final
+        if post
             fx_string *= "_p[tid, 4] = x \n _p[tid, 3] = y \n"
         else
             fx_string *= "_p[tid, 2] = x \n _p[tid, 1] = y \n"
@@ -189,9 +196,14 @@ end
 function configure_hutchinson(fums::Vector{FractalUserMethod},
                               fis::Vector, fnums::Vector;
                               name = "", diagnostic = false,
-                              final = false, evaluate = true)
+                              post = false, evaluate = true,
+                              chain = false)
     fx_string = "@inline function H_"*name*"(_p, tid, symbols, fid)\n"
-    fx_string *= "x = _p[tid, 2] \n y = _p[tid, 1] \n"
+    if chain
+        fx_string *= "x = _p[tid, 4] \n y = _p[tid, 3] \n"
+    else
+        fx_string *= "x = _p[tid, 2] \n y = _p[tid, 1] \n"
+    end
 
     fx_offset = 1
     bit_offset = 0
@@ -213,7 +225,7 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
     end
 
     if evaluate
-        if final
+        if post
             fx_string *= "_p[tid, 4] = x \n _p[tid, 3] = y \n"
         else
             fx_string *= "_p[tid, 2] = x \n _p[tid, 1] = y \n"
@@ -234,16 +246,16 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
 end
 
 function Hutchinson(fums::Array{FractalUserMethod},
-                    color_set, prob_set; name = "",
-                    diagnostic = false, final = false) where A <: Array
-    Hutchinson(fums, [], color_set, prob_set; final = final,
+                    color_set, prob_set; name = "", chain = false,
+                    diagnostic = false, post = false) where A <: Array
+    Hutchinson(fums, [], color_set, prob_set; post = post, chain = chain,
                diagnostic = diagnostic, name = name)
 end
 
 # This is a constructor for when people read in an array of arrays for colors
 function Hutchinson(fums::Array{FractalUserMethod},
-                    fis::Vector, color_set, prob_set; name = "",
-                    diagnostic = false, final = false) where A <: Array
+                    fis::Vector, color_set, prob_set; name = "", chain = false,
+                    diagnostic = false, post = false) where A <: Array
 
     fnum = length(fums)
     temp_colors = new_color_array(color_set, diagnostic = diagnostic)
@@ -258,15 +270,15 @@ function Hutchinson(fums::Array{FractalUserMethod},
         symbols = configure_fis!(fis)
     end
     H = configure_hutchinson(fums, fis; name = name, diagnostic = diagnostic,
-                             final = final)
+                             post = post, chain = chain)
     colors = configure_colors(temp_colors, fis; name = name,
-                              diagnostic = diagnostic, final = final)
+                              diagnostic = diagnostic, post = post)
     return Hutchinson(H, colors, temp_colors, fums, fis, [name], prob_set,
-                      symbols, Tuple(length(fums)))
+                      symbols, Tuple(length(fums)), post, chain)
 end
 
 function Hutchinson(fos::Vector{FractalOperator}, fis::Vector; name = "",
-                    diagnostic = false, final = false)
+                    diagnostic = false, post = false, chain = false)
 
     # constructing probabilities and colors
     fnum = length(fos)
@@ -286,20 +298,20 @@ function Hutchinson(fos::Vector{FractalOperator}, fis::Vector; name = "",
     end
 
     H = configure_hutchinson(fos, fis; name = name, diagnostic = diagnostic,
-                             final = final)
+                             post = post, chain = chain)
     colors = configure_colors(color_array, fis; name = name,
-                              diagnostic = diagnostic, final = final)
+                              diagnostic = diagnostic, post = post)
 
     fums = FractalUserMethod.(fos)
     return Hutchinson(H, colors, color_array, fums, fis, [name], prob_set,
-                      symbols, Tuple(length(fos)))
+                      symbols, Tuple(length(fos)), post, chain)
 
 end
 
-function Hutchinson(fos::Vector{FractalOperator}; name = "",
-                    diagnostic = false, final = false)
-    Hutchinson(fos, [], name = name, diagnostic = diagnostic,
-               final = final)
+function Hutchinson(fos::Vector{FractalOperator}; name = "", chain = false,
+                    diagnostic = false, post = false)
+    Hutchinson(fos, [], name = name, diagnostic = diagnostic, chain = chain, 
+               post = post)
 end
 
 function update_fis!(H::Hutchinson, fis::Vector{FractalInput})
@@ -317,5 +329,5 @@ function update_colors!(H::Hutchinson, fx_id, h_id,
     H.color_set[fx_id + offset] = create_color(new_color)
     H.cop[h_id] = configure_colors(H.color_set[offset:offset + H.fnums[h_id]],
                                    H.fi_set; name = H.name_set[h_id], 
-                                   final = final)
+                                   post = post)
 end

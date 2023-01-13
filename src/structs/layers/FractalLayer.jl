@@ -58,12 +58,23 @@ function params(a::Type{FractalLayer}; numthreads = 256, numcores = 4,
             solver_type = solver_type)
 end
 
+function fix_operators!(H1, H2)
+    if H1.post
+    end
+
+    if H1.chain
+    end
+
+    if H2.chain
+    end
+end
 
 # Creating a default call
 function FractalLayer(v, r, g, b, a, c, position, world_size, ppu;
                       postprocessing_steps = Vector{AbstractPostProcess}([]),
                       config = standard,
                       H1 = Hutchinson(), H2 = nothing)
+    fix_operators!(H1, H2)
     postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
     return FractalLayer(H1, H2, v, r, g, b, a, c, position, world_size, ppu,
                         default_params(FractalLayer,
@@ -83,6 +94,7 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                       num_particles = 1000, num_iterations = 1000, dims = 2,
                       H1 = Hutchinson(), H2 = nothing,
                       solver_type = :semi_random)
+    fix_operators!(H1, H2)
     postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
     res = (ceil(Int, world_size[1]*ppu), ceil(Int, world_size[2]*ppu))
     v = ArrayType(zeros(Int,res))
