@@ -7,6 +7,15 @@ import Fae.@fum
 previous = @fum function previous()
 end
 
+# for now, to force a color, just make each color channel = -channel + 2*color
+# used only for final colors
+force_red = @fum function force_red()
+    red = -red + 2
+    green = -green
+    blue = -blue
+    alpha = -alpha + 2
+end
+
 custom = @fum function custom(; red = 0, green = 0, blue = 0, alpha = 0)
     red = red
     green = green
