@@ -38,6 +38,7 @@ function iterate!(ps::Points, layer::FractalLayer, H::Hutchinson, n,
     else
         @warn(string(layer.params.solver_type)*" is not a valid solver type!\n"*
               "Defaulting to random...")
+        fx = naive_chaos_kernel!
     end
 
     max_range = maximum(values(bounds))*10
