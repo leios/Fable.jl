@@ -1,7 +1,7 @@
 name = "Fae"
 uuid = "a3ea4736-0a3b-4c29-ac8a-20364318a635"
 authors = ["James Schloss <jrs.schloss@gmail.com>"]
-version = "0.0.1"
+version = "0.0.0"
 
 [deps]
 AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
