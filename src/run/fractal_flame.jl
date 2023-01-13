@@ -33,7 +33,11 @@ function iterate!(ps::Points, layer::FractalLayer, H::Hutchinson, n,
                   diagnostic = false)
     if !isnothing(H2) && layer.params.solver_type == :semi_random
         fx = semi_random_chaos_kernel!
+    elseif layer.params.solver_type == :random
+        fx = naive_chaos_kernel!
     else
+        @warn(string(layer.params.solver_type)*" is not a valid solver type!\n"*
+              "Defaulting to random...")
         fx = naive_chaos_kernel!
     end
 
