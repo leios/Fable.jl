@@ -18,13 +18,26 @@ end
 
 function Shader(fum::FractalUserMethod, fis::Vector{FractalInput};
                 name = "shader")
-    return Shader(configure_fum(fum; fum_type = :shader, name = name), fum,
+    return Shader(configure_fum(fum, fis; fum_type = :shader, name = name), fum,
                   fis, name, configure_fis!(fis))
 end
 
 function Shader(fum::FractalUserMethod; name = "shader")
     return Shader(configure_fum(fum; fum_type = :shader, name = name), fum,
                   Vector{FractalInput}(), name, Tuple(1))
+end
+
+function Shader(a::Shader, b::Shader)
+end
+
+function Shader(shaders::Vector{Shader})
+
+    new_shader = shaders[1]
+    for i = 2:length(shaders)
+        Shader(new_shader, shaders[i])
+    end
+
+    return new_shader
 end
 
 function update_fis!(S::Shader, fis::Vector{FractalInput})
