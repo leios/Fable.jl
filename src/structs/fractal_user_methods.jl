@@ -1,4 +1,4 @@
-export FractalUserMethod, @fum, configure_fum
+export FractalUserMethod, @fum, configure_fum, overlay, mix
 
 struct FractalUserMethod
     name::Symbol
@@ -117,10 +117,12 @@ function configure_fum(fum::FractalUserMethod, fis::Vector{FractalInput};
     else
         error("FUM type "*string(fum_type)*" not available!")
     end
-    if fum_type == :color || fum_type == :hutchinson
+
+    if fum_type == :hutchinson
         fx_string *= "x = _p[tid, 2] \n"
         fx_string *= "y = _p[tid, 1] \n"
     end
+
     if fum_type == :color || fum_type == :shader
         fx_string *= "red = _clr[tid, 1] \n"
         fx_string *= "green = _clr[tid, 2] \n"
@@ -185,3 +187,106 @@ function (a::Fae.FractalUserMethod)(args...; kwargs...)
     return FractalUserMethod(Symbol(new_name), a.args, new_kwargs, a.body)
 end
 
+function overlay(a::FractalUserMethod, b::FractalUserMethod; fum_type = :color)
+    new_args = vcat(a.args, b.args)
+    new_kwargs = vcat(a.kwargs, b.kwargs)
+    new_name = Meta.parse(string(a.name)*"_"*string(b.name))
+    new_body = string(b.body)[1:end-3]
+    if fum_type == :color || fum_type == :shader
+        new_body *= "
+            _clr[tid, 1] = red*alpha + (1-alpha)*_clr[tid, 1]\n
+            _clr[tid, 2] = green*alpha + (1-alpha)*_clr[tid, 2]\n
+            _clr[tid, 3] = blue*alpha + (1-alpha)*_clr[tid, 3]\n
+            _clr[tid, 4] = max(alpha, _clr[tid, 4])\n"*
+            string(a.body)[1+5:end]
+    elseif fum_type == :hutchinson
+        new_body *= string(a.body)[1+5:end]
+    end
+
+    return FractalUserMethod(new_name, new_args, new_kwargs,
+                             Meta.parse(new_body))
+end
+
+function mix(a::FractalUserMethod, b::FractalUserMethod; fum_type = :color)
+    new_args = vcat(a.args, b.args)
+    new_kwargs = vcat(a.kwargs, b.kwargs)
+    new_name = Meta.parse(string(a.name)*"_"*string(b.name))
+    new_body = string(b.body)[1:end-3]
+    if fum_type == :color || fum_type == :shader
+        new_body *= "
+            _clr[tid, 1] = red*0.5 + _clr[tid, 1]*0.5\n
+            _clr[tid, 2] = green*0.5 + _clr[tid, 2]*0.5\n
+            _clr[tid, 3] = blue*0.5 + _clr[tid, 3]*0.5\n
+            _clr[tid, 4] = max(alpha, _clr[tid, 4])\n"*
+            string(a.body)[1+5:end]
+    elseif fum_type == :hutchinson
+        new_body *= string(a.body)[1+5:end]
+    end
+
+    return FractalUserMethod(new_name, new_args, new_kwargs,
+                             Meta.parse(new_body))
+
+end
+
+function mix(fums::Vector{FractalUserMethod}; fum_type = :color,
+             alphas::Union{Nothing, Vector{N}} = nothing) where N <: Number
+
+    if fum_type == :color || fum_type == :shader
+        if length(fums) != length(alphas)
+            @warn(string(length(fums))*" FUMs provided with only "*
+                  string(length(alphas))*" alpha values!\n" *
+                  "Mixing all colors evenly...")
+            alphas = [1/length(fums) for i = 1:length(fums)]
+        end
+
+        if !isapprox(sum(alphas),1)
+            @warn("Mixed FUM alpha values != 1!\n"*
+                  "Mixing all colors evenly...")
+            alphas = [1/length(fums) for i = 1:length(fums)]
+        end
+    end
+
+    if length(fums) == 1
+        return fums[1]
+    end
+
+    new_args = fums[1].args
+    new_kwargs = fums[1].kwargs
+    new_name = fums[1].name
+    new_body = string(fums[1].body)[1:end-3]
+    if fum_type == :color || fum_type == :shader
+        new_body *="
+            _clr[tid, 1] = red*"*string(alphas[1])*"\n
+            _clr[tid, 2] = green*"*string(alphas[1])*"\n
+            _clr[tid, 3] = blue*"*string(alphas[1])*"\n
+            _clr[tid, 4] = "*string(alphas[1])*"\n"
+    end
+
+    for i = 2:length(fums)
+        new_args = vcat(new_args, fums[i].args)
+        new_kwargs = vcat(new_kwargs, fums[i].kwargs)
+        new_name = Meta.parse(string(new_name)*"_"*string(fums[i].name))
+        if fum_type == :color || fum_type == :shader
+            new_body *= string(fums[2].body)[1+5:end-3]*"
+                _clr[tid, 1] += red*"*string(alphas[i])*"\n
+                _clr[tid, 2] += green*"*string(alphas[i])*"\n
+                _clr[tid, 3] += blue*"*string(alphas[i])*"\n
+                _clr[tid, 4] += "*string(alphas[i])*"\n"
+        elseif fum_type == :hutchinson
+            new_body *= string(fums[2].body)[1+5:end]
+        end
+    end
+
+    if fum_type == :color || fum_type == :shader
+        new_body *= "
+            red = _clr[tid, 1]
+            green = _clr[tid, 2]
+            blue = _clr[tid, 3]
+            alpha = _clr[tid, 4]
+            end\n"
+    end
+
+    return FractalUserMethod(new_name, new_args, new_kwargs,
+                             Meta.parse(new_body))
+
+end

@@ -20,18 +20,15 @@ function update!(final_H::Hutchinson, Hs::HT; diagnostic = false, name = "",
                  final = false) where HT <: Union{Vector{Hutchinson},
                                                   Tuple{Hutchinson}}
 
-    symbols = [Hs[1].symbols[i] for i = 1:length(Hs[1].symbols)]
     prob_set = [Hs[1].prob_set[i] for i = 1:length(Hs[1].prob_set)]
 
     for j = 2:length(Hs)
         temp_prob = [Hs[j].prob_set[i] for i = 1:length(Hs[j].prob_set)]
-        temp_symbols = [Hs[j].symbols[i] for i = 1:length(Hs[j].symbols)]
 
         prob_set = vcat(prob_set, temp_prob)
-        symbols = vcat(symbols, temp_symbols)
     end
 
-    final_H.symbols = Tuple(symbols)
+    update_fis!(final_H)
     final_H.prob_set = Tuple(prob_set)
 
     if diagnostic
@@ -54,7 +51,6 @@ function Hutchinson(Hs::HT; diagnostic = false, name = "",
     fi_set = Hs[1].fi_set
     name_set = Hs[1].name_set
     prob_set = [Hs[1].prob_set[i] for i = 1:length(Hs[1].prob_set)]
-    symbols = [Hs[1].symbols[i] for i = 1:length(Hs[1].symbols)]
     fnums = [Hs[1].fnums[i] for i = 1:length(Hs[1].fnums)]
 
     fsum = length(Hs[1].symbols)
@@ -77,11 +73,9 @@ function Hutchinson(Hs::HT; diagnostic = false, name = "",
         end
 
         temp_prob = [Hs[j].prob_set[i] for i = 1:length(Hs[j].prob_set)]
-        temp_symbols = [Hs[j].symbols[i] for i = 1:length(Hs[j].symbols)]
         temp_fnums = [Hs[j].fnums[i] for i = 1:length(Hs[j].fnums)]
 
         prob_set = vcat(prob_set, temp_prob)
-        symbols = vcat(symbols, temp_symbols)
         fnums = vcat(fnums, temp_fnums)
 
         fsum += length(Hs[j].symbols)
@@ -99,6 +93,7 @@ function Hutchinson(Hs::HT; diagnostic = false, name = "",
             name *= name_set[i] * "_"
         end
     end
+    symbols = configure_fis!(fi_set)
     new_H = configure_hutchinson(fum_set, fi_set, fnums;
                                  name = name, diagnostic = diagnostic,
                                  final = final)
@@ -118,7 +113,7 @@ function Hutchinson(Hs::HT; diagnostic = false, name = "",
 
     return Hutchinson(new_H, new_colors,
                       color_set, fum_set, fi_set, name_set, Tuple(prob_set),
-                      Tuple(symbols), Tuple(fnums))
+                      symbols, Tuple(fnums))
 end
 
 function Hutchinson()
@@ -302,8 +297,8 @@ function Hutchinson(fos::Vector{FractalOperator}; name = "",
                final = final)
 end
 
-function update_fis!(H::Hutchinson, fis::Vector{FractalInput})
-    H.symbols = configure_fis!(fis)
+function update_fis!(H::Hutchinson)
+    H.symbols = configure_fis!(H.fi_set)
 end
 
 function update_colors!(H::Hutchinson, fx_id, h_id,
