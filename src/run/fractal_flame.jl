@@ -31,7 +31,9 @@ end
 function iterate!(ps::Points, layer::FractalLayer, H::Hutchinson, n,
                   bounds, bin_widths, H2::Union{Nothing, Hutchinson};
                   frame = 0, diagnostic = false)
-    if !isnothing(H2) && layer.params.solver_type == :semi_random
+    if isnothing(H2) 
+        fx = naive_chaos_kernel!
+    elseif layer.params.solver_type == :semi_random
         fx = semi_random_chaos_kernel!
     elseif layer.params.solver_type == :random
         fx = naive_chaos_kernel!
