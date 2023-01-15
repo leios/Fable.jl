@@ -136,7 +136,8 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
 
     fx_string = ""
     if evaluate
-        fx_string = "@inline function H_"*name*"(_p, tid, symbols, choice)\n"
+        fx_string = "@inline function H_"*name*
+                    "(_p, tid, symbols, choice, frame)\n"
         fx_string *= "x = _p[tid, 2] \n y = _p[tid, 1] \n"
     end
 
@@ -185,7 +186,7 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
                               fis::Vector, fnums::Vector;
                               name = "", diagnostic = false,
                               final = false, evaluate = true)
-    fx_string = "@inline function H_"*name*"(_p, tid, symbols, fid)\n"
+    fx_string = "@inline function H_"*name*"(_p, tid, symbols, fid, frame)\n"
     fx_string *= "x = _p[tid, 2] \n y = _p[tid, 1] \n"
 
     fx_offset = 1

@@ -107,13 +107,14 @@ function configure_fum(fum::FractalUserMethod, fis::Vector{FractalInput};
 
     used_fis = find_fis(fum, fis)
     if fum_type == :color
-        fx_string = "function "*string(fum.name)*"_"*
-                    name*"(_clr, _p, tid, symbols)\n"
+        fx_string = "@inline function "*string(fum.name)*"_"*
+                    name*"(_clr, _p, tid, symbols, frame)\n"
     elseif fum_type == :shader
-        fx_string = "function "*string(fum.name)*"_"*name*
-                    "(_clr,y,x,tid,symbols)\n"
+        fx_string = "@inline function "*string(fum.name)*"_"*name*
+                    "(_clr, y ,x ,tid ,symbols, frame)\n"
     elseif fum_type == :hutchinson
-        fx_string = "function "*string(fum.name)*"_"*name*"(_p,tid,symbols)\n"
+        fx_string = "@inline function "*string(fum.name)*"_"*name*
+                    "(_p, tid, symbols, frame)\n"
     else
         error("FUM type "*string(fum_type)*" not available!")
     end

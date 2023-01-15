@@ -30,7 +30,7 @@ end
 
 function iterate!(ps::Points, layer::FractalLayer, H::Hutchinson, n,
                   bounds, bin_widths, H2::Union{Nothing, Hutchinson};
-                  diagnostic = false)
+                  frame = 0, diagnostic = false)
     if !isnothing(H2) && layer.params.solver_type == :semi_random
         fx = semi_random_chaos_kernel!
     elseif layer.params.solver_type == :random
@@ -60,14 +60,14 @@ function iterate!(ps::Points, layer::FractalLayer, H::Hutchinson, n,
     if isnothing(H2)
         kernel!(ps.positions, n, H.op, H.cop, H.prob_set, H.symbols, H.fnums,
                 layer.values, layer.reds, layer.greens,
-                layer.blues, layer.alphas, 
+                layer.blues, layer.alphas, frame, 
                 bounds, Tuple(bin_widths), layer.params.num_ignore, max_range,
                 ndrange=size(ps.positions)[1])
     else
         kernel!(ps.positions, n, H.op, H.cop, H.prob_set, H.symbols, H.fnums,
                 H2.op, H2.cop, H2.symbols, H2.prob_set, H2.fnums,
                 layer.values, layer.reds, layer.greens,
-                layer.blues, layer.alphas, 
+                layer.blues, layer.alphas, frame, 
                 bounds, Tuple(bin_widths), layer.params.num_ignore, max_range,
                 ndrange=size(ps.positions)[1])
     end
@@ -76,7 +76,7 @@ end
 @kernel function naive_chaos_kernel!(points, n, H1, H1_clrs, H1_probs,
                                      H1_symbols, H1_fnums,
                                      layer_values, layer_reds, layer_greens,
-                                     layer_blues, layer_alphas, bounds,
+                                     layer_blues, layer_alphas, frame, bounds,
                                      bin_widths, num_ignore, max_range)
 
     tid = @index(Global,Linear)
@@ -114,8 +114,8 @@ end
                 fid = 1
             end
 
-            H1(shared_tile, lid, H1_symbols, fid)
-            H1_clrs(shared_colors, shared_tile, lid, H1_symbols, fid)
+            H1(shared_tile, lid, H1_symbols, fid, frame)
+            H1_clrs(shared_colors, shared_tile, lid, H1_symbols, fid, frame)
 
             @inbounds on_img_flag = on_image(shared_tile[lid,1],
                                              shared_tile[lid,2],
@@ -153,8 +153,8 @@ end
                                            H1_symbols, H1_fnums, H2, H2_clrs,
                                            H2_symbols, H2_probs, H2_fnums,
                                            layer_values, layer_reds,
-                                           layer_greens,
-                                           layer_blues, layer_alphas, bounds,
+                                           layer_greens, layer_blues,
+                                           layer_alphas, frame, bounds,
                                            bin_widths, num_ignore, max_range)
 
     tid = @index(Global,Linear)
@@ -192,14 +192,15 @@ end
                 fid = 1
             end
 
-            H1(shared_tile, lid, H1_symbols, fid)
-            H1_clrs(shared_colors, shared_tile, lid, H1_symbols, fid)
+            H1(shared_tile, lid, H1_symbols, fid, frame)
+            H1_clrs(shared_colors, shared_tile, lid, H1_symbols, fid, frame)
 
             for j = 1:length(H2_fnums)
                 for fid_2 = 1:H2_fnums[j]
 
-                    H2(shared_tile, lid, H2_symbols, fid_2)
-                    H2_clrs(shared_colors, shared_tile, lid, H2_symbols, fid_2)
+                    H2(shared_tile, lid, H2_symbols, fid_2, frame)
+                    H2_clrs(shared_colors, shared_tile, lid,
+                            H2_symbols, fid_2, frame)
 
                     @inbounds on_img_flag = on_image(shared_tile[lid,3],
                                                      shared_tile[lid,4],
@@ -240,7 +241,7 @@ end
                                      H1_symbols, H1_fnums, H2, H2_clrs,
                                      H2_symbols, H2_probs, H2_fnums,
                                      layer_values, layer_reds, layer_greens,
-                                     layer_blues, layer_alphas, bounds,
+                                     layer_blues, layer_alphas, frame, bounds,
                                      bin_widths, num_ignore, max_range)
 
     tid = @index(Global,Linear)
@@ -279,8 +280,8 @@ end
                 fid = 1
             end
 
-            H1(shared_tile, lid, H1_symbols, fid)
-            H1_clrs(shared_colors, shared_tile, lid, H1_symbols, fid)
+            H1(shared_tile, lid, H1_symbols, fid, frame)
+            H1_clrs(shared_colors, shared_tile, lid, H1_symbols, fid, frame)
 
             if H2 != Fae.null
                 if length(H2_fnums) > 1 || H2_fnums[1] > 1
@@ -291,8 +292,8 @@ end
                 end
             end
 
-            H2(shared_tile, lid, H2_symbols, fid_2)
-            H2_clrs(shared_colors, shared_tile, lid, H2_symbols, fid_2)
+            H2(shared_tile, lid, H2_symbols, fid_2, frame)
+            H2_clrs(shared_colors, shared_tile, lid, H2_symbols, fid_2, frame)
 
             @inbounds on_img_flag = on_image(shared_tile[lid,3],
                                              shared_tile[lid,4],
@@ -327,7 +328,7 @@ end
 end
 
 
-function run!(layer::FractalLayer; diagnostic = false)
+function run!(layer::FractalLayer; diagnostic = false, frame = 0)
 
     res = size(layer.canvas)
     bounds = find_bounds(layer)
@@ -343,7 +344,8 @@ function run!(layer::FractalLayer; diagnostic = false)
     bounds = find_bounds(layer)
 
     wait(iterate!(pts, layer, layer.H1, layer.params.num_iterations,
-                  bounds, bin_widths, layer.H2; diagnostic = diagnostic))
+                  bounds, bin_widths, layer.H2; diagnostic = diagnostic,
+                  frame = frame))
 
     return layer
 

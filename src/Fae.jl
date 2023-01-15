@@ -15,6 +15,7 @@ end
 using MacroTools
 using DataStructures
 using LinearAlgebra
+using Unitful
 
 using Images
 using VideoIO
@@ -22,6 +23,9 @@ using VideoIO
 # Constants
 global OUTPUT = true
 set_output(tf) = (global OUTPUT = tf)
+
+# Interfaces
+include("structs/time.jl")
 
 # KA kernels
 include("math/histogram.jl")
