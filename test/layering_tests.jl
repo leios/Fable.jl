@@ -252,6 +252,8 @@ function layering_testsuite(ArrayType::Type{AT}) where AT <: AbstractArray
 
     @testset "Layering tests for $(string(ArrayType))s" begin
         layering_tests(ArrayType)
+    end
+    @testset "Rescaling tests for $(string(ArrayType))s" begin
         rescaling_tests(ArrayType)
     end
 

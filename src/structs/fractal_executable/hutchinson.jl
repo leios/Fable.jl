@@ -302,6 +302,10 @@ function update_fis!(H::Hutchinson)
     H.symbols = configure_fis!(H.fi_set)
 end
 
+function update_fis!(H::Hutchinson, fis::Vector{FractalInput})
+    H.symbols = configure_fis!(fis)
+end
+
 function update_colors!(H::Hutchinson, fx_id, h_id,
                         new_color::Union{RGB, RGBA, Vector{N}}) where N<:Number
 
