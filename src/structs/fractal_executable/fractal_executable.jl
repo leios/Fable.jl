@@ -39,7 +39,7 @@ function configure_colors(fums::Vector{FractalUserMethod},
     fx_string = ""
     if evaluate
         fx_string *= "@inline function color_"*name*"(_clr, _p, tid,"*
-                     " symbols, choice)\n"
+                     " symbols, choice, frame)\n"
         fx_string *= "x = _p[tid, 2] \n"
         fx_string *= "y = _p[tid, 1] \n"
         fx_string *= "red = _clr[tid, 1] \n"
@@ -99,7 +99,8 @@ function configure_colors(fums::Vector{FractalUserMethod},
                           fis::Vector, fnums::Vector;
                           name = "", diagnostic = false,
                           final = false, evaluate = true)
-    fx_string = "@inline function color_"*name*"(_clr, _p, tid, symbols, fid)\n"
+    fx_string = "@inline function color_"*name*
+                "(_clr, _p, tid, symbols, fid, frame)\n"
     fx_string *= "x = _p[tid, 2] \n"
     fx_string *= "y = _p[tid, 1] \n"
     fx_string *= "red = _clr[tid, 1] \n"

@@ -1,6 +1,6 @@
 export run!
 
-function run!(layer::ShaderLayer; diagnostic = false) 
+function run!(layer::ShaderLayer; diagnostic = false, frame = 0) 
 
     if layer.params.ArrayType <: Array
         kernel! = shader_kernel!(CPU(), layer.params.numcores)
@@ -13,10 +13,10 @@ function run!(layer::ShaderLayer; diagnostic = false)
     bounds = find_bounds(layer)
 
     wait(kernel!(layer.shader.symbols, layer.canvas, bounds,
-                 layer.shader.op, ndrange = size(layer.canvas)))
+                 layer.shader.op, frame, ndrange = size(layer.canvas)))
 end
 
-@kernel function shader_kernel!(symbols, canvas, bounds, op)
+@kernel function shader_kernel!(symbols, canvas, bounds, op, frame)
 
     i, j = @index(Global, NTuple)
     tid = @index(Global, Linear)
@@ -28,7 +28,7 @@ end
     @inbounds y = bounds.ymin + (i/res[1])*(bounds.ymax - bounds.ymin)
     @inbounds x = bounds.xmin + (j/res[2])*(bounds.xmax - bounds.xmin)
 
-    op(shared_colors, y, x, lid, symbols)
+    op(shared_colors, y, x, lid, symbols, frame)
 
     canvas[tid] = RGBA(shared_colors[lid, 1], shared_colors[lid, 2],
                        shared_colors[lid, 3], shared_colors[lid, 4])
