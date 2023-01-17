@@ -12,7 +12,7 @@ mutable struct Outline <: AbstractPostProcess
     initialized::Bool
 end
 
-function Outline(; linewidth = 2,
+function Outline(; linewidth = 1,
                    color = RGBA(1.0, 1.0, 1.0, 1.0),
                    intensity_function = simple_intensity,
                    object_outline = false,
