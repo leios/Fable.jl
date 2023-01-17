@@ -10,6 +10,7 @@ makedocs(
             "Rotating Square" => "examples/swirled_square.md",
             "Simple Smears" => "examples/smear.md",
         ],
+        "Post Processing" => "postprocessing.md",
         "Research Directions" => "research_directions.md",
     ],
 )

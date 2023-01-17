@@ -1,5 +1,15 @@
 using Fae, Images
 
+function quick_circle(num_particles, num_iterations; ArrayType = Array,
+                      filename = "out.png")
+    circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
+
+    fl = FractalLayer(; H1 = circle, ArrayType = ArrayType)
+
+    run!(fl)
+    write_image(fl; filename = filename)
+end
+
 function clip_example(num_particles, num_iterations; ArrayType = Array,
                       filename = "clip_out.png")
 

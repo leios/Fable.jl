@@ -36,3 +36,4 @@ docs/build/
 
 LocalPreferences.toml
 *.bak
+*.xcf

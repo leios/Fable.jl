@@ -81,11 +81,7 @@ end
 @kernel function ridge_kernel!(canvas, intensity_function, threshold, c)
     tid = @index(Global, Linear)
     if intensity_function(canvas[tid]) > threshold
-        # Note, needs improvement:
-        # because we have the sobel filtered image and the new alpha should
-        # be related to the *change* in each quantity, we just take the max...
-        new_alpha = max(c.r, c.g, c.b, c.alpha)
-        canvas[tid] = RGBA(c.r, c.g, c.b, c.alpha*new_alpha)
+        canvas[tid] = RGBA(c.r, c.g, c.b, c.alpha)
     else
         canvas[tid] = RGBA(0,0,0,0)
     end

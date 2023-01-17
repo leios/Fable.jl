@@ -7,8 +7,8 @@ mutable struct Filter <: AbstractPostProcess
     initialized::Bool
 end
 
-function Filter(op, filter)
-    return Filter(op, filter, nothing, false)
+function Filter(filter; ArrayType = Array)
+    return Filter(filter!, ArrayType(filter), nothing, false)
 end
 
 function initialize!(filter::Filter, layer::AL) where AL <: AbstractLayer
