@@ -6,12 +6,14 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "General Information" => "general_info.md",
+        "Layering" => "layering.md",
+        "Time Interface" => "time_interface.md",
+        "Post Processing" => "postprocessing.md",
+        "Research Directions" => "research_directions.md",
         "Examples" => Any[
             "Rotating Square" => "examples/swirled_square.md",
             "Simple Smears" => "examples/smear.md",
         ],
-        "Post Processing" => "postprocessing.md",
-        "Research Directions" => "research_directions.md",
     ],
 )
 
