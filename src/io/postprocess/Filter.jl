@@ -65,10 +65,6 @@ function Gaussian(; filter_size = 3, ArrayType = Array, sigma = 1.0)
     return Filter(filter!, ArrayType(filter), nothing, false)
 end
 
-function Filter(filter)
-    return Filter(filter!, filter, nothing, false)
-end
-
 function filter!(layer::AL, filter_params::Filter) where AL <: AbstractLayer
     filter!(layer.canvas, layer, filter_params)
 end

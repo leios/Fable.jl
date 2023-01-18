@@ -177,7 +177,7 @@ function blur_example(num_particles, num_iterations; ArrayType = Array,
 end
 ```
 
-This will produce the following image:
+This will produce the following image when using a $$100\times 100$$ filter:
 
 ![A blurred circle](res/postprocessing_blur.png)
 

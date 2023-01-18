@@ -1,27 +1,24 @@
 # General Information
 
-The current Fae.jl API is designed such that the user can write down any set of equations to be dispatched onto either their GPU or CPU depending on available hardware.
-Note that the API is still unstable and subject to change, but there are several general guiding principles we follow that should not be changing in the near future.
-There are (of course) a few caveats:
+The current Fae.jl API is still in active development, but for those wanting to learn about how to use it, there are several [examples available to learn from](https://github.com/leios/Fae.jl/tree/main/examples).
+Though Fae.jl focuses on creating general-purpose animations with *fractals*, other rendering modes are either supported or planned to be implemented in the future.
+For now, the only available rendering modes are:
+* **Hutchinson operators:** These are used to describe Iterated Function Systems and are the primary focus of Fae.jl
+* **Colors:** This mode is somewhat trivial and will just create a layer of a specified color
+* **Shaders:** This mode leverages the framework used to describe IFSs to color an image with some user-provided equation.
 
-#### Restricted IFSs are not supported
+We would like to support rendering via raytracing, raymarching, and rasterization in the future for those who wish to use such features.
+If you would like to learn how to use any of the existing rendering modes, please look at [the layering section of our documentation](layering.md).
 
-The goal of Fae.jl is to allow any user to express whatever IFS they want to solve and then dispatch those equations to the GPU / CPU for solving.
-There is one caveat here in that we currently do not have a way to express restricted chaos games or restricted IFSs.
-That is to say we do not have a way to syntactically express equation dependencies.
-For example, we cannot allow one function will act differently depending on the last function chosen.
+## What are Iterated Function Systems?
 
-#### Limited AMD GPU support
-
-In principle, Fae can somewhat easily support AMD GPUs.
-It should be as simple as providing support for ROCMArrays like we do for CuArrays, but I have not been able to test this.
-
-Ok, with that out of the way, let's talk about the general structure of Fae.jl
+We plan to put more information in the docs, but there is a great article already describing them in the [Algorithm Archive](https://www.algorithm-archive.org/contents/IFS/IFS.html).
+For now, please go there for more information
 
 ## General Fae.jl workflow
 
-Fae.jl is generally structured around building a Fractal Executable, called either a `Hutchinson` operator or (more simply) `fee`.
-In general, this is a function system, so for a Sierpinski Triangle, your fee will be something like
+Fae.jl is generally structured around building a Fractal Executable (`fee`).
+In the case you want to use the fractal rendering mode, this `fee` will be a function system, so for a Sierpinski Triangle, it would look like this:
 
 ```math
 \begin{aligned}
@@ -44,4 +41,4 @@ Well...
 * Fo, the fractal operator is the function you are using in your executable, complete with probability and color or shader information
 * Fum, the fractal user method is how users actually create colors and fractal operators.
 
-It's a bit confusing because we had to really rework a lot of the symbolic utilities in Julia so we could do the computation on the GPU.
+I am intending to write more docs here, but check out the examples for more information on specifically how to use these.
