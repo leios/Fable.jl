@@ -55,18 +55,18 @@ include("objects/lollipeople.jl")
 # IO
 include("structs/layers/layers.jl")
 include("io/postprocess/postprocess.jl")
-include("structs/layers/FractalLayer.jl")
-include("structs/layers/ColorLayer.jl")
-include("structs/layers/ImageLayer.jl")
-include("structs/layers/ShaderLayer.jl")
-include("structs/VideoParams.jl")
+include("structs/layers/fractal_layer.jl")
+include("structs/layers/color_layer.jl")
+include("structs/layers/image_layer.jl")
+include("structs/layers/shader_layer.jl")
+include("structs/video_params.jl")
 include("io/io_tools.jl")
 
 # PostProcessing
-include("io/postprocess/Clip.jl")
-include("io/postprocess/Filter.jl")
-include("io/postprocess/Sobel.jl")
-include("io/postprocess/Outline.jl")
+include("io/postprocess/clip.jl")
+include("io/postprocess/filter.jl")
+include("io/postprocess/sobel.jl")
+include("io/postprocess/outline.jl")
 
 # Main file
 include("run/run.jl")
