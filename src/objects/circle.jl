@@ -72,9 +72,9 @@ function define_circle(; position = [0.0, 0.0],
 end
 
 # This specifically returns the fums for a circle
-function define_circle_operators(pos::Union{Vector{FT}, Tuple}, radius;
+function define_circle_operators(pos::Union{Vector, Tuple}, radius;
                                  chosen_fx = :constant_disk,
-                                 name = "circle") where FT <: AbstractFloat
+                                 name = "circle")
 
     f_0 = fi("f_0_"*name, 0)
     f_1 = fi("f_1_"*name, 1)
@@ -97,9 +97,8 @@ function update_circle!(H, pos, radius)
     update_circle!(H, pos, radius, nothing)
 end
 
-function update_circle!(H::Hutchinson, pos::Vector{FT}, radius,
-                        color::Union{Array{FT}, Nothing}) where FT <: AbstractFloat
-
+function update_circle!(H::Hutchinson, pos::Union{Vector, Tuple}, radius,
+                        color::Union{Array, Tuple, Nothing})
     
     H.fi_set[3] = FractalInput(H.fi_set[3].index, H.fi_set[3].name, Tuple(pos))
     H.fi_set[4] = FractalInput(H.fi_set[4].index, H.fi_set[4].name, radius)

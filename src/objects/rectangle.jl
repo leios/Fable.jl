@@ -1,12 +1,12 @@
 export define_rectangle, update_rectangle!, define_square, update_square!
 # Returns back H, colors, and probs for a square
-function define_rectangle(; position = zeros(FT, 2),
+function define_rectangle(; position = zeros(2),
                             rotation = 0.0,
                             scale_x = 1.0,
                             scale_y = 1.0,
                             color = Shaders.grey,
                             name = "rectangle",
-                            diagnostic = false) where FT <: AbstractFloat
+                            diagnostic = false)
 
     fums, fis = define_rectangle_operators(position, rotation, scale_x, scale_y;
                                            name = name)
@@ -23,12 +23,12 @@ function define_rectangle(; position = zeros(FT, 2),
 end
 
 # Returns back H, colors, and probs for a square
-function define_square(; position = zeros(FT, 2),
-                         rotation::FT = 0.0,
-                         scale::FT = 1.0,
+function define_square(; position = zeros(2),
+                         rotation = 0.0,
+                         scale = 1.0,
                          color = Shaders.grey,
                          name = "square",
-                         diagnostic = false) where FT <: AbstractFloat
+                         diagnostic = false)
 
     return define_rectangle(; position = position, rotation = rotation,
                               scale_x = scale, scale_y = scale, color = color,
@@ -36,9 +36,9 @@ function define_square(; position = zeros(FT, 2),
 end
 
 # This specifically returns the fums for a square
-function define_rectangle_operators(pos::Vector{FT}, rotation::FT,
-                                    scale_x, scale_y;
-                                    name="rectangle") where FT <: AbstractFloat
+function define_rectangle_operators(pos::Union{Vector, Tuple},
+                                    rotation, scale_x, scale_y;
+                                    name="rectangle")
 
 
     scale_x *= 0.5
@@ -76,15 +76,14 @@ function update_square!(H, pos, rotation, scale; fnum = 4)
     update_rectangle!(H, pos, rotation, scale, scale, nothing; fnum = fnum)
 end
 
-function update_square!(H::Hutchinson, pos::Vector{FT}, rotation::FT,
-                        scale, color::Union{Array{FT}, Nothing};
-                        fnum = 4) where FT <: AbstractFloat
+function update_square!(H::Hutchinson, pos::Union{Vector, Tuple}, rotation,
+                        scale, color::Union{Array, Tuple, Nothing}; fnum = 4)
     update_rectangle!(H, pos, rotation, scale, scale, color; fnum = fnum)
 end
 
-function update_rectangle!(H::Hutchinson, pos::Vector{FT}, rotation::FT,
-                           scale_x, scale_y, color::Union{Array{FT}, Nothing};
-                           fnum = 4) where FT <: AbstractFloat
+function update_rectangle!(H::Hutchinson, pos::Union{Vector, Tuple}, rotation,
+                           scale_x, scale_y,
+                           color::Union{Array, Tuple, Nothing}; fnum = 4)
 
     p1_x = scale_x*cos(rotation) - scale_y*sin(rotation) + pos[1]
     p1_y = scale_x*sin(rotation) + scale_y*cos(rotation) + pos[2]

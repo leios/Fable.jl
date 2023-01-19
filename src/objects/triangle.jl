@@ -38,9 +38,9 @@ function define_triangle(; A = [sqrt(3)/4, -0.5],
 end
 
 # This specifically returns the fums for a triangle triangle
-function define_triangle_operators(A::Vector{FT}, B::Vector{FT},
-                                   C::Vector{FT}; chosen_fx = :fill,
-                                   name="triangle") where FT <: AbstractFloat
+function define_triangle_operators(A::PT, B::PT, C::PT; chosen_fx = :fill,
+                                   name="triangle") where PT <: Union{Vector,
+                                                                      Tuple}
 
     if chosen_fx != :sierpinski && chosen_fx != :fill
         error("Cannot create triangle with ", string(chosen_fx), " function!")
@@ -62,15 +62,15 @@ function define_triangle_operators(A::Vector{FT}, B::Vector{FT},
     end
 end
 
-function update_triangle!(H::Hutchinson, A::Vector{FT}, B::Vector{FT},
-                          C::Vector{FT}) where FT <: AbstractFloat
+function update_triangle!(H::Hutchinson,
+                          A::PT, B::PT, C::PT) where PT <: Union{Vector, Tuple}
 
     update_triangle!(H, A, B, C, nothing)
 end
 
-function update_triangle!(H::Hutchinson, A::Vector{FT}, B::Vector{FT},
-                          C::Vector{FT},
-                          color::Union{Array{FT}, Nothing}) where FT <: AbstractFloat
+function update_triangle!(H::Hutchinson, A::PT, B::PT, C::PT,
+                          color::Union{Array, Tuple, Nothing}
+                         ) where PT <: Union{Vector, Tuple}
 
     f_A = fi("A",A)
     f_B = fi("B",B)

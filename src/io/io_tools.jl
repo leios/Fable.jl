@@ -1,11 +1,18 @@
-export write_image, write_video!, zero!, reset!, create_canvas
+export write_image, write_video!, zero!, reset!, create_canvas, mix_layers!
 
 function mix_layers!(layer_1::AL1, layer_2::AL2;
                      mode = :simple) where {AL1 <: AbstractLayer,
                                             AL2 <: AbstractLayer}
+    if AL1 <: FractalLayer
+        to_canvas!(layer_1)
+    end
+
+    if AL2 <: FractalLayer
+        to_canvas!(layer_2)
+    end
 
     overlap = find_overlap(layer_1, layer_2)
-    mix_layers!(layer_1, layer_2, overlap)
+    wait(mix_layers!(layer_1, layer_2, overlap))
 end
 
 function mix_layers!(layer_1::AL1, layer_2::AL2, overlap::Overlap; op = +,
@@ -171,7 +178,7 @@ function write_image(layers::Vector{AL};
     postprocess!(layers[1])
     for i = 2:length(layers)
         postprocess!(layers[i])
-        wait(mix_layers!(layers[1], layers[i]; mode = :simple))
+        mix_layers!(layers[1], layers[i]; mode = :simple)
     end
 
     img .= Array(layers[1].canvas)
@@ -194,7 +201,7 @@ function write_video!(v::VideoParams,
     postprocess!(layers[1])
     for i = 2:length(layers)
         post_process!(layers[i])
-        wait(mix_layers!(layers[1], layers[i]; mode = :simple))
+        mix_layers!(layers[1], layers[i]; mode = :simple)
     end
 
     v.frame .= Array(layers[1].canvas)
@@ -216,7 +223,7 @@ function write_video!(n::Nothing, layers::Vector{AL};
     postprocess!(layers[1])
     for i = 2:length(layers)
         post_process!(layers[i])
-        wait(mix_layers!(layers[1], layers[i]; mode = :simple))
+        mix_layers!(layers[1], layers[i]; mode = :simple)
     end
 
     if reset
