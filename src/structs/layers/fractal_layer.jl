@@ -147,6 +147,10 @@ function norm_component(color, value)
 end
 
 function to_canvas!(layer::FractalLayer, canvas_params::CopyToCanvas)
+    to_canvas!(layer)
+end
+
+function to_canvas!(layer::FractalLayer)
 
     f = FL_canvas_kernel!
     if layer.params.logscale

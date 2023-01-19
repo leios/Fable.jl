@@ -94,6 +94,45 @@ function layering_tests(ArrayType::Type{AT}) where AT <: AbstractArray
 
 end
 
+function layer_mixing_tests(ArrayType::Type{AT}) where AT <: AbstractArray
+    clayer = ColorLayer(RGB(0.5, 0.5, 0.5); world_size = (1, 2), ppu = 1)
+
+    clayer_2 = ColorLayer(RGB(0, 0, 0); world_size = (1, 1), ppu = 1,
+                          position = (0, -0.5))
+    clayer_3 = ColorLayer(RGB(1, 1, 1); world_size = (1, 1), ppu = 1,
+                          position = (0, 0.5))
+
+    mix_layers!(clayer, clayer_2)
+    mix_layers!(clayer, clayer_3)
+    img = write_image(clayer)
+    @test img[1] == RGBA(0,0,0,1)
+    @test img[2] == RGBA(1,1,1,1)
+
+    clayer = ColorLayer(RGB(0.5, 0.5, 0.5); world_size = (1, 2), ppu = 1)
+    square_1 = define_square(; color = Shaders.black,
+                               position = (-0.5, 0), scale = 1,
+                               name = "square_1")
+    square_2 = define_square(; color = Shaders.white,
+                               position = (0.5, 0), scale = 1,
+                               name = "square_2")
+
+    flayer_1 = FractalLayer(; H1 = square_1, world_size = (1, 2), ppu = 1,
+                            num_particles = 10, num_iterations = 1000)
+    flayer_2 = FractalLayer(; H1 = square_2, world_size = (1, 2), ppu = 1,
+                            num_particles = 10, num_iterations = 1000)
+
+    run!(flayer_1)
+    run!(flayer_2)
+
+    mix_layers!(clayer, flayer_1)
+    mix_layers!(clayer, flayer_2)
+
+    img = write_image(clayer)
+
+    @test img[1] == RGBA(0,0,0,1)
+    @test img[2] == RGBA(1,1,1,1)
+end
+
 # TODO: Figure out appropriate indices for this test
 function overlap_tests()
 
@@ -252,6 +291,7 @@ function layering_testsuite(ArrayType::Type{AT}) where AT <: AbstractArray
 
     @testset "Layering tests for $(string(ArrayType))s" begin
         layering_tests(ArrayType)
+        layer_mixing_tests(ArrayType)
     end
     @testset "Rescaling tests for $(string(ArrayType))s" begin
         rescaling_tests(ArrayType)

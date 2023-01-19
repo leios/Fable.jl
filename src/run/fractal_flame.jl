@@ -16,12 +16,12 @@ export run!
 # couldn't figure out how to get an n-dim version working for GPU
 @inline function on_image(p_y, p_x, bounds, dims)
     flag = true
-    if p_y < bounds.ymin || p_y > bounds.ymax ||
+    if p_y <= bounds.ymin || p_y > bounds.ymax ||
        p_y == NaN || p_y == Inf
         flag = false
     end
 
-    if p_x < bounds.xmin || p_x > bounds.xmax ||
+    if p_x <= bounds.xmin || p_x > bounds.xmax ||
        p_x == NaN || p_x == Inf
         flag = false
     end
@@ -127,7 +127,7 @@ end
                 @inbounds bin = find_bin(layer_values, shared_tile[lid,1],
                                          shared_tile[lid,2], bounds,
                                          bin_widths)
-                if bin > 0 && bin < length(layer_values)
+                if bin > 0 && bin <= length(layer_values)
 
                     @inbounds @atomic layer_values[bin] += 1
                     @inbounds @atomic layer_reds[bin] +=
@@ -213,7 +213,7 @@ end
                                                  shared_tile[lid,3],
                                                  shared_tile[lid,4], bounds,
                                                  bin_widths)
-                        if bin > 0 && bin < length(layer_values)
+                        if bin > 0 && bin <= length(layer_values)
     
                             @inbounds @atomic layer_values[bin] += 1
                             @inbounds @atomic layer_reds[bin] +=
@@ -305,7 +305,7 @@ end
                 @inbounds bin = find_bin(layer_values, shared_tile[lid,3],
                                          shared_tile[lid,4], bounds,
                                          bin_widths)
-                if bin > 0 && bin < length(layer_values)
+                if bin > 0 && bin <= length(layer_values)
 
                     @inbounds @atomic layer_values[bin] += 1
                     @inbounds @atomic layer_reds[bin] +=
