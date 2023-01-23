@@ -27,6 +27,9 @@ set_output(tf) = (global OUTPUT = tf)
 # Interfaces
 include("structs/time.jl")
 
+# Geometries
+include("math/geometries.jl")
+
 # KA kernels
 include("math/histogram.jl")
 
