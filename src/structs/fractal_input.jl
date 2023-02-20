@@ -1,4 +1,4 @@
-export FractalInput, fi, configure_fis!, add, set
+export FractalInput, fi, configure_fis!, add, set, value
 
 # Fractal inputs are essentially wrappers for the symbols tuple
 # I would like to use have these outward-facing so users can update the tuple
@@ -9,6 +9,18 @@ struct FractalInput
 end
 
 FractalInput() = FractalInput(0,"",0)
+
+function value(a::Any)
+    return a
+end
+
+function value(a::Array)
+    return Tuple(a)
+end
+
+function value(a::FractalInput)
+    return a.val
+end
 
 function set(fi::FractalInput, val)
     return FractalInput(fi.index, fi.name, val)

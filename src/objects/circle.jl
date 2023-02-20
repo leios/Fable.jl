@@ -1,14 +1,11 @@
 export define_circle, update_circle!
 
-# TODO:
-#     1. Use Box--Muller so we don't need polar input
-#     2. Add constant density disk
 # Code examples modified from: https://www.math.uwaterloo.ca/~wgilbert/FractalGallery/IFS/IFS.html
 
-naive_disk = Fae.@fum function naive_disk(x, y; radius = 1, pos = (0,0),
-                                         function_index = 0)
-    x_temp = (x-pos[2])/radius
-    y_temp = (y-pos[1])/radius
+naive_disk = Fae.@fum function naive_disk(x, y; radius = 1, position = (0,0),
+                                          function_index = 0)
+    x_temp = (x-position[2])/radius
+    y_temp = (y-position[1])/radius
     r = sqrt(x_temp*x_temp + y_temp*y_temp)
 
     theta = pi
@@ -22,15 +19,16 @@ naive_disk = Fae.@fum function naive_disk(x, y; radius = 1, pos = (0,0),
     theta2 = (r+function_index)*pi
     r2 = theta/(2*pi)
 
-    x = radius*r2*cos(theta2)+pos[2]
-    y = radius*r2*sin(theta2)+pos[1]
+    x = radius*r2*cos(theta2)+position[2]
+    y = radius*r2*sin(theta2)+position[1]
 end
 
-constant_disk = Fae.@fum function constant_disk(x, y; radius = 1, pos = (0,0),
+constant_disk = Fae.@fum function constant_disk(x, y; radius = 1,
+                                                position = (0,0),
                                                 function_index = 0)
 
-    x_temp = (x-pos[2])/radius
-    y_temp = (y-pos[1])/radius
+    x_temp = (x-position[2])/radius
+    y_temp = (y-position[1])/radius
     r = x_temp*x_temp + y_temp*y_temp
 
     theta = pi
@@ -44,14 +42,14 @@ constant_disk = Fae.@fum function constant_disk(x, y; radius = 1, pos = (0,0),
     theta2 = (r+function_index)*pi
     r2 = sqrt(theta/(2*pi))
 
-    x = radius*r2*cos(theta2)+pos[2]
-    y = radius*r2*sin(theta2)+pos[1]
+    x = radius*r2*cos(theta2)+position[2]
+    y = radius*r2*sin(theta2)+position[1]
 
 end
 
 # Returns back H, colors, and probs for a circle
-function define_circle(; position = [0.0, 0.0],
-                         radius = 1.0,
+function define_circle(; position::Union{Tuple, Vector, FractalInput} = (0, 0),
+                         radius::Union{Number, FractalInput} = 1.0,
                          color = Shaders.gray,
                          name = "circle",
                          chosen_fx = :constant_disk,
@@ -72,36 +70,60 @@ function define_circle(; position = [0.0, 0.0],
 end
 
 # This specifically returns the fums for a circle
-function define_circle_operators(pos::Union{Vector, Tuple}, radius;
+function define_circle_operators(position::Union{Vector, Tuple, FractalInput},
+                                 radius::Union{Number, FractalInput};
                                  chosen_fx = :constant_disk,
                                  name = "circle")
 
     f_0 = fi("f_0_"*name, 0)
     f_1 = fi("f_1_"*name, 1)
-    pos = fi("pos_"*name, Tuple(pos))
-    radius = fi("radius_"*name, radius)
+    if !isa(position, FractalInput)
+        position = fi("position_"*name, Tuple(position))
+    end
+    if !isa(radius, FractalInput)
+        radius = fi("radius_"*name, radius)
+    end
     if chosen_fx == :naive_disk
-        d_0 = naive_disk(function_index = f_0, pos = pos, radius = radius)
-        d_1 = naive_disk(function_index = f_1, pos = pos, radius = radius)
+        d_0 = naive_disk(function_index = f_0, position = position, radius = radius)
+        d_1 = naive_disk(function_index = f_1, position = position, radius = radius)
     elseif chosen_fx == :constant_disk
-        d_0 = constant_disk(function_index = f_0, pos = pos, radius = radius)
-        d_1 = constant_disk(function_index = f_1, pos = pos, radius = radius)
+        d_0 = constant_disk(function_index = f_0, position = position, radius = radius)
+        d_1 = constant_disk(function_index = f_1, position = position, radius = radius)
     else
         error("function not found for circle IFS!")
     end
-    return [d_0, d_1], [f_0, f_1, pos, radius]
+    return [d_0, d_1], [f_0, f_1, position, radius]
 
 end
 
-function update_circle!(H, pos, radius)
-    update_circle!(H, pos, radius, nothing)
+function update_circle!(H, position, radius)
+    update_circle!(H, position, radius, nothing)
 end
 
-function update_circle!(H::Hutchinson, pos::Union{Vector, Tuple}, radius,
-                        color::Union{Array, Tuple, Nothing})
+function update_circle!(H::Hutchinson;
+                        position::Union{Vector, Tuple,
+                                        FractalInput, Nothing} = nothing,
+                        radius::Union{Number, FractalInput, Nothing} = nothing,
+                        color::Union{Array, Tuple, Nothing} = nothing)
     
-    H.fi_set[3] = FractalInput(H.fi_set[3].index, H.fi_set[3].name, Tuple(pos))
-    H.fi_set[4] = FractalInput(H.fi_set[4].index, H.fi_set[4].name, radius)
+    if position != nothing
+        if isa(position, FractalInput)
+            H.fi_set[3] = position
+        else
+            H.fi_set[3] = FractalInput(H.fi_set[3].index,
+                                       H.fi_set[3].name,
+                                       Tuple(position))
+        end
+    end
+    if radius != nothing
+        if isa(radius, FractalInput)
+            H.fi_set[4] = radius
+        else
+            H.fi_set[4] = FractalInput(H.fi_set[4].index,
+                                       H.fi_set[4].name,
+                                       value(radius))
+        end
+    end
     
     H.symbols = configure_fis!(H.fi_set)
     if color != nothing
