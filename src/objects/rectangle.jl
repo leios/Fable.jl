@@ -1,9 +1,39 @@
 export define_rectangle, update_rectangle!, define_square, update_square!
 # Returns back H, colors, and probs for a square
-function define_rectangle(; position = zeros(2),
-                            rotation = 0.0,
-                            scale_x = 1.0,
-                            scale_y = 1.0,
+
+rectangle_fum = @fum function rectangle_fum(x, y;
+                                            vertex = 1,
+                                            rotation = 0,
+                                            position = (0,0),
+                                            scale_x = 1,
+                                            scale_y = 1)
+
+    scale_x *= 0.5
+    scale_y *= 0.5
+
+    if vertex == 1
+        p_x = scale_x*cos(rotation) - scale_y*sin(rotation) + position[2]
+        p_y = scale_x*sin(rotation) + scale_y*cos(rotation) + position[1]
+    elseif vertex == 2
+        p_x = scale_x*cos(rotation) + scale_y*sin(rotation) + position[2]
+        p_y = scale_x*sin(rotation) - scale_y*cos(rotation) + position[1]
+    elseif vertex == 3
+        p_x = - scale_x*cos(rotation) + scale_y*sin(rotation) + position[2]
+        p_y = - scale_x*sin(rotation) - scale_y*cos(rotation) + position[1]
+    elseif vertex == 4
+        p_x = - scale_x*cos(rotation) - scale_y*sin(rotation) + position[2]
+        p_y = - scale_x*sin(rotation) + scale_y*cos(rotation) + position[1]
+    else
+        error("vertex "*string(vertex)*" not available for rectangles!")
+    end
+
+    x = 0.5*(p_x + x)
+    y = 0.5*(p_y + y)
+end
+function define_rectangle(; position::Union{Vector, Tuple, FractalInput}=(0,0),
+                            rotation::Union{Number, FractalInput} = 0.0,
+                            scale_x::Union{Number, FractalInput} = 1.0,
+                            scale_y::Union{Number, FractalInput} = 1.0,
                             color = Shaders.grey,
                             name = "rectangle",
                             diagnostic = false)
@@ -23,9 +53,9 @@ function define_rectangle(; position = zeros(2),
 end
 
 # Returns back H, colors, and probs for a square
-function define_square(; position = zeros(2),
-                         rotation = 0.0,
-                         scale = 1.0,
+function define_square(; position::Union{Vector, Tuple, FractalInput}=(0,0),
+                         rotation::Union{Number, FractalInput} = 0.0,
+                         scale::Union{Number, FractalInput} = 1.0,
                          color = Shaders.grey,
                          name = "square",
                          diagnostic = false)
@@ -36,72 +66,91 @@ function define_square(; position = zeros(2),
 end
 
 # This specifically returns the fums for a square
-function define_rectangle_operators(pos::Union{Vector, Tuple},
-                                    rotation, scale_x, scale_y;
+function define_rectangle_operators(position::Union{Vector,Tuple,FractalInput},
+                                    rotation::Union{Number, FractalInput},
+                                    scale_x::Union{Number, FractalInput},
+                                    scale_y::Union{Number, FractalInput};
                                     name="rectangle")
 
 
-    scale_x *= 0.5
-    scale_y *= 0.5
+    square_1 = rectangle_fum(position = position, rotation = rotation,
+                             scale_x = scale_x, scale_y = scale_y, vertex = 1)
+    square_2 = rectangle_fum(position = position, rotation = rotation,
+                             scale_x = scale_x, scale_y = scale_y, vertex = 2)
+    square_3 = rectangle_fum(position = position, rotation = rotation,
+                             scale_x = scale_x, scale_y = scale_y, vertex = 3)
+    square_4 = rectangle_fum(position = position, rotation = rotation,
+                             scale_x = scale_x, scale_y = scale_y, vertex = 4)
 
-    p1_x = scale_x*cos(rotation) - scale_y*sin(rotation) + pos[2]
-    p1_y = scale_x*sin(rotation) + scale_y*cos(rotation) + pos[1]
-    p1 = fi("p1_"*name, (p1_x, p1_y))
-
-    p2_x = scale_x*cos(rotation) + scale_y*sin(rotation) + pos[2]
-    p2_y = scale_x*sin(rotation) - scale_y*cos(rotation) + pos[1]
-    p2 = fi("p2_"*name, (p2_x, p2_y))
-
-    p3_x = - scale_x*cos(rotation) + scale_y*sin(rotation) + pos[2]
-    p3_y = - scale_x*sin(rotation) - scale_y*cos(rotation) + pos[1]
-    p3 = fi("p3_"*name, (p3_x, p3_y))
-
-    p4_x = - scale_x*cos(rotation) - scale_y*sin(rotation) + pos[2]
-    p4_y = - scale_x*sin(rotation) + scale_y*cos(rotation) + pos[1]
-    p4 = fi("p4_"*name, (p4_x, p4_y))
-
-    square_1 = Flames.halfway(loc = p1)
-    square_2 = Flames.halfway(loc = p2)
-    square_3 = Flames.halfway(loc = p3)
-    square_4 = Flames.halfway(loc = p4)
-
-    return [square_1, square_2, square_3, square_4], [p1, p2, p3, p4]
+    return [square_1, square_2, square_3, square_4],
+           [position, rotation, scale_x, scale_y]
 end
 
-function update_rectangle!(H, pos, rotation, scale_x, scale_y; fnum = 4)
-    update_rectangle!(H, pos, rotation, scale_x, scale_y, nothing; fnum = fnum)
+function update_rectangle!(H, position, rotation, scale_x, scale_y; fnum = 4)
+    update_rectangle!(H, position, rotation, scale_x, scale_y, nothing; fnum = fnum)
 end
 
-function update_square!(H, pos, rotation, scale; fnum = 4)
-    update_rectangle!(H, pos, rotation, scale, scale, nothing; fnum = fnum)
+function update_square!(H, position, rotation, scale; fnum = 4)
+    update_rectangle!(H, position, rotation, scale, scale, nothing; fnum = fnum)
 end
 
-function update_square!(H::Hutchinson, pos::Union{Vector, Tuple}, rotation,
+function update_square!(H::Hutchinson, position::Union{Vector, Tuple}, rotation,
                         scale, color::Union{Array, Tuple, Nothing}; fnum = 4)
-    update_rectangle!(H, pos, rotation, scale, scale, color; fnum = fnum)
+    update_rectangle!(H, position, rotation, scale, scale, color; fnum = fnum)
 end
 
-function update_rectangle!(H::Hutchinson, pos::Union{Vector, Tuple}, rotation,
-                           scale_x, scale_y,
+function update_rectangle!(H::Hutchinson;
+                           position::Union{Vector, Tuple,
+                                           FractalInput, Nothing}=nothing,
+                           rotation::Union{Number, FractalInput,
+                                           Nothing}=nothing,
+                           scale_x::Union{Number, FractalInput,
+                                           Nothing}=nothing,
+                           scale_y::Union{Number, FractalInput,
+                                           Nothing}=nothing,
                            color::Union{Array, Tuple, Nothing}; fnum = 4)
 
-    p1_x = scale_x*cos(rotation) - scale_y*sin(rotation) + pos[1]
-    p1_y = scale_x*sin(rotation) + scale_y*cos(rotation) + pos[2]
-    p1 = fi("p1", (p1_x, p1_y))
+    if position != nothing
+        if isa(position, FractalInput)
+            H.fi_set[1] = position
+        else
+            H.fi_set[1] = FractalInput(H.fi_set[3].index,
+                                       H.fi_set[3].name,
+                                       Tuple(position))
+        end
+    end
 
-    p2_x = scale_x*cos(rotation) + scale_y*sin(rotation) + pos[1]
-    p2_y = scale_x*sin(rotation) - scale_y*cos(rotation) + pos[2]
-    p2 = fi("p2", (p2_x, p2_y))
+    if rotation != nothing
+        if isa(rotation, FractalInput)
+            H.fi_set[2] = rotation
+        else
+            H.fi_set[2] = FractalInput(H.fi_set[4].index,
+                                       H.fi_set[4].name,
+                                       value(rotation))
+        end
+    end
 
-    p3_x = - scale_x*cos(rotation) + scale_y*sin(rotation) + pos[1]
-    p3_y = - scale_x*sin(rotation) - scale_y*cos(rotation) + pos[2]
-    p3 = fi("p3", (p3_x, p3_y))
+    if scale_x != nothing
+        if isa(scale_x, FractalInput)
+            H.fi_set[2] = scale_x
+        else
+            H.fi_set[2] = FractalInput(H.fi_set[4].index,
+                                       H.fi_set[4].name,
+                                       value(scale_x))
+        end
+    end
 
-    p4_x = - scale_x*cos(rotation) - scale_y*sin(rotation) + pos[1]
-    p4_y = - scale_x*sin(rotation) + scale_y*cos(rotation) + pos[2]
-    p4 = fi("p4", (p4_x, p4_y))
+    if scale_y != nothing
+        if isa(scale_y, FractalInput)
+            H.fi_set[2] = scale_y
+        else
+            H.fi_set[2] = FractalInput(H.fi_set[4].index,
+                                       H.fi_set[4].name,
+                                       value(scale_y))
+        end
+    end
 
-    H.symbols = configure_fis!([p1, p2, p3, p4])
+    H.symbols = configure_fis!(H.fi_set)
     if color != nothing
         H.color_set = new_color_array([color for i = 1:4], fnum)
     end
