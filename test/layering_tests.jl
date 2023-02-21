@@ -110,10 +110,10 @@ function layer_mixing_tests(ArrayType::Type{AT}) where AT <: AbstractArray
 
     clayer = ColorLayer(RGB(0.5, 0.5, 0.5); world_size = (1, 2), ppu = 1)
     square_1 = define_square(; color = Shaders.black,
-                               position = (-0.5, 0), scale = 1,
+                               position = (0, -0.5), scale = 1,
                                name = "square_1")
     square_2 = define_square(; color = Shaders.white,
-                               position = (0.5, 0), scale = 1,
+                               position = (0, 0.5), scale = 1,
                                name = "square_2")
 
     flayer_1 = FractalLayer(; H1 = square_1, world_size = (1, 2), ppu = 1,

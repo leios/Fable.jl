@@ -20,8 +20,8 @@ function square_tests(ArrayType::Type{AT}) where AT <: AbstractArray
     img = write_image(fl)
 
     @test isapprox(img[3,3], RGBA(0.0, 0.0, 1.0, 1.0))
-    @test isapprox(img[3,8], RGBA(1.0, 0.0, 1.0, 1.0))
-    @test isapprox(img[8,3], RGBA(0.0, 1.0, 0.0, 1.0))
+    @test isapprox(img[8,3], RGBA(1.0, 0.0, 1.0, 1.0))
+    @test isapprox(img[3,8], RGBA(0.0, 1.0, 0.0, 1.0))
     @test isapprox(img[8,8], RGBA(1.0, 0.0, 0.0, 1.0))
 
 end

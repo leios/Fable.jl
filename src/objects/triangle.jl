@@ -50,10 +50,10 @@ function define_triangle_operators(A::Union{Vector, Tuple, FractalInput},
     if !isa(A, FractalInput)
         A = fi("A_"*name, A)
     end
-    if !isa(A, FractalInput)
+    if !isa(B, FractalInput)
         B = fi("B_"*name, B)
     end
-    if !isa(A, FractalInput)
+    if !isa(C, FractalInput)
         C = fi("C_"*name, C)
     end
 
@@ -63,9 +63,9 @@ function define_triangle_operators(A::Union{Vector, Tuple, FractalInput},
     if chosen_fx == :fill
         s_4 = triangle_fill(A = A, B = B, C = C)
 
-        return [s_1, s_2, s_3, s_4], [f_A,f_B,f_C]
+        return [s_1, s_2, s_3, s_4], [A,B,C]
     elseif chosen_fx == :sierpinski
-        return [s_1, s_2, s_3], [f_A,f_B,f_C]
+        return [s_1, s_2, s_3], [A,B,C]
     end
 end
 
