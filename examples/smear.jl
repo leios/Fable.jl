@@ -1,7 +1,8 @@
 using Fae
 
 function smear_example(num_particles, num_iterations, total_frames;
-                       ArrayType = Array, output_type = :video)
+                       ArrayType = Array, output_type = :video, 
+                       diagnostic = true)
     FloatType = Float32
 
     # define image domain
@@ -19,13 +20,13 @@ function smear_example(num_particles, num_iterations, total_frames;
     end
 
     # define ball parameters
-    position = [-2.0, -2.0]
-    ball = define_circle(; position = position,
+    object_position = fi("object_position", [-2.0, -2.0])
+    ball = define_circle(; position = object_position,
                            radius = 1.0,
-                           color = (1,1,1))
+                           color = (1,1,1),
+                           diagnostic = diagnostic)
 
     # fractal inputs to track changes in position, scale, and theta for smear 
-    object_position = fi("object_position", position)
     scale = fi("scale", (1,1))
     theta = fi("theta", 0)
 
@@ -37,7 +38,8 @@ function smear_example(num_particles, num_iterations, total_frames;
 
     # now turning it into a fractal operator
     smear_transform = fee(Hutchinson, [FractalOperator(smear)],
-                          fis; name = "smear", final = true, diagnostic = true)
+                          fis; name = "smear", final = true,
+                          diagnostic = diagnostic)
 
     layer.H1 = ball
     layer.H2 = smear_transform
@@ -49,8 +51,6 @@ function smear_example(num_particles, num_iterations, total_frames;
         pos = [-2.0+4*(i-1)/(total_frames-1),
                -2.0+4*(i-1)/(total_frames-1)]
 
-        update_circle!(ball, pos, radius)
-
         # creating a value that grows as it gets closer to total_frames / 2
         # and shrinks as it gets closer to total_frames
         scale_x = 2 - abs((i-1)*2-(total_frames-1))/(total_frames-1)
@@ -61,6 +61,7 @@ function smear_example(num_particles, num_iterations, total_frames;
         theta = set(theta, pi/4)
 
         update_fis!(smear_transform, [object_position, scale, theta])
+        update_circle!(ball; position = object_position)
         run!(layer)
 
         if output_type == :video

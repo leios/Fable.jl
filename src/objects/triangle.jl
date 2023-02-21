@@ -10,9 +10,9 @@ triangle_fill = @fum function triangle_fill(x,y;
     y = midpoint[1] - (y - midpoint[1]) * 0.5
 end
 
-function define_triangle(; A = [sqrt(3)/4, -0.5],
-                           B = [-sqrt(3)/4, 0],
-                           C = [sqrt(3)/4, 0.5],
+function define_triangle(; A::Union{Vector,Tuple,FractalInput}=(sqrt(3)/4,-0.5),
+                           B::Union{Vector,Tuple,FractalInput}=(-sqrt(3)/4,0),
+                           C::Union{Vector,Tuple,FractalInput}=(sqrt(3)/4,0.5),
                            color = Shaders.gray,
                            name = "triangle",
                            chosen_fx = :fill,
@@ -38,45 +38,74 @@ function define_triangle(; A = [sqrt(3)/4, -0.5],
 end
 
 # This specifically returns the fums for a triangle triangle
-function define_triangle_operators(A::PT, B::PT, C::PT; chosen_fx = :fill,
-                                   name="triangle") where PT <: Union{Vector,
-                                                                      Tuple}
+function define_triangle_operators(A::Union{Vector, Tuple, FractalInput},
+                                   B::Union{Vector, Tuple, FractalInput},
+                                   C::Union{Vector, Tuple, FractalInput};
+                                   chosen_fx = :fill, name="triangle")
 
     if chosen_fx != :sierpinski && chosen_fx != :fill
         error("Cannot create triangle with ", string(chosen_fx), " function!")
     end
 
-    f_A = fi("A_"*name,A)
-    f_B = fi("B_"*name,B)
-    f_C = fi("C_"*name,C)
+    if !isa(A, FractalInput)
+        A = fi("A_"*name, A)
+    end
+    if !isa(B, FractalInput)
+        B = fi("B_"*name, B)
+    end
+    if !isa(C, FractalInput)
+        C = fi("C_"*name, C)
+    end
 
-    s_1 = Flames.halfway(loc = f_A)
-    s_2 = Flames.halfway(loc = f_B)
-    s_3 = Flames.halfway(loc = f_C)
+    s_1 = Flames.halfway(loc = A)
+    s_2 = Flames.halfway(loc = B)
+    s_3 = Flames.halfway(loc = C)
     if chosen_fx == :fill
-        s_4 = triangle_fill(A = f_A, B = f_B, C = f_C)
+        s_4 = triangle_fill(A = A, B = B, C = C)
 
-        return [s_1, s_2, s_3, s_4], [f_A,f_B,f_C]
+        return [s_1, s_2, s_3, s_4], [A,B,C]
     elseif chosen_fx == :sierpinski
-        return [s_1, s_2, s_3], [f_A,f_B,f_C]
+        return [s_1, s_2, s_3], [A,B,C]
     end
 end
 
-function update_triangle!(H::Hutchinson,
-                          A::PT, B::PT, C::PT) where PT <: Union{Vector, Tuple}
+function update_triangle!(H::Hutchinson;
+                          A::Union{Vector,Tuple,FractalInput,Nothing}=nothing,
+                          B::Union{Vector,Tuple,FractalInput,Nothing}=nothing,
+                          C::Union{Vector,Tuple,FractalInput,Nothing}=nothing,
+                          color::Union{Array, Tuple, Nothing}=nothing)
 
-    update_triangle!(H, A, B, C, nothing)
-end
+    if A != nothing
+        if isa(A, FractalInput)
+            H.fi_set[1] = A
+        else
+            H.fi_set[1] = FractalInput(H.fi_set[3].index,
+                                       H.fi_set[3].name,
+                                       Tuple(A))
+        end
+    end
 
-function update_triangle!(H::Hutchinson, A::PT, B::PT, C::PT,
-                          color::Union{Array, Tuple, Nothing}
-                         ) where PT <: Union{Vector, Tuple}
+    if B != nothing
+        if isa(B, FractalInput)
+            H.fi_set[1] = B
+        else
+            H.fi_set[1] = FractalInput(H.fi_set[3].index,
+                                       H.fi_set[3].name,
+                                       Tuple(B))
+        end
+    end
 
-    f_A = fi("A",A)
-    f_B = fi("B",B)
-    f_C = fi("C",C)
+    if C != nothing
+        if isa(C, FractalInput)
+            H.fi_set[1] = C
+        else
+            H.fi_set[1] = FractalInput(H.fi_set[3].index,
+                                       H.fi_set[3].name,
+                                       Tuple(C))
+        end
+    end
 
-    H.symbols = configure_fis!([f_A, f_B, f_C])
+    H.symbols = configure_fis!(H.fi_set)
     if color != nothing
         H.color_set = new_color_array(color)
     end
