@@ -69,19 +69,11 @@ function define_triangle_operators(A::Union{Vector, Tuple, FractalInput},
     end
 end
 
-function update_triangle!(H::Hutchinson,
-                          A::Union{Vector,Tuple,FractalInput,Nothing}=nothing,
-                          B::Union{Vector,Tuple,FractalInput,Nothing}=nothing,
-                          C::Union{Vector,Tuple,FractalInput,Nothing}=nothing)
-
-    update_triangle!(H, A, B, C, nothing)
-end
-
-function update_triangle!(H::Hutchinson,
+function update_triangle!(H::Hutchinson;
                           A::Union{Vector,Tuple,FractalInput,Nothing}=nothing,
                           B::Union{Vector,Tuple,FractalInput,Nothing}=nothing,
                           C::Union{Vector,Tuple,FractalInput,Nothing}=nothing,
-                          color::Union{Array, Tuple, Nothing})
+                          color::Union{Array, Tuple, Nothing}=nothing)
 
     if A != nothing
         if isa(A, FractalInput)

@@ -62,7 +62,6 @@ function smear_example(num_particles, num_iterations, total_frames;
 
         update_fis!(smear_transform, [object_position, scale, theta])
         update_circle!(ball; position = object_position)
-        println(ball.symbols)
         run!(layer)
 
         if output_type == :video

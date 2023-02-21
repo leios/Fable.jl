@@ -72,6 +72,21 @@ function define_rectangle_operators(position::Union{Vector,Tuple,FractalInput},
                                     scale_y::Union{Number, FractalInput};
                                     name="rectangle")
 
+    if !isa(position, FractalInput)
+        position = fi("position", Tuple(position))
+    end
+
+    if !isa(rotation, FractalInput)
+        rotation = fi("rotation", rotation)
+    end
+
+    if !isa(scale_x, FractalInput)
+        scale_x = fi("scale_x", scale_x)
+    end
+
+    if !isa(scale_y, FractalInput)
+        scale_y = fi("scale_y", scale_y)
+    end
 
     square_1 = rectangle_fum(position = position, rotation = rotation,
                              scale_x = scale_x, scale_y = scale_y, vertex = 1)
@@ -108,7 +123,7 @@ function update_rectangle!(H::Hutchinson;
                                            Nothing}=nothing,
                            scale_y::Union{Number, FractalInput,
                                            Nothing}=nothing,
-                           color::Union{Array, Tuple, Nothing}; fnum = 4)
+                           color::Union{Array, Tuple, Nothing}, fnum = 4)
 
     if position != nothing
         if isa(position, FractalInput)
