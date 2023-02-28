@@ -16,7 +16,8 @@ function define_triangle(; A::Union{Vector,Tuple,FractalInput}=(sqrt(3)/4,-0.5),
                            color = Shaders.gray,
                            name = "triangle",
                            chosen_fx = :fill,
-                           diagnostic = false)
+                           diagnostic = false,
+                           additional_fis = FractalInput[])
     fums, fis = define_triangle_operators(A, B, C; name = name)
 
     fnum = 3
@@ -34,7 +35,8 @@ function define_triangle(; A::Union{Vector,Tuple,FractalInput}=(sqrt(3)/4,-0.5),
     end
     fos = [FractalOperator(fums[i], color_set[i], 1/fnum) for i = 1:fnum]
 
-    return Hutchinson(fos, fis; name = name, diagnostic = diagnostic)
+    return Hutchinson(fos, vcat(fis, additional_fis);
+                      name = name, diagnostic = diagnostic)
 end
 
 # This specifically returns the fums for a triangle triangle

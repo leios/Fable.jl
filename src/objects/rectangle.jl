@@ -36,7 +36,8 @@ function define_rectangle(; position::Union{Vector, Tuple, FractalInput}=(0,0),
                             scale_y::Union{Number, FractalInput} = 1.0,
                             color = Shaders.grey,
                             name = "rectangle",
-                            diagnostic = false)
+                            diagnostic = false,
+                            additional_fis = FractalInput[])
 
     fums, fis = define_rectangle_operators(position, rotation, scale_x, scale_y;
                                            name = name)
@@ -49,7 +50,8 @@ function define_rectangle(; position::Union{Vector, Tuple, FractalInput}=(0,0),
               "maybe improper number of functions?")
     end
     fos = [FractalOperator(fums[i], color_set[i], 0.25) for i = 1:4]
-    return Hutchinson(fos, fis; name = name, diagnostic = diagnostic)
+    return Hutchinson(fos, vcat(fis, additional_fis);
+                      name = name, diagnostic = diagnostic)
 end
 
 # Returns back H, colors, and probs for a square
@@ -58,11 +60,13 @@ function define_square(; position::Union{Vector, Tuple, FractalInput}=(0,0),
                          scale::Union{Number, FractalInput} = 1.0,
                          color = Shaders.grey,
                          name = "square",
-                         diagnostic = false)
+                         diagnostic = false,
+                         additional_fis = FractalInput[])
 
     return define_rectangle(; position = position, rotation = rotation,
                               scale_x = scale, scale_y = scale, color = color,
-                              name = name, diagnostic = diagnostic)
+                              name = name, diagnostic = diagnostic,
+                              additional_fis = additional_fis)
 end
 
 # This specifically returns the fums for a square
