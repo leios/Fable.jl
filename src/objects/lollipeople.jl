@@ -87,9 +87,9 @@ end
 end
 
 function update_fis!(layer::LolliLayer;
-                     fis::Vector{FractalInput} = [],
-                     head_fis::Vector{FractalInput} = [],
-                     body_fis::Vector{FractalInput} = [])
+                     fis::Vector{FractalInput} = FractalInput[],
+                     head_fis::Vector{FractalInput} = FractalInput[],
+                     body_fis::Vector{FractalInput} = FractalInput[])
     if length(fis) + length(head_fis) > 1
         update_fis!(layer.head, vcat(fis, head_fis))
     end
@@ -175,9 +175,9 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
                     num_particles = 1000, num_iterations = 1000,
                     postprocessing_steps = Vector{AbstractPostProcess}([]),
                     eye_fum = simple_eyes,
-                    fis::Vector{FractalInput} = [],
-                    head_fis::Vector{FractalInput} = [],
-                    body_fis::Vector{FractalInput} = [])
+                    fis::Vector{FractalInput} = FractalInput[],
+                    head_fis::Vector{FractalInput} = FractalInput[],
+                    body_fis::Vector{FractalInput} = FractalInput[])
 
     head_fis = vcat(head_fis, fis)
     body_fis = vcat(body_fis, fis)
@@ -191,8 +191,8 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
                               scale_y = 0.5*height-offset,
                               color = body_color,
                               name = "body"*name,
-                              diagnostic = diagnostic,
-                              additional_fis = body_fis)
+                              diagnostic = diagnostic)
+                              #additional_fis = body_fis)
 
     body_layer = FractalLayer(num_particles = num_particles,
                               num_iterations = num_iterations,
@@ -209,8 +209,8 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
                            radius = head_radius,
                            color = overlay(body_color, eye_fum),
                            name = "head"*name,
-                           diagnostic = diagnostic,
-                           additional_fis = head_fis)
+                           diagnostic = diagnostic)
+                           #additional_fis = head_fis)
 
     head_layer = FractalLayer(num_particles = num_particles,
                               num_iterations = num_iterations,
