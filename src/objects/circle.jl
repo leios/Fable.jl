@@ -53,7 +53,8 @@ function define_circle(; position::Union{Tuple, Vector, FractalInput} = (0, 0),
                          color = Shaders.gray,
                          name = "circle",
                          chosen_fx = :constant_disk,
-                         diagnostic = false)
+                         diagnostic = false,
+                         additional_fis = FractalInput[])
 
     fums, fis = define_circle_operators(position, radius; chosen_fx = chosen_fx,
                                         name = name)
@@ -66,7 +67,8 @@ function define_circle(; position::Union{Tuple, Vector, FractalInput} = (0, 0),
               "maybe improper number of functions?")
     end
     fos = [FractalOperator(fums[i], color_set[i], 0.5) for i = 1:2]
-    return Hutchinson(fos, fis; name = name, diagnostic = diagnostic)
+    return Hutchinson(fos, vcat(fis, additional_fis);
+                      name = name, diagnostic = diagnostic)
 end
 
 # This specifically returns the fums for a circle
