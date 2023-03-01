@@ -90,12 +90,47 @@ function update_fis!(layer::LolliLayer;
                      fis::Vector{FractalInput} = FractalInput[],
                      head_fis::Vector{FractalInput} = FractalInput[],
                      body_fis::Vector{FractalInput} = FractalInput[])
-    if length(fis) + length(head_fis) > 1
-        update_fis!(layer.head, vcat(fis, head_fis))
+    l = length(fis) + length(head_fis)
+    if l >= 1
+        H = layer.head.H1
+        for i = 1:length(fis)
+            for j = 1:length(H.fi_set)
+                if fis[i].name == H.fi_set[j].name
+                    H.fi_set[j] = fis[i]
+                end
+            end
+        end
+        for i = 1:length(head_fis)
+            for j = 1:length(H.fi_set)
+                if head_fis[i].name == H.fi_set[j].name 
+                    H.fi_set[j] = head_fis[i]
+                end
+            end
+
+        end
+        update_fis!(H)
     end
 
-    if length(fis) + length(body_fis) > 1
-        update_fis!(layer.body, vcat(fis, body_fis))
+    l = length(fis) + length(body_fis)
+    if l >= 1
+        H = layer.body.H1
+        for i = 1:length(fis)
+            for j = 1:length(H.fi_set)
+                if fis[i].name == H.fi_set[j].name 
+                    H.fi_set[j] = fis[i]
+                end
+            end
+        end
+        for i = 1:length(body_fis)
+            for j = 1:length(H.fi_set)
+                if body_fis[i].name == H.fi_set[j].name 
+                    H.fi_set[j] = body_fis[i]
+                end
+            end
+
+        end
+        update_fis!(H)
+
     end
 end
 
@@ -191,8 +226,8 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
                               scale_y = 0.5*height-offset,
                               color = body_color,
                               name = "body"*name,
-                              diagnostic = diagnostic)
-                              #additional_fis = body_fis)
+                              diagnostic = diagnostic,
+                              additional_fis = body_fis)
 
     body_layer = FractalLayer(num_particles = num_particles,
                               num_iterations = num_iterations,
@@ -200,17 +235,12 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
                               position = layer_position, ArrayType = ArrayType,
                               H1 = body)
 
-    head_tuple = head_position
-    if isa(head_position, FractalInput)
-        head_tuple = head_position.val
-    end
-
-    head = define_circle(; position = head_tuple,
+    head = define_circle(; position = head_position,
                            radius = head_radius,
                            color = overlay(body_color, eye_fum),
                            name = "head"*name,
-                           diagnostic = diagnostic)
-                           #additional_fis = head_fis)
+                           diagnostic = diagnostic,
+                           additional_fis = head_fis)
 
     head_layer = FractalLayer(num_particles = num_particles,
                               num_iterations = num_iterations,

@@ -18,8 +18,6 @@ function lolli_example(num_particles, num_interactions;
         for i = 1:num_frames
             run!(lolli)
             write_video!(video_out, [bg, lolli])
-            reset!(lolli)
-            reset!(bg)
         end
 
         close_video(video_out)
@@ -34,7 +32,7 @@ function lolli_example(num_particles, num_interactions;
             angle = 2*pi*i/num_frames
             radius = i*height*0.5/num_frames
             location = (radius*sin(angle), radius*cos(angle))
-            set(eye_location, location)
+            eye_location = set(eye_location, location)
             update_fis!(lolli; head_fis = [eye_location])
 
             run!(lolli)
@@ -45,4 +43,7 @@ function lolli_example(num_particles, num_interactions;
 
         close_video(video_out)
     end
+
+    return lolli
+
 end

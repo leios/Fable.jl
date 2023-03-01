@@ -110,8 +110,14 @@ function zero!(layer::AL) where AL <: AbstractLayer
     layer.canvas[:] .= RGBA(0.0, 0.0, 0.0, 0.0)
 end
 
-function zero!(a::Array{T}) where T <: Union{RGB, RGB{N0f8}}
+function zero!(a::Array{T}) where T <: Union{RGB, RGBA}
     a[:] .= RGBA(0.0, 0.0, 0.0, 0.0)
+end
+
+function zero!(layer::LolliLayer)
+    zero!(layer.head)
+    zero!(layer.body)
+    zero!(layer.canvas)
 end
 
 function zero!(layer::FractalLayer)
@@ -124,8 +130,8 @@ function zero!(layer::FractalLayer)
         kernel! = zero_kernel!(ROCDevice(), layer.params.numthreads)
     end
 
-    kernel!(layer.values, layer.reds, layer.greens, layer.blues,
-            ndrange = size(layer.values))
+    wait(kernel!(layer.values, layer.reds, layer.greens, layer.blues,
+                 ndrange = size(layer.values)))
 end
 
 function reset!(layers::Vector{AL}) where AL <: AbstractLayer
