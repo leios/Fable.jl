@@ -110,7 +110,9 @@ function zero!(layer::AL) where AL <: AbstractLayer
     layer.canvas[:] .= RGBA(0.0, 0.0, 0.0, 0.0)
 end
 
-function zero!(a::Array{T}) where T <: Union{RGB, RGBA}
+function zero!(a::Union{Array{T},
+                        CuArray{T},
+                        ROCArray{T}}) where T <: Union{RGB, RGBA}
     a[:] .= RGBA(0.0, 0.0, 0.0, 0.0)
 end
 

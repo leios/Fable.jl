@@ -9,11 +9,11 @@ function lolli_example(num_particles, num_interactions;
     res = (1080, 1920)
 
     if transform_type == :check
-        lolli = LolliPerson(height)
+        lolli = LolliPerson(height; ArrayType = ArrayType)
         run!(lolli)
         write_image([bg, lolli]; filename = filename)
     elseif transform_type == :check_video
-        lolli = LolliPerson(height)
+        lolli = LolliPerson(height; ArrayType = ArrayType)
         video_out = open_video(res; framerate = 30, filename = "out.mp4")
         for i = 1:num_frames
             run!(lolli)
@@ -25,7 +25,8 @@ function lolli_example(num_particles, num_interactions;
         eye_location = fi("eye_location", (0.0, 0.0))
         eye_operator = simple_eyes(location = eye_location)
         lolli = LolliPerson(height; eye_fum = eye_operator,
-                            head_fis = [eye_location])
+                            head_fis = [eye_location],
+                            ArrayType = ArrayType)
 
         video_out = open_video(res; framerate = 30, filename = "out.mp4")
         for i = 1:num_frames
