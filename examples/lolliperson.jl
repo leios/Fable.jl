@@ -1,7 +1,7 @@
 using Fae, Images
 
 function lolli_example(num_particles, num_interactions;
-                       height = 2.0,
+                       height = 2.0, brow_height = 0.5,
                        ArrayType = Array, num_frames = 10,
                        transform_type = :check,
                        diagnostic = false, filename = "out.png")
@@ -43,6 +43,13 @@ function lolli_example(num_particles, num_interactions;
         end
 
         close_video(video_out)
+
+    elseif transform_type == :brow
+        eye_operator = simple_eyes(brow_height = brow_height, show_brows = true)
+        lolli = LolliPerson(height; eye_fum = eye_operator,
+                            ArrayType = ArrayType)
+        run!(lolli)
+        write_image([bg, lolli]; filename = filename)
     end
 
     return lolli

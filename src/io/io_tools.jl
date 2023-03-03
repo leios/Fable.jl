@@ -116,12 +116,6 @@ function zero!(a::Union{Array{T},
     a[:] .= RGBA(0.0, 0.0, 0.0, 0.0)
 end
 
-function zero!(layer::LolliLayer)
-    zero!(layer.head)
-    zero!(layer.body)
-    zero!(layer.canvas)
-end
-
 function zero!(layer::FractalLayer)
     
     if layer.params.ArrayType <: Array

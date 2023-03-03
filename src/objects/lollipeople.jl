@@ -134,6 +134,12 @@ function update_fis!(layer::LolliLayer;
     end
 end
 
+function zero!(layer::LolliLayer)
+    zero!(layer.head)
+    zero!(layer.body)
+    zero!(layer.canvas)
+end
+
 #------------------------------------------------------------------------------#
 # LolliPerson Specifics
 #------------------------------------------------------------------------------#
@@ -147,19 +153,37 @@ simple_eyes = @fum function simple_eyes(x, y;
                                         size = height*0.04,
                                         show_brows = false,
                                         brow_angle = 0.0,
-                                        brow_ratio = 1.0,
-                                        brow_size = 1.0)
+                                        brow_size = (0.3, 1.25),
+                                        brow_height = 1.0)
     head_position = (-height*1/8, 0.0)
     location = location .+ head_position
     r2 = size*0.5
     r1 = ellipticity*r2
-    if in_ellipse(x,y,location.+(0, 0.5*inter_eye_distance),0.0,r1,r2) ||
-       in_ellipse(x,y,location.-(0, 0.5*inter_eye_distance),0.0,r1,r2)
-        red = color[1]
-        green = color[2]
-        blue = color[3]
-        alpha = color[4]
+    y_height = location[1] + r1 - 2*r1 * brow_height
+    if y >= y_height
+        if in_ellipse(x,y,location.+(0, 0.5*inter_eye_distance),0.0,r1,r2) ||
+           in_ellipse(x,y,location.-(0, 0.5*inter_eye_distance),0.0,r1,r2)
+            red = color[1]
+            green = color[2]
+            blue = color[3]
+            alpha = color[4]
+        end
     end
+
+    if show_brows
+        brow_size = brow_size .* size
+        brow_x = 0.5*inter_eye_distance + brow_size[2]*0.1
+        if in_rectangle(x, y, (y_height-brow_size[1]*0.5, brow_x),
+                        brow_angle, brow_size[2], brow_size[1]) ||
+           in_rectangle(x, y, (y_height-brow_size[1]*0.5, -brow_x),
+                        brow_angle, brow_size[2], brow_size[1])
+            red = color[1]
+            green = color[2]
+            blue = color[3]
+            alpha = color[4]
+        end
+    end
+
 end
 
 place_eyes = @fum function place_eyes(x, y;
@@ -202,8 +226,6 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
                     eye_color = Shaders.white, body_color = Shaders.black,
                     head_position = (-height*1/4, 0.0),
                     head_radius = height*0.25,
-                    eye_radius = 0.0, eye_angle = 0.0,
-                    eye_height = 2.5, eye_width = 1,
                     name = "", ArrayType = Array, diagnostic = true,
                     known_operations = [],
                     ppu = 1200, world_size = (0.9, 1.6),
@@ -291,6 +313,8 @@ end
 
 # This causes a LolliPerson to blink.
 function blink!(lolli::LolliLayer, num_frames)
+
+    # Note: Only show brow at 0.8 brow_height!
 
     idx = find_fi(lolli.eyes.fi_set, "eye_height")
 

@@ -1,4 +1,4 @@
-function in_ellipse(x, y, position, rotation, r1, r2)
+@inline function in_ellipse(x, y, position, rotation, r1, r2)
     r = sqrt(x*x + y*y)
     theta = atan(y,x)
     x2 = r*cos(theta-rotation)
@@ -10,8 +10,8 @@ function in_ellipse(x, y, position, rotation, r1, r2)
     return false
 end
 
-function in_rectangle(x, y, position, rotation, scale_x, scale_y)
-    r = sqrt((x-position[2])^2 + (y-position[1])^2)
+@inline function in_rectangle(x, y, position, rotation, scale_x, scale_y)
+    r = sqrt(x*x + y*y)
     theta = atan(y,x)
     x2 = r*cos(theta-rotation)
     y2 = r*sin(theta-rotation)
