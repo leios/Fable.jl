@@ -1,4 +1,5 @@
-export LolliLayer, LolliPerson, run!, postprocess!, simple_eyes, update_fis!
+export LolliLayer, LolliPerson, run!, postprocess!, simple_eyes, update_fis!,
+       blink!
 
 #------------------------------------------------------------------------------#
 # Struct Definition
@@ -170,7 +171,7 @@ simple_eyes = @fum function simple_eyes(x, y;
         end
     end
 
-    if show_brows
+    if Bool(show_brows)
         brow_size = brow_size .* size
         brow_x = 0.5*inter_eye_distance + brow_size[2]*0.1
         if in_rectangle(x, y, (y_height-brow_size[1]*0.5, brow_x),
@@ -312,17 +313,40 @@ function nod_off!(lolli::LolliLayer, time)
 end
 
 # This causes a LolliPerson to blink.
-function blink!(lolli::LolliLayer, num_frames)
+function blink!(lolli::LolliLayer, curr_frame, start_frame, end_frame)
+    # split into 3rds, 1 close, 1 closed, 1 open
+    third_frame = (end_frame - start_frame)*0.333
 
-    # Note: Only show brow at 0.8 brow_height!
+    fi_set = lolli.head.H1.fi_set
+    if curr_frame < start_frame + third_frame
+        brow_height = 1 - (curr_frame - start_frame)/(third_frame)
+    elseif curr_frame >= start_frame + third_frame &&
+           curr_frame <= start_frame + third_frame*2
+        brow_height = 0.0
+    else
+        brow_height = (curr_frame - start_frame - third_frame*2)/(third_frame)
+    end
 
-    idx = find_fi(lolli.eyes.fi_set, "eye_height")
+    if brow_height < 1.0
+        show_brows = true
+    else
+        show_brows = false
+    end
 
-    # change eye height over a particular period
+    brow_height_idx = find_fi(fi_set, "brow_height")
+    if isnothing(brow_height_idx)
+        @warn("Brow height not set as FractalInput. Blinking will not work!")
+    else
+        fi_set[brow_height_idx] = set(fi_set[brow_height_idx], brow_height)
 
-end
+    end
 
-# This function will check how much time is in `num_frames` and how many frames
-# it takes to blink (`blink_frames`) and then blink randomly within the time
-function intermittent_blinking(lolli::LolliLayer, num_frames, blink_frames)
+    show_brows_idx = find_fi(fi_set, "show_brows")
+    if isnothing(show_brows_idx)
+        @warn("show_brows not set as FractalInput. Blinking will not work!")
+    else
+        fi_set[show_brows_idx] = set(fi_set[show_brows_idx], show_brows)
+    end
+
+    update_fis!(lolli; head_fis = fi_set)
 end
