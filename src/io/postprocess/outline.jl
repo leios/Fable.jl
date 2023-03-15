@@ -17,8 +17,7 @@ function Outline(; linewidth = 1,
                    intensity_function = simple_intensity,
                    object_outline = false,
                    threshold = 1/(linewidth*linewidth+1),
-                   sigma = 1,
-                   ) where CT <: Union{RGB, RGBA}
+                   sigma = 1)
     sobel = Sobel()
     if linewidth > 1
         filter_size = floor(Int, 3*linewidth)

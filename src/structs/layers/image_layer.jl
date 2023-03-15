@@ -17,7 +17,7 @@ function ImageLayer(img;
                     ArrayType = Array,
                     FloatType = Float32,
                     numcores = 4,
-                    numthreads = 256) where CT <: Union{RGB, RGBA}
+                    numthreads = 256)
 
     world_size = (size(img)[1]/ppu, size(img)[2]/ppu)
 
@@ -38,7 +38,7 @@ function ImageLayer(filename::String;
                     ArrayType = Array,
                     FloatType = Float32,
                     numcores = 4,
-                    numthreads = 256) where CT <: Union{RGB, RGBA}
+                    numthreads = 256)
 
     img = load(filename)
     return ImageLayer(img;
