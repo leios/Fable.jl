@@ -1,6 +1,6 @@
 using Fae, Images
 
-function lolli_example(num_particles, num_interactions;
+function lolli_example(num_particles, num_iterations;
                        height = 2.0, brow_height = 0.5,
                        ArrayType = Array, num_frames = 10,
                        transform_type = :check,
@@ -9,11 +9,15 @@ function lolli_example(num_particles, num_interactions;
     res = (1080, 1920)
 
     if transform_type == :check
-        lolli = LolliPerson(height; ArrayType = ArrayType)
+        lolli = LolliPerson(height; ArrayType = ArrayType,
+                            num_particles = num_particles,
+                            num_iterations = num_iterations)
         run!(lolli)
         write_image([bg, lolli]; filename = filename)
     elseif transform_type == :check_video
-        lolli = LolliPerson(height; ArrayType = ArrayType)
+        lolli = LolliPerson(height; ArrayType = ArrayType,
+                            num_particles = num_particles,
+                            num_iterations = num_iterations)
         video_out = open_video(res; framerate = 30, filename = "out.mp4")
         for i = 1:num_frames
             run!(lolli)
@@ -23,10 +27,12 @@ function lolli_example(num_particles, num_interactions;
         close_video(video_out)
     elseif transform_type == :eye_roll
         eye_location = fi("eye_location", (0.0, 0.0))
-        eye_operator = simple_eyes(location = eye_location)
+        eye_operator = simple_eyes(location = eye_location, height = height)
         lolli = LolliPerson(height; eye_fum = eye_operator,
                             head_fis = [eye_location],
-                            ArrayType = ArrayType)
+                            ArrayType = ArrayType,
+                            num_particles = num_particles,
+                            num_iterations = num_iterations)
 
         video_out = open_video(res; framerate = 30, filename = "out.mp4")
         for i = 1:num_frames
@@ -45,19 +51,26 @@ function lolli_example(num_particles, num_interactions;
         close_video(video_out)
 
     elseif transform_type == :brow
-        eye_operator = simple_eyes(brow_height = brow_height, show_brows = true)
+        eye_operator = simple_eyes(brow_height = brow_height,
+                                   show_brows = true,
+                                   height = height)
         lolli = LolliPerson(height; eye_fum = eye_operator,
-                            ArrayType = ArrayType)
+                            ArrayType = ArrayType,
+                            num_particles = num_particles,
+                            num_iterations = num_iterations)
         run!(lolli)
         write_image([bg, lolli]; filename = filename)
     elseif transform_type == :blink
         brow_height = fi("brow_height", 1.0)
         show_brows = fi("show_brows", false)
         eye_operator = simple_eyes(brow_height = brow_height,
-                                   show_brows = show_brows)
+                                   show_brows = show_brows,
+                                   height = height)
         lolli = LolliPerson(height; eye_fum = eye_operator,
                             head_fis = [brow_height, show_brows],
-                            ArrayType = ArrayType)
+                            ArrayType = ArrayType,
+                            num_particles = num_particles,
+                            num_iterations = num_iterations)
 
         video_out = open_video(res; framerate = 30, filename = "out.mp4")
         for i = 1:num_frames

@@ -149,14 +149,14 @@ simple_eyes = @fum function simple_eyes(x, y;
                                         height = 1.0,
                                         ellipticity = 2.5,
                                         location = (0.0, 0.0),
-                                        inter_eye_distance = height*0.075,
+                                        inter_eye_distance = height*0.150,
                                         color = (1,1,1,1),
-                                        size = height*0.04,
+                                        size = height*0.08,
                                         show_brows = false,
                                         brow_angle = 0.0,
                                         brow_size = (0.3, 1.25),
                                         brow_height = 1.0)
-    head_position = (-height*1/8, 0.0)
+    head_position = (-height/4, 0.0)
     location = location .+ head_position
     r2 = size*0.5
     r1 = ellipticity*r2
@@ -232,13 +232,17 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
                     ppu = 1200, world_size = (0.9, 1.6),
                     num_particles = 1000, num_iterations = 1000,
                     postprocessing_steps = Vector{AbstractPostProcess}([]),
-                    eye_fum = simple_eyes,
+                    eye_fum::Union{FractalUserMethod, Nothing} = nothing,
                     fis::Vector{FractalInput} = FractalInput[],
                     head_fis::Vector{FractalInput} = FractalInput[],
                     body_fis::Vector{FractalInput} = FractalInput[])
 
     head_fis = vcat(head_fis, fis)
     body_fis = vcat(body_fis, fis)
+
+    if eye_fum == nothing
+        eye_fum = simple_eyes(height = height)
+    end
 
     postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
     offset = 0.1*body_multiplier
