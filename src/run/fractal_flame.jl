@@ -53,7 +53,6 @@ function iterate!(ps::Points, layer::FractalLayer, H::Hutchinson, n,
     end
 
     if diagnostic
-        println("H1 symbols:\n", H.symbols
         @invokelatest kernel!(ps.positions, n, H.op, H.cop,
                               H.prob_set, H.symbols, H.fnums,
                               layer.values, layer.reds, layer.greens,
