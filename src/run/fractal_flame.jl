@@ -53,25 +53,23 @@ function iterate!(ps::Points, layer::FractalLayer, H::Hutchinson, n,
     end
 
     if diagnostic
-        println("H1 symbols:\n", H.symbols)
-        if !isnothing(H2)
-            println("H2 symbols:\n", H2.symbols)
-        end
-    end
-
-    if isnothing(H2)
-        kernel!(ps.positions, n, H.op, H.cop, H.prob_set, H.symbols, H.fnums,
-                layer.values, layer.reds, layer.greens,
-                layer.blues, layer.alphas, frame, 
-                bounds, Tuple(bin_widths), layer.params.num_ignore, max_range,
-                ndrange=size(ps.positions)[1])
+        println("H1 symbols:\n", H.symbols
+        @invokelatest kernel!(ps.positions, n, H.op, H.cop,
+                              H.prob_set, H.symbols, H.fnums,
+                              layer.values, layer.reds, layer.greens,
+                              layer.blues, layer.alphas, frame, 
+                              bounds, Tuple(bin_widths),
+                              layer.params.num_ignore, max_range,
+                              ndrange=size(ps.positions)[1])
     else
-        kernel!(ps.positions, n, H.op, H.cop, H.prob_set, H.symbols, H.fnums,
-                H2.op, H2.cop, H2.symbols, H2.prob_set, H2.fnums,
-                layer.values, layer.reds, layer.greens,
-                layer.blues, layer.alphas, frame, 
-                bounds, Tuple(bin_widths), layer.params.num_ignore, max_range,
-                ndrange=size(ps.positions)[1])
+        @invokelatest kernel!(ps.positions, n, H.op, H.cop,
+                              H.prob_set, H.symbols, H.fnums,
+                              H2.op, H2.cop, H2.symbols, H2.prob_set, H2.fnums,
+                              layer.values, layer.reds, layer.greens,
+                              layer.blues, layer.alphas, frame, 
+                              bounds, Tuple(bin_widths),
+                              layer.params.num_ignore, max_range,
+                              ndrange=size(ps.positions)[1])
     end
 end
 
