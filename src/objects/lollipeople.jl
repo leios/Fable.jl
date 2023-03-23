@@ -145,6 +145,16 @@ end
 # LolliPerson Specifics
 #------------------------------------------------------------------------------#
 
+lean_head = @fum function lean_head(x, y;
+                                    height = 1.0,
+                                    lean_angle = 0.0)
+end
+
+lean_body = @fum function lean_body(x, y;
+                                    height = 1.0,
+                                    lean_angle = 0.0)
+end
+
 simple_eyes = @fum function simple_eyes(x, y;
                                         height = 1.0,
                                         ellipticity = 2.5,
@@ -187,47 +197,12 @@ simple_eyes = @fum function simple_eyes(x, y;
 
 end
 
-place_eyes = @fum function place_eyes(x, y;
-                                      eye_radius = 0,
-                                      eye_angle = 0,
-                                      head_position = (0,0),
-                                      head_radius = 1,
-                                      eye_height = 2.5,
-                                      eye_width = 1,
-                                      eyelid_position = 1,
-                                      right_eye = 0)
-
-    y = (y - head_position[1]) * eye_height * head_radius * 0.15 +
-        head_position[1] + eye_radius * sin(eye_angle)
-    x = (x - head_position[2]) * eye_width* head_radius * 0.15 -
-        head_position[2] + eye_radius * cos(eye_angle) -
-        head_radius * (0.25 - 0.5 * right_eye)
-
-    # reflecting and shrinking an eyelid in the case of blinking
-    # we are essentially flipping along y = slope*x + b, where...
-    #     slope = 1 if right eye; -1 if left eye
-    #     b = eyelid position relative to the top of the eye
-    #     x,y are the Cartesian coordinates (as always)
-    if eyelid_position < 1
-        if right_eye == 0
-            slope = -1
-        elseif right_eye == 1
-            slope = 1
-        end
-
-        if val > slope*x + eye_position*eyelid_position
-            
-        end
-    end
-
-end
-
 function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
                     body_multiplier = min(1, height),
                     eye_color = Shaders.white, body_color = Shaders.black,
                     head_position = (-height*1/4, 0.0),
                     head_radius = height*0.25,
-                    name = "", ArrayType = Array, diagnostic = true,
+                    name = "", ArrayType = Array, diagnostic = false,
                     known_operations = [],
                     ppu = 1200, world_size = (0.9, 1.6),
                     num_particles = 1000, num_iterations = 1000,
@@ -239,6 +214,36 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
 
     head_fis = vcat(head_fis, fis)
     body_fis = vcat(body_fis, fis)
+
+    # Going through all Fractal Inputs and checking to see if we need additional
+    # Hutchinson operators
+    H2_head = nothing
+    H2_body = nothing
+    for i = 1:length(fis)
+        if fis[i].name == "lean_angle"
+            H_head = Hutchinson(lean_head(lean_angle = fis[i],
+                                          height = height);
+                                diagnostic = diagnostic,
+                                name = "lean_head_"*name,
+                                final = true, fis = head_fis)
+            if H2_head == nothing
+                H2_head = H_head
+            else
+                H2_head = fee(Hutchinson, (H_head, H2_head))
+            end
+
+            H_body = Hutchinson(lean_body(lean_angle = fis[i],
+                                          height = height);
+                                diagnostic = diagnostic,
+                                name = "lean_body_"*name,
+                                final = true, fis = body_fis)
+            if H2_body == nothing
+                H2_body = H_body
+            else
+                H2_body = fee(Hutchinson, (H_body, H2_body))
+            end
+        end
+    end
 
     if eye_fum == nothing
         eye_fum = simple_eyes(height = height)
@@ -260,7 +265,7 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
                               num_iterations = num_iterations,
                               ppu = ppu, world_size = world_size,
                               position = layer_position, ArrayType = ArrayType,
-                              H1 = body)
+                              H1 = body, H2 = H2_body)
 
     head = define_circle(; position = head_position,
                            radius = head_radius,
@@ -273,7 +278,7 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
                               num_iterations = num_iterations,
                               ppu = ppu, world_size = world_size,
                               position = layer_position, ArrayType = ArrayType,
-                              H1 = head)
+                              H1 = head, H2 = H2_head)
 
     canvas = copy(head_layer.canvas)
     return LolliLayer(head_layer, eye_fum, body_layer, angle, foot_position,

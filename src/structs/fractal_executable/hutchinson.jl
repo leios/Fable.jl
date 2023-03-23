@@ -48,6 +48,8 @@ function Hutchinson(Hs::HT; diagnostic = false, name = "",
                                                      Tuple{Hutchinson}}
     if length(Hs) == 1
         return Hs[1]
+    elseif length(Hs) == 0
+        return nothing
     end
 
     color_set = Hs[1].color_set
@@ -233,10 +235,16 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
 
 end
 
-function Hutchinson(fums::Array{FractalUserMethod},
-                    color_set, prob_set; name = "",
+function Hutchinson(fum::FractalUserMethod; name = "", fis = [],
                     diagnostic = false, final = false)
-    Hutchinson(fums, [], color_set, prob_set; final = final,
+    Hutchinson([fum], [Shaders.previous], (1.0,); final = final,
+                diagnostic = diagnostic, name = name, fis = fis)
+end
+
+function Hutchinson(fums::Array{FractalUserMethod},
+                    color_set, prob_set; name = "", fis = [],
+                    diagnostic = false, final = false)
+    Hutchinson(fums, fis, color_set, prob_set; final = final,
                diagnostic = diagnostic, name = name)
 end
 

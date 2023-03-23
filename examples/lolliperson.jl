@@ -83,7 +83,27 @@ function lolli_example(num_particles, num_iterations;
         end
 
         close_video(video_out)
+    elseif transform_type == :lean
+        lean_angle = fi("lean_angle", -pi)
+        lolli = LolliPerson(height; fis = [lean_angle],
+                            ArrayType = ArrayType,
+                            num_particles = num_particles,
+                            num_iterations = num_iterations,
+                            diagnostic = diagnostic)
 
+        video_out = open_video(res; framerate = 30, filename = "out.mp4")
+        for i = 1:num_frames
+            new_angle = -pi + 2*pi*i/num_frames
+            lean_angle = set(lean_angle, new_angle)
+
+            update_fis!(lolli; fis = [lean_angle])
+            run!(lolli)
+            write_video!(video_out, [bg, lolli])
+            reset!(lolli)
+            reset!(bg)
+        end
+
+        close_video(video_out)
     end
 
     return lolli
