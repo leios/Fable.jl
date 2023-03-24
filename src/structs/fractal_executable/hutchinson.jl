@@ -235,14 +235,14 @@ function configure_hutchinson(fums::Vector{FractalUserMethod},
 
 end
 
-function Hutchinson(fum::FractalUserMethod; name = "", fis = [],
+function Hutchinson(fum::FractalUserMethod; name = "", fis = FractalInput[],
                     diagnostic = false, final = false)
     Hutchinson([fum], [Shaders.previous], (1.0,); final = final,
                 diagnostic = diagnostic, name = name, fis = fis)
 end
 
 function Hutchinson(fums::Array{FractalUserMethod},
-                    color_set, prob_set; name = "", fis = [],
+                    color_set, prob_set; name = "", fis = FractalInput[],
                     diagnostic = false, final = false)
     Hutchinson(fums, fis, color_set, prob_set; final = final,
                diagnostic = diagnostic, name = name)

@@ -94,10 +94,18 @@ function update_fis!(layer::LolliLayer;
     l = length(fis) + length(head_fis)
     if l >= 1
         H = layer.head.H1
+        H2 = layer.head.H2
         for i = 1:length(fis)
             for j = 1:length(H.fi_set)
                 if fis[i].name == H.fi_set[j].name
                     H.fi_set[j] = fis[i]
+                end
+            end
+            if H2 != nothing
+                for j = 1:length(H2.fi_set)
+                    if fis[i].name == H2.fi_set[j].name
+                        H2.fi_set[j] = fis[i]
+                    end
                 end
             end
         end
@@ -107,18 +115,36 @@ function update_fis!(layer::LolliLayer;
                     H.fi_set[j] = head_fis[i]
                 end
             end
+            if H2 != nothing
+                for j = 1:length(H2.fi_set)
+                    if head_fis[i].name == H2.fi_set[j].name
+                        H2.fi_set[j] = head_fis[i]
+                    end
+                end
+            end
 
         end
         update_fis!(H)
+        if H2 != nothing
+            update_fis!(H2)
+        end
     end
 
     l = length(fis) + length(body_fis)
     if l >= 1
         H = layer.body.H1
+        H2 = layer.body.H2
         for i = 1:length(fis)
             for j = 1:length(H.fi_set)
                 if fis[i].name == H.fi_set[j].name 
                     H.fi_set[j] = fis[i]
+                end
+            end
+            if H2 != nothing
+                for j = 1:length(H2.fi_set)
+                    if fis[i].name == H2.fi_set[j].name
+                        H2.fi_set[j] = fis[i]
+                    end
                 end
             end
         end
@@ -128,10 +154,18 @@ function update_fis!(layer::LolliLayer;
                     H.fi_set[j] = body_fis[i]
                 end
             end
-
+            if H2 != nothing
+                for j = 1:length(H2.fi_set)
+                    if head_fis[i].name == H2.fi_set[j].name
+                        H2.fi_set[j] = head_fis[i]
+                    end
+                end
+            end
         end
         update_fis!(H)
-
+        if H2 != nothing
+            update_fis!(H2)
+        end
     end
 end
 
@@ -146,13 +180,36 @@ end
 #------------------------------------------------------------------------------#
 
 lean_head = @fum function lean_head(x, y;
-                                    height = 1.0,
+                                    foot_position = (0.0, 0.0),
                                     lean_angle = 0.0)
+    lean_angle += pi*0.5
+    x_temp = x - foot_position[2]
+    y_temp = y - foot_position[1]
+
+    x_temp2 = x_temp*cos(lean_angle) - y_temp*sin(lean_angle)
+    y_temp = x_temp*sin(lean_angle) + y_temp*cos(lean_angle)
+
+    x = x_temp2 + foot_position[2]
+    y = y_temp + foot_position[1]
+    
 end
 
 lean_body = @fum function lean_body(x, y;
                                     height = 1.0,
+                                    foot_position = (0,0),
                                     lean_angle = 0.0)
+    lean_angle += pi*0.5
+    lean_angle *= -(y - foot_position[1])/(0.5*height)
+
+    x_temp = x - foot_position[2]
+    y_temp = y - foot_position[1]
+
+    x_temp2 = x_temp*cos(lean_angle) - y_temp*sin(lean_angle)
+    y_temp = x_temp*sin(lean_angle) + y_temp*cos(lean_angle)
+
+    x = x_temp2 + foot_position[2]
+    y = y_temp + foot_position[1]
+
 end
 
 simple_eyes = @fum function simple_eyes(x, y;
@@ -222,7 +279,7 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
     for i = 1:length(fis)
         if fis[i].name == "lean_angle"
             H_head = Hutchinson(lean_head(lean_angle = fis[i],
-                                          height = height);
+                                          foot_position = foot_position);
                                 diagnostic = diagnostic,
                                 name = "lean_head_"*name,
                                 final = true, fis = head_fis)
@@ -233,6 +290,7 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
             end
 
             H_body = Hutchinson(lean_body(lean_angle = fis[i],
+                                          foot_position = foot_position,
                                           height = height);
                                 diagnostic = diagnostic,
                                 name = "lean_body_"*name,
