@@ -131,6 +131,9 @@ end
                 @inbounds bin = find_bin(layer_values, shared_tile[lid,1],
                                          shared_tile[lid,2], bounds,
                                          bin_widths)
+                #if tid == 1
+                #    @print(bin, '\n')
+                #end
                 if bin > 0 && bin <= length(layer_values)
 
                     @inbounds @atomic layer_values[bin] += 1

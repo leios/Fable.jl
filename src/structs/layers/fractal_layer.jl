@@ -162,11 +162,11 @@ function to_canvas!(layer::FractalLayer)
         update_params!(layer; max_value = maximum(layer.values))
     end
 
-    if isa(layer.reds, Array)
+    if layer.params.ArrayType <: Array
         kernel! = f(CPU(), layer.params.numcores)
-    elseif has_cuda_gpu() && isa(layer.reds, CuArray)
+    elseif has_cuda_gpu() && layer.params.ArrayType <: CuArray
         kernel! = f(CUDADevice(), layer.params.numthreads)
-    elseif has_rocm_gpu() && isa(layer.reds, ROCArray)
+    elseif has_rocm_gpu() && layer.params.ArrayType <: ROCArray
         kernel! = f(ROCDevice(), layer.params.numthreads)
     end
 

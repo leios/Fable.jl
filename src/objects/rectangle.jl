@@ -30,6 +30,7 @@ rectangle_fum = @fum function rectangle_fum(x, y;
     x = 0.5*(p_x + x)
     y = 0.5*(p_y + y)
 end
+
 function define_rectangle(; position::Union{Vector, Tuple, FractalInput}=(0,0),
                             rotation::Union{Number, FractalInput} = 0.0,
                             scale_x::Union{Number, FractalInput} = 1.0,

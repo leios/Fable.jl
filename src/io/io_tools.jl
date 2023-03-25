@@ -110,7 +110,9 @@ function zero!(layer::AL) where AL <: AbstractLayer
     layer.canvas[:] .= RGBA(0.0, 0.0, 0.0, 0.0)
 end
 
-function zero!(a::Array{T}) where T <: Union{RGB, RGB{N0f8}}
+function zero!(a::Union{Array{T},
+                        CuArray{T},
+                        ROCArray{T}}) where T <: Union{RGB, RGBA}
     a[:] .= RGBA(0.0, 0.0, 0.0, 0.0)
 end
 
@@ -124,8 +126,8 @@ function zero!(layer::FractalLayer)
         kernel! = zero_kernel!(ROCDevice(), layer.params.numthreads)
     end
 
-    kernel!(layer.values, layer.reds, layer.greens, layer.blues,
-            ndrange = size(layer.values))
+    wait(kernel!(layer.values, layer.reds, layer.greens, layer.blues,
+                 ndrange = size(layer.values)))
 end
 
 function reset!(layers::Vector{AL}) where AL <: AbstractLayer
@@ -200,7 +202,7 @@ function write_video!(v::VideoParams,
  
     postprocess!(layers[1])
     for i = 2:length(layers)
-        post_process!(layers[i])
+        postprocess!(layers[i])
         mix_layers!(layers[1], layers[i]; mode = :simple)
     end
 
@@ -222,7 +224,7 @@ function write_video!(n::Nothing, layers::Vector{AL};
                       reset = true) where AL <: AbstractLayer
     postprocess!(layers[1])
     for i = 2:length(layers)
-        post_process!(layers[i])
+        postprocess!(layers[i])
         mix_layers!(layers[1], layers[i]; mode = :simple)
     end
 
