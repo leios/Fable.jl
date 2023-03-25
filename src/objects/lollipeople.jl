@@ -181,10 +181,13 @@ end
 
 lean_head = @fum function lean_head(x, y;
                                     foot_position = (0.0, 0.0),
+                                    head_radius = 0.25,
+                                    lean_velocity = 0.0,
                                     lean_angle = 0.0)
-    lean_angle += pi*0.5
     x_temp = x - foot_position[2]
     y_temp = y - foot_position[1]
+
+    lean_angle += lean_velocity*x_temp/head_radius
 
     x_temp2 = x_temp*cos(lean_angle) - y_temp*sin(lean_angle)
     y_temp = x_temp*sin(lean_angle) + y_temp*cos(lean_angle)
@@ -197,12 +200,13 @@ end
 lean_body = @fum function lean_body(x, y;
                                     height = 1.0,
                                     foot_position = (0,0),
+                                    lean_velocity = 0.0,
                                     lean_angle = 0.0)
-    lean_angle += pi*0.5
-    lean_angle *= -(y - foot_position[1])/(0.5*height)
-
     x_temp = x - foot_position[2]
     y_temp = y - foot_position[1]
+
+    lean_angle *= -(y - foot_position[1])/(0.5*height)
+    lean_angle += lean_velocity*x_temp/(0.1*height)
 
     x_temp2 = x_temp*cos(lean_angle) - y_temp*sin(lean_angle)
     y_temp = x_temp*sin(lean_angle) + y_temp*cos(lean_angle)
@@ -278,7 +282,15 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
     H2_body = nothing
     for i = 1:length(fis)
         if fis[i].name == "lean_angle"
+            lean_velocity_idx = find_fi(fis, "lean_velocity")
+            if lean_velocity_idx != nothing
+                lean_velocity = fis[lean_velocity_idx]
+            else
+                lean_velocity = 0.0
+            end
             H_head = Hutchinson(lean_head(lean_angle = fis[i],
+                                          lean_velocity = lean_velocity,
+                                          head_radius = head_radius,
                                           foot_position = foot_position);
                                 diagnostic = diagnostic,
                                 name = "lean_head_"*name,
@@ -290,6 +302,7 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
             end
 
             H_body = Hutchinson(lean_body(lean_angle = fis[i],
+                                          lean_velocity = lean_velocity,
                                           foot_position = foot_position,
                                           height = height);
                                 diagnostic = diagnostic,
