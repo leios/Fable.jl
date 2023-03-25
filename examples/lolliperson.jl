@@ -97,7 +97,6 @@ function lolli_example(num_particles, num_iterations;
             new_angle = 0.25*pi*sin(2*pi*i/num_frames)
             lean_velocity = set(lean_velocity, abs(lean_angle.val - new_angle))
             lean_angle = set(lean_angle, new_angle)
-            println(lean_angle)
 
             update_fis!(lolli; fis = [lean_angle, lean_velocity])
             run!(lolli)
