@@ -12,7 +12,7 @@ function run!(layer::ShaderLayer; diagnostic = false, frame = 0)
 
     bounds = find_bounds(layer)
 
-    wait(kernel!(layer.shader.symbols, layer.canvas, bounds,
+    wait(@invokelatest kernel!(layer.shader.symbols, layer.canvas, bounds,
                  layer.shader.op, frame, ndrange = size(layer.canvas)))
 end
 
