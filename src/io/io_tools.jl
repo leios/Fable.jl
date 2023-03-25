@@ -151,7 +151,7 @@ function write_image(layer;
                      filename::Union{Nothing, String} = nothing,
                      reset = true,
                      img = fill(RGBA{Float32}(0,0,0),
-                                size(layer.canvas))) where AL <: AbstractLayer
+                                size(layer.canvas)))
 
     postprocess!(layer)
 

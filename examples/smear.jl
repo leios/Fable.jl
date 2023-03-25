@@ -68,7 +68,7 @@ function smear_example(num_particles, num_iterations, total_frames;
             write_video!(video_out, [layer])
         elseif output_type == :image
             filename = "check"*lpad(i,5,"0")*".png"
-            write_image([layer], filename)
+            write_image([layer]; filename=filename)
         end
 
         # clearing frame

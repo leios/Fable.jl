@@ -231,7 +231,7 @@ end
 
 function Hutchinson(fums::Array{FractalUserMethod},
                     color_set, prob_set; name = "",
-                    diagnostic = false, final = false) where A <: Array
+                    diagnostic = false, final = false)
     Hutchinson(fums, [], color_set, prob_set; final = final,
                diagnostic = diagnostic, name = name)
 end
@@ -239,7 +239,7 @@ end
 # This is a constructor for when people read in an array of arrays for colors
 function Hutchinson(fums::Array{FractalUserMethod},
                     fis::Vector, color_set, prob_set; name = "",
-                    diagnostic = false, final = false) where A <: Array
+                    diagnostic = false, final = false)
 
     fnum = length(fums)
     temp_colors = new_color_array(color_set, diagnostic = diagnostic)
