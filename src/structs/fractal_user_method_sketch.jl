@@ -2,35 +2,44 @@ export FractalUserMethod, @fum
 
 struct FractalUserMethod
     name::Symbol
-    args::Tuple
+    config::Symbol
     kwargs::NamedTuple
     fx::Function
 end
 
 args(a,n) = a.args[n]
 
-function __to_NamedTuple(kwargs)
-    NamedTuple{Tuple(args.(kwargs[:],1))}(Tuple(args.(kwargs[:],2)))
+function __set_args(args, config)
+    if config == :fractal
+        correct_args = [:y, :x, :frame]
+    elseif config == :shader
+        correct_args = [:y, :x, :red, :green, :blue, :alpha, :frame]
+    end
+    if !issubset(args, correct_args)
+        error("Function arguments must be one of the following:\n"*
+              string(correct_args)*"\n"*
+              "Please use key-word arguments for any additional arguments!")
+    end
+    return correct_args
 end
+
+# this function can create a NamedTuple from kwargs in a macro, ie:
+# kwargs = __to_NamedTuple(def[:kwargs])
+# It is not currently used, but took a while to find out, so I'm leaving it
+# here for debugging purposes
+#function __to_NamedTuple(kwargs)
+#    NamedTuple{Tuple(args.(kwargs[:],1))}(Tuple(args.(kwargs[:],2)))
+#end
 
 function __define_fum_stuff(expr, config)
     def = MacroTools.splitdef(expr)
     def[:name] = name = Symbol(def[:name], :_fum)
-    if config == :fractal
-        args = [:y, :x, :frame]
-    elseif config == :shader
-        args = [:y, :x, :red, :green, :blue, :alpha, :frame]
-    end
     used_args = def[:args]
-    if !issubset(used_args, args)
-        error("Function arguments must be one of the following:\n"*
-              string(args)*"\n"*
-              "Please use key-word arguments for any additional arguments!")
-    end
+    args = __set_args(used_args, config)
     def[:args] = args
-    kwargs = __to_NamedTuple(def[:kwargs])
+    kwargs = NamedTuple()
     fum_fx = combinedef(def)
-    return name, args, kwargs, eval(fum_fx)
+    return name, config, kwargs, eval(fum_fx)
 end
 
 # Note: this operator currently works like this:
@@ -69,38 +78,41 @@ macro fum(ex...)
     else
         error("Cannot convert expr to Fractal User Method!")
     end
-    return FractalUserMethod(name,Tuple(args),kwargs,fum_fx)
+    return FractalUserMethod(name,config,kwargs,fum_fx)
 end
 
-function (a::Fae.FractalUserMethod)(args...; kwargs...)
-    new_kwargs = deepcopy(a.kwargs)
-    new_name = string(a.name)
-    for kwarg in kwargs
-        for i = 1:length(a.kwargs)
-            # a.kwargs[i].args[end-1] is the rhs of the fum kwarg
-            if string(kwarg[1]) == string(a.kwargs[i].args[end-1])
-                if isa(kwarg[2], FractalInput)
-                    if isa(kwarg[2].val, Number) || kwarg[2].index == 0
-                        new_kwargs[i] = Meta.parse(string(kwarg[1]) *"="*
-                                                   string(kwarg[2].name))
-                    else
-                        new_kwargs[i] = Meta.parse(string(kwarg[1]) *"="*
-                                                   string(kwarg[2].name) *"["*
-                                                   string(kwarg[2].index) *"]")
-                    end
-                elseif isa(kwarg[2], Array)
-                    error("Cannot create new kwarg array! "*
-                          "Please use Tuple syntax ()!")
-                else
-                    new_kwargs[i] = Meta.parse(string(kwarg[1]) *"="*
-                                               string(kwarg[2]))
-                end
-            elseif string(kwarg[1]) == "name"
-                new_name *= kwarg[2]
-            end
-        end
+
+function (a::FractalUserMethod)(args...; kwargs...)
+    # we do not reason about standard args right now, although this could
+    # be considered in the future if we ensure users always configure their
+    # fums beforehand. We could then save the args and such in each fum and
+    # assign them to a value that is passed in to the compute kernels.
+    if length(args) > 0
+        @warn("function arguments cannot be set at"*
+              " this time and will be ignored!\n"*
+              "Please use appropriate key-word arguments instead!")
     end
 
-    return FractalUserMethod(Symbol(new_name), a.args, new_kwargs, a.body)
+    # checking to make sure the symbols are assignable in the first place
+    error_flag = false
+
+    # Note: grabs all keywords from the a.fx. If multiple definitions exist,
+    # it takes the first one. It might mistakenly grab the wrong function.
+    # If this happens, we need to reason about how to pick the right function
+    # when two exist with the same name, but different kwargs...
+    known_kwargs = Base.kwarg_decl.(methods(a.fx))[1]
+    println(known_kwargs)
+    for key in keys(kwargs)
+        if !in(key, known_kwargs)
+            @warn(string(key)*" not found in set of fum key-word args!")
+            error_flag = true
+        end
+    end
+    if error_flag
+        error("one or more keys not found in set of fum key-word args!\n"*
+              "Maybe consider creating a new fum function with the right "*
+               "key-word arguments?")
+    end
+    return FractalUserMethod(a.name, a.config, NamedTuple(kwargs), a.fx)
 end
 
