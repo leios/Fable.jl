@@ -18,6 +18,8 @@ stretch_and_rotate = @fum function stretch_and_rotate(
 
     x = temp_x + object_position[2]
     y = temp_y + object_position[1]
+
+    return (y,x)
 end
 
 simple_smear = @fum function simple_smear(x,y;
@@ -30,6 +32,7 @@ simple_smear = @fum function simple_smear(x,y;
 
     x = (x-object_position[2])*temp[2] + object_position[2]
     y = (y-object_position[1])*temp[1] + object_position[1]
+    return (y,x)
 end
 
 end

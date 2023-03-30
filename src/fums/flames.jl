@@ -9,6 +9,7 @@ end
 scale = @fum function scale(x, y; scale = (1,1))
     x = scale[2]*x
     y = scale[1]*y
+    return (y,x)
 end
 
 scale_and_translate = @fum function scale_and_translate(x, y;
@@ -16,6 +17,7 @@ scale_and_translate = @fum function scale_and_translate(x, y;
                                                        scale = (1, 1))
     x = scale[2]*x + translation[2]
     y = scale[1]*y + translation[1]
+    return (y,x)
 end
 
 
@@ -23,11 +25,13 @@ perspective = @fum function perspective(x, y; theta = 0.5*pi, dist = 1)
     C = dist/(dist - y*sin(theta))
     x *= C
     y *= C*cos(theta)
+    return (y,x)
 end
 
 cloud = @fum function cloud(x, y)
     x *= 2
     y = -(y+exp(-abs(y+2)^2/2))
+    return (y,x)
 end
 
 waves = @fum function waves(x, y; c = 1, f = 1, b = 1, e = 1)
@@ -35,12 +39,14 @@ waves = @fum function waves(x, y; c = 1, f = 1, b = 1, e = 1)
 
     x += b * sin(y/c^2)
     y += e * sin(x_temp/f^2)
+    return (y,x)
 end
 
 fae_cross = @fum function fae_cross(x, y)
     val = sqrt(1/(x^2 + y^2)^2)
     x *= val
     y *= val
+    return (y,x)
 end
 
 fan = @fum function fan(x, y; c = 1, f = 1)
@@ -57,17 +63,20 @@ fan = @fum function fan(x, y; c = 1, f = 1)
         y = r*sin(theta + 0.5*t)
     end
 
+    return (y,x)
 end
 
 popcorn = @fum function popcorn(x, y; c = 1, f = 1)
     x_temp = x
     x += c*sin(tan(3*y))
     y += f*sin(tan(3*x_temp))
+    return (y,x)
 end
 
 shift = @fum function shift(x, y; loc = (0,0))
     x += loc[2]
     y += loc[1]
+    return (y,x)
 end
 
 antibubble = @fum function antibubble(x, y)
@@ -75,6 +84,7 @@ antibubble = @fum function antibubble(x, y)
     c = r2/4
     x = c*x
     y = c*y
+    return (y,x)
 end
 
 bubble = @fum function bubble(x, y)
@@ -82,34 +92,28 @@ bubble = @fum function bubble(x, y)
     c = 4/(4+r2)
     x = c*x
     y = c*y
+    return (y,x)
 end
 
 halfway = @fum function halfway(x, y; loc=(0,0))
     x = 0.5*(loc[2] + x)
     y = 0.5*(loc[1] + y)
+    return (y,x)
 end
 
 sinusoidal = @fum function sinusoidal(x, y)
     x = sin(x)
     y = sin(y)
-end
-
-polar_play = @fum function polar_play(x, y, t, theta)
-    r = sqrt(sum(x*x + y*y))
-    theta = atan(y, x)
-    theta += theta*t
-
-    y = 1-r
-    x = theta/pi
+    return (y,x)
 end
 
 polar = @fum function polar(x, y)
     r = sqrt(sum(x*x + y*y))
     theta = atan(y, x)
 
-
     y = r-1
     x = theta/pi
+    return (y,x)
 end
 
 horseshoe = @fum function horseshoe(x, y)
@@ -123,6 +127,7 @@ horseshoe = @fum function horseshoe(x, y)
 
     x = v1
     y = v2
+    return (y,x)
 end
 
 heart = @fum function heart(x, y)
@@ -131,11 +136,13 @@ heart = @fum function heart(x, y)
 
     y = -r*cos(theta*r)
     x = r*sin(theta*r)
+    return (y,x)
 end
 
 rotate = @fum function rotate(x, y; theta = 0.5*pi)
     x = x*cos(theta) - y*sin(theta)
     y = x*sin(theta) + y*cos(theta)
+    return (y,x)
 end
 
 swirl = @fum function swirl(x, y)
@@ -146,5 +153,6 @@ swirl = @fum function swirl(x, y)
 
     y = v1
     x = v2
+    return (y,x)
 end
 end

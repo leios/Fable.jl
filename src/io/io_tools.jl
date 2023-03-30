@@ -3,6 +3,7 @@ export write_image, write_video!, zero!, reset!, create_canvas, mix_layers!
 function mix_layers!(layer_1::AL1, layer_2::AL2;
                      mode = :simple) where {AL1 <: AbstractLayer,
                                             AL2 <: AbstractLayer}
+#=
     if AL1 <: FractalLayer
         to_canvas!(layer_1)
     end
@@ -10,6 +11,7 @@ function mix_layers!(layer_1::AL1, layer_2::AL2;
     if AL2 <: FractalLayer
         to_canvas!(layer_2)
     end
+=#
 
     overlap = find_overlap(layer_1, layer_2)
     wait(mix_layers!(layer_1, layer_2, overlap))
@@ -116,6 +118,7 @@ function zero!(a::Union{Array{T},
     a[:] .= RGBA(0.0, 0.0, 0.0, 0.0)
 end
 
+#=
 function zero!(layer::FractalLayer)
     
     if layer.params.ArrayType <: Array
@@ -129,6 +132,7 @@ function zero!(layer::FractalLayer)
     wait(kernel!(layer.values, layer.reds, layer.greens, layer.blues,
                  ndrange = size(layer.values)))
 end
+=#
 
 function reset!(layers::Vector{AL}) where AL <: AbstractLayer
     for i = 1:length(layers)

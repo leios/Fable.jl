@@ -37,10 +37,10 @@ include("math/histogram.jl")
 include("structs/fractal_input.jl")
 include("structs/fractal_user_methods.jl")
 include("fums/shaders.jl")
-include("structs/fractal_operators.jl")
-include("structs/flame_structs.jl")
+#include("structs/fractal_operators.jl")
+#include("structs/flame_structs.jl")
 include("structs/fractal_executable/fractal_executable.jl")
-include("structs/fractal_executable/hutchinson.jl")
+#include("structs/fractal_executable/hutchinson.jl")
 include("structs/fractal_executable/shader.jl")
 
 # Operations
@@ -49,15 +49,15 @@ include("fums/flames.jl")
 include("fums/smears.jl")
 
 # Objects
-include("objects/rectangle.jl")
-include("objects/circle.jl")
-include("objects/triangle.jl")
-include("objects/barnsley.jl")
+#include("objects/rectangle.jl")
+#include("objects/circle.jl")
+#include("objects/triangle.jl")
+#include("objects/barnsley.jl")
 
 # IO
 include("structs/layers/layers.jl")
 include("io/postprocess/postprocess.jl")
-include("structs/layers/fractal_layer.jl")
+#include("structs/layers/fractal_layer.jl")
 include("structs/layers/color_layer.jl")
 include("structs/layers/image_layer.jl")
 include("structs/layers/shader_layer.jl")
@@ -72,11 +72,11 @@ include("io/postprocess/outline.jl")
 
 # Main file
 include("run/run.jl")
-include("run/fractal_flame.jl")
+#include("run/fractal_flame.jl")
 include("run/shader.jl")
 include("run/color.jl")
 
 # Lollipeople
-include("objects/lollipeople.jl")
+#include("objects/lollipeople.jl")
 
 end # module

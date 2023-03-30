@@ -1,5 +1,50 @@
 export run!
 
+function solve(fums::Tuple{FractalUserMethod},
+               y, x, red, green, blue, alpha, frame)
+
+    if length(fums) == 0
+        # do nothing
+    elseif length(fums) == 1
+        red, green, blue, alpha = fum.fx(y, x, red, green, blue, alpha;
+                                         fum.kwargs...)
+    else
+        # recursive
+        for i = 1:length(fums)
+            solve(fums[i], y, x, red, green, blue, alpha)
+        end
+
+        # stack
+#=
+        s = Stack{Union{FractalUserMethod},Tuple}()
+        push(s, fums)
+
+        while length(s) > 0
+            node = pop!(s)
+            if isa(s, Tuple)
+                for i = 1:length(fums)
+                    push!(s, fums[i])
+                end
+            elseif isa(s, FractalUserMethod)
+                red, green, blue, alpha = fum.fx(y, x, red, green, blue, alpha;
+                                                 fum.kwargs...)
+            end
+        end
+=#
+    end
+    return red, green, blue, alpha
+end
+
+function solve_stack(fums::Tuple{FractalUserMethod},
+                     y, x, red, green, blue, alpha, frame)
+    if length == 0
+        # do nothing
+    else
+        s = Stack{FractalUserMethod}()
+    end
+    return red, green, blue, alpha
+end
+
 function run!(layer::ShaderLayer; diagnostic = false, frame = 0) 
 
     if layer.params.ArrayType <: Array
@@ -16,20 +61,16 @@ function run!(layer::ShaderLayer; diagnostic = false, frame = 0)
                  layer.shader.op, frame, ndrange = size(layer.canvas)))
 end
 
-@kernel function shader_kernel!(symbols, canvas, bounds, op, frame)
+@kernel function shader_kernel!(symbols, canvas, bounds, fums, frame)
 
     i, j = @index(Global, NTuple)
-    tid = @index(Global, Linear)
-    lid = @index(Local, Linear)
     res = @ndrange()
-
-    shared_colors = @localmem eltype(canvas[1]) (@groupsize()[1], 4)
 
     @inbounds y = bounds.ymin + (i/res[1])*(bounds.ymax - bounds.ymin)
     @inbounds x = bounds.xmin + (j/res[2])*(bounds.xmax - bounds.xmin)
 
-    op(shared_colors, y, x, lid, symbols, frame)
+    #op(shared_colors, y, x, lid, symbols, frame)
+    red, green, blue, alpha = solve(fums, y, x, 0.0, 0.0, 0.0, 0.0, frame)
 
-    canvas[tid] = RGBA(shared_colors[lid, 1], shared_colors[lid, 2],
-                       shared_colors[lid, 3], shared_colors[lid, 4])
+    canvas[i,j] = RGBA(red, green, blue, alpha)
 end
