@@ -35,16 +35,6 @@ function solve(fums::Tuple{FractalUserMethod},
     return red, green, blue, alpha
 end
 
-function solve_stack(fums::Tuple{FractalUserMethod},
-                     y, x, red, green, blue, alpha, frame)
-    if length == 0
-        # do nothing
-    else
-        s = Stack{FractalUserMethod}()
-    end
-    return red, green, blue, alpha
-end
-
 function run!(layer::ShaderLayer; diagnostic = false, frame = 0) 
 
     if layer.params.ArrayType <: Array
@@ -57,11 +47,13 @@ function run!(layer::ShaderLayer; diagnostic = false, frame = 0)
 
     bounds = find_bounds(layer)
 
-    wait(@invokelatest kernel!(layer.shader.symbols, layer.canvas, bounds,
-                 layer.shader.op, frame, ndrange = size(layer.canvas)))
+    wait(@invokelatest kernel!(layer.canvas, bounds,
+                               layer.shader.fums,
+                               frame,
+                               ndrange = size(layer.canvas)))
 end
 
-@kernel function shader_kernel!(symbols, canvas, bounds, fums, frame)
+@kernel function shader_kernel!(canvas, bounds, fums, frame)
 
     i, j = @index(Global, NTuple)
     res = @ndrange()
@@ -69,7 +61,6 @@ end
     @inbounds y = bounds.ymin + (i/res[1])*(bounds.ymax - bounds.ymin)
     @inbounds x = bounds.xmin + (j/res[2])*(bounds.xmax - bounds.xmin)
 
-    #op(shared_colors, y, x, lid, symbols, frame)
     red, green, blue, alpha = solve(fums, y, x, 0.0, 0.0, 0.0, 0.0, frame)
 
     canvas[i,j] = RGBA(red, green, blue, alpha)
