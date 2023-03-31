@@ -1,17 +1,23 @@
 export run!
 
-function solve(fums::Tuple{FractalUserMethod},
+function solve(fum::FractalUserMethod, y, x, red, green, blue, alpha, frame)
+    red, green, blue, alpha = fum.fx(y, x, red, green, blue, alpha, frame;
+                                     fum.kwargs...)
+end
+
+function solve(fums::Tuple,
                y, x, red, green, blue, alpha, frame)
 
     if length(fums) == 0
         # do nothing
     elseif length(fums) == 1
-        red, green, blue, alpha = fum.fx(y, x, red, green, blue, alpha;
+        red, green, blue, alpha = fum.fx(y, x, red, green, blue, alpha, frame;
                                          fum.kwargs...)
     else
         # recursive
         for i = 1:length(fums)
-            solve(fums[i], y, x, red, green, blue, alpha)
+            red, green, blue, alpha = solve(fums[i], y, x,
+                                            red, green, blue, alpha, frame)
         end
 
         # stack
@@ -26,7 +32,8 @@ function solve(fums::Tuple{FractalUserMethod},
                     push!(s, fums[i])
                 end
             elseif isa(s, FractalUserMethod)
-                red, green, blue, alpha = fum.fx(y, x, red, green, blue, alpha;
+                red, green, blue, alpha = fum.fx(y, x,
+                                                 red, green, blue, alpha, frame;
                                                  fum.kwargs...)
             end
         end
@@ -60,6 +67,7 @@ end
 
     @inbounds y = bounds.ymin + (i/res[1])*(bounds.ymax - bounds.ymin)
     @inbounds x = bounds.xmin + (j/res[2])*(bounds.xmax - bounds.xmin)
+
 
     red, green, blue, alpha = solve(fums, y, x, 0.0, 0.0, 0.0, 0.0, frame)
 

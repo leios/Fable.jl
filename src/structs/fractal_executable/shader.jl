@@ -8,8 +8,8 @@ end
 
 fee(S::Type{Shader}, args...; kwargs...) = Shader(args...; kwargs...)
 
-function Shader(fum::FractalUserMethod; name = "shader")
-    return Shader(fum, name))
+function Shader(fum::Union{FractalUserMethod, Tuple}; name = "shader")
+    return Shader(fum, name)
 end
 
 function Shader(a::Shader, b::Shader; mix_function = overlay)

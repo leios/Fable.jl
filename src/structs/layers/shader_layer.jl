@@ -35,7 +35,7 @@ function ShaderLayer(shader::Shader;
 
 end
 
-function ShaderLayer(fum::FractalUserMethod;
+function ShaderLayer(fums::Union{FractalUserMethod, Tuple};
                      postprocessing_steps = Vector{AbstractPostProcess}([]),
                      world_size = (0.9, 1.6),
                      position = (0.0, 0.0),
@@ -46,7 +46,7 @@ function ShaderLayer(fum::FractalUserMethod;
                      numthreads = 256)
     res = (ceil(Int, world_size[1]*ppu), ceil(Int, world_size[2]*ppu))
 
-    return ShaderLayer(Shader(fum),
+    return ShaderLayer(Shader(fums),
                        ArrayType(fill(RGBA(FloatType(0),0,0,0), res)),
                        position,
                        world_size,

@@ -1,10 +1,8 @@
 export FractalUserMethod, @fum
 
-struct FractalUserMethod
-    name::Symbol
-    config::Symbol
-    kwargs::NamedTuple
-    fx::Function
+struct FractalUserMethod{NT <: NamedTuple, F <: Function}
+    kwargs::NT
+    fx::F
 end
 
 args(a,n) = a.args[n]
@@ -39,7 +37,7 @@ function __define_fum_stuff(expr, config)
     def[:args] = args
     kwargs = NamedTuple()
     fum_fx = combinedef(def)
-    return name, config, kwargs, eval(fum_fx)
+    return kwargs, eval(fum_fx)
 end
 
 # Note: this operator currently works like this:
@@ -49,6 +47,7 @@ end
 macro fum(ex...)
 
     config = :fractal
+
     if length(ex) == 1
     elseif length(ex) == 2
         if ex[1] == :color || ex[1] == :shader ||
@@ -68,17 +67,17 @@ macro fum(ex...)
     elseif expr.head == :(=)
         # inline function definitions
         if isa(expr.args[1], Expr)
-            name, args, kwargs, fum_fx = __define_fum_stuff(expr, config)
+            kwargs, fum_fx = __define_fum_stuff(expr, config)
         else
             error("Cannot create FractalUserMethod.\n"*
                   "Input is not a valid function definition!")
         end
     elseif expr.head == :function
-        name, args, kwargs, fum_fx = __define_fum_stuff(expr, config)
+        kwargs, fum_fx = __define_fum_stuff(expr, config)
     else
         error("Cannot convert expr to Fractal User Method!")
     end
-    return FractalUserMethod(name,config,kwargs,fum_fx)
+    return FractalUserMethod(kwargs,fum_fx)
 end
 
 
