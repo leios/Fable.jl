@@ -1,7 +1,10 @@
 export FractalUserMethod, @fum
 
-struct FractalUserMethod{NT <: NamedTuple, F <: Function}
+struct FractalUserMethod{NT <: NamedTuple,
+                         V <: Vector{FractalInput},
+                         F <: Function}
     kwargs::NT
+    fis::V
     fx::F
 end
 
@@ -77,11 +80,12 @@ macro fum(ex...)
     else
         error("Cannot convert expr to Fractal User Method!")
     end
-    return FractalUserMethod(kwargs,fum_fx)
+    return FractalUserMethod(kwargs,FractalInput[], fum_fx)
 end
 
 
 function (a::FractalUserMethod)(args...; kwargs...)
+
     # we do not reason about standard args right now, although this could
     # be considered in the future if we ensure users always configure their
     # fums beforehand. We could then save the args and such in each fum and
@@ -100,18 +104,37 @@ function (a::FractalUserMethod)(args...; kwargs...)
     # If this happens, we need to reason about how to pick the right function
     # when two exist with the same name, but different kwargs...
     known_kwargs = Base.kwarg_decl.(methods(a.fx))[1]
-    println(known_kwargs)
-    for key in keys(kwargs)
-        if !in(key, known_kwargs)
+
+    final_kwarg_idxs = Int[]
+    final_fi_idxs = Int[]
+
+    ks = keys(kwargs)
+    vals = values(NamedTuple(kwargs))
+    for i = 1:length(ks)
+        if !in(ks[i], known_kwargs)
             @warn(string(key)*" not found in set of fum key-word args!")
             error_flag = true
         end
+
+        if isa(vals[i], FractalInput)
+            push!(final_fi_idxs, i)
+        else
+            push!(final_kwarg_idxs, i)
+        end
     end
+
     if error_flag
         error("one or more keys not found in set of fum key-word args!\n"*
               "Maybe consider creating a new fum function with the right "*
                "key-word arguments?")
     end
-    return FractalUserMethod(a.name, a.config, NamedTuple(kwargs), a.fx)
+
+    fis = [FractalInput(ks[i], vals[i].x) for i in final_fi_idxs]
+
+    ks = Tuple(ks[final_kwarg_idxs])
+    vals = Tuple(vals[final_kwarg_idxs])
+
+    final_kwargs = NamedTuple{ks}(vals)
+    return FractalUserMethod(NamedTuple(kwargs), FractalInput[], a.fx)
 end
 

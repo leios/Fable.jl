@@ -1,15 +1,17 @@
 using Fae
 
-radial = @fum function radial(y, x; origin = (0,0))
+radial = @fum shader function radial(y, x; origin = (0,0))
     r = sqrt((x-origin[2])*(x-origin[2]) + (y-origin[1])*(y-origin[1]))
 
     red = 1
     green = min(1, 1/r)
     blue = 1
     alpha = min(1, 1/r)
+
+    return red, green, blue, alpha
 end
 
-rectangle = @fum function rectangle(; position = (0,0), rotation = 0,
+rectangle = @fum shader function rectangle(; position = (0,0), rotation = 0,
                                       scale_x = 1, scale_y = 1)
     if in_rectangle(x, y, position, rotation, scale_x, scale_y)
         red = 1
@@ -22,9 +24,10 @@ rectangle = @fum function rectangle(; position = (0,0), rotation = 0,
         blue = 0
         alpha = 0
     end
+    return red, green, blue, alpha
 end
 
-ellipse = @fum function ellipse(; position = (0,0), rotation = 0,
+ellipse = @fum shader function ellipse(; position = (0,0), rotation = 0,
                                   r1 = 1, r2 = 1)
     if in_ellipse(x, y, position, rotation, r1, r2)
         red = 1
@@ -37,6 +40,7 @@ ellipse = @fum function ellipse(; position = (0,0), rotation = 0,
         blue = 0
         alpha = 0
     end
+    return red, green, blue, alpha
 end
 
 function shader_example(fum; ArrayType = Array, filename = "out.png")

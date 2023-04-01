@@ -2,8 +2,9 @@
 export fee, Shader
 
 mutable struct Shader <: FractalExecutable
-    fums::Union{FractalUserMethod, Tuple}
-    name::String
+    fxs::Tuple{Function}
+    kwargs::Tuple{NamedTuple}
+    fis::Vector{FractalInput}
 end
 
 fee(S::Type{Shader}, args...; kwargs...) = Shader(args...; kwargs...)

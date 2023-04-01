@@ -1,4 +1,4 @@
-export FractalInput, fi, @fi, set!, to_expr
+export FractalInput, fi, @fi, set!, combine
 
 struct FractalInput
     s::Union{Symbol, String}
@@ -11,8 +11,11 @@ function set!(fi::FractalInput, val)
     fi.x.x = val
 end
 
-function to_expr(fi)
-    val = fi.x.x
-    sym = Symbol(fi.s)
-    return :($sym = $val)
+combine(fis::Vector{FractalInput}, nt::NamedTuple) = combine(nt, fis)
+
+function combine(nt::NamedTuple, fis::Vector{FractalInput})
+    fi_vals = (fis[i].x.x for i = 1:length(fis))
+    fi_keys = (Symbol(fis[i].s) for i = 1:length(fis))
+
+    return NamedTuple{(keys(nt)..., fi_keys...)}((values(nt)..., fi_vals...))
 end
