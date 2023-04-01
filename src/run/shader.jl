@@ -1,47 +1,5 @@
 export run!
 
-function solve(fum::FractalUserMethod, y, x, red, green, blue, alpha, frame)
-    red, green, blue, alpha = fum.fx(y, x, red, green, blue, alpha, frame;
-                                     fum.kwargs...)
-end
-
-function solve(fums::Tuple,
-               y, x, red, green, blue, alpha, frame)
-
-    if length(fums) == 0
-        # do nothing
-    elseif length(fums) == 1
-        red, green, blue, alpha = fum.fx(y, x, red, green, blue, alpha, frame;
-                                         fum.kwargs...)
-    else
-        # recursive
-        for i = 1:length(fums)
-            red, green, blue, alpha = solve(fums[i], y, x,
-                                            red, green, blue, alpha, frame)
-        end
-
-        # stack
-#=
-        s = Stack{Union{FractalUserMethod},Tuple}()
-        push(s, fums)
-
-        while length(s) > 0
-            node = pop!(s)
-            if isa(s, Tuple)
-                for i = 1:length(fums)
-                    push!(s, fums[i])
-                end
-            elseif isa(s, FractalUserMethod)
-                red, green, blue, alpha = fum.fx(y, x,
-                                                 red, green, blue, alpha, frame;
-                                                 fum.kwargs...)
-            end
-        end
-=#
-    end
-    return red, green, blue, alpha
-end
-
 function run!(layer::ShaderLayer; diagnostic = false, frame = 0) 
 
     if layer.params.ArrayType <: Array
@@ -55,12 +13,13 @@ function run!(layer::ShaderLayer; diagnostic = false, frame = 0)
     bounds = find_bounds(layer)
 
     wait(@invokelatest kernel!(layer.canvas, bounds,
-                               layer.shader.fums,
+                               layer.shader.fxs,
+                               combine(layer.shader.kwargs, layer.shader.fis),
                                frame,
                                ndrange = size(layer.canvas)))
 end
 
-@kernel function shader_kernel!(canvas, bounds, fums, frame)
+@kernel function shader_kernel!(canvas, bounds, fxs, kwargs, frame)
 
     i, j = @index(Global, NTuple)
     res = @ndrange()
@@ -68,8 +27,10 @@ end
     @inbounds y = bounds.ymin + (i/res[1])*(bounds.ymax - bounds.ymin)
     @inbounds x = bounds.xmin + (j/res[2])*(bounds.xmax - bounds.xmin)
 
-
-    red, green, blue, alpha = solve(fums, y, x, 0.0, 0.0, 0.0, 0.0, frame)
+    for i = 1:length(fxs)
+        red, green, blue, alpha = fxs[i](y, x, red, green, blue, alpha, frame;
+                                         kwargs[i]...)
+    end
 
     canvas[i,j] = RGBA(red, green, blue, alpha)
 end

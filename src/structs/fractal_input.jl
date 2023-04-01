@@ -14,6 +14,10 @@ end
 combine(fis::Vector{FractalInput}, nt::NamedTuple) = combine(nt, fis)
 
 function combine(nt::NamedTuple, fis::Vector{FractalInput})
+    if length(fis) == 0
+        return nt
+    end
+
     fi_vals = (fis[i].x.x for i = 1:length(fis))
     fi_keys = (Symbol(fis[i].s) for i = 1:length(fis))
 

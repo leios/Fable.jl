@@ -2,31 +2,46 @@
 export fee, Shader
 
 mutable struct Shader <: FractalExecutable
-    fxs::Tuple{Function}
-    kwargs::Tuple{NamedTuple}
-    fis::Vector{FractalInput}
+    fxs::Tuple
+    kwargs::Tuple
+    fis::Tuple
 end
+
+Shader() = Shader((),(),())
 
 fee(S::Type{Shader}, args...; kwargs...) = Shader(args...; kwargs...)
 
-function Shader(fum::Union{FractalUserMethod, Tuple}; name = "shader")
-    return Shader(fum, name)
+function Shader(fum::FractalUserMethod)
+    return Shader((fum.fx,), (fum.kwargs,), (fum.fis,))
 end
 
-function Shader(a::Shader, b::Shader; mix_function = overlay)
-    new_name = a.name*"_"*b.name
+function Shader(fums::Tuple)
+    if length(fums) == 0
+        error("No FractalUserMethod provided!")
+    elseif length(fums) == 1
+        return Shader(fums[1])
+    else
+        # recursive
+        shader = Shader()
+        for i = 1:length(fums)
+            shader = Shader(shader, Shader(fums[i]))
+        end
 
-    return Shader((a.fums, b.fums), name = new_name)
-    
+        return shader
+    end
 end
 
-function Shader(shaders::Vector{Shader}; mix_function = mix)
-    all_fums = [shaders[i].fums for i = 1:length(shaders)]
-    name = shaders[1].name
+function Shader(a::Shader, b::Shader)
+    return Shader((a.fxs..., b.fxs...),
+                  (a.kwargs..., b.kwargs...),
+                  (a.fis..., b.fis...))
+end
 
+function Shader(shaders::Vector{Shader})
+    shader = shaders[1]
     for i = 2:length(shaders)
-        new_name = new_name*"_"*shaders[i].name
+        shader = Shader(shader, shaders[i])
     end
 
-    return Shader(Tuple(all_fums), new_name)
+    return shader
 end
