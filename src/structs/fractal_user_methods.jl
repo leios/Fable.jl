@@ -135,6 +135,6 @@ function (a::FractalUserMethod)(args...; kwargs...)
     vals = Tuple(vals[final_kwarg_idxs])
 
     final_kwargs = NamedTuple{ks}(vals)
-    return FractalUserMethod(NamedTuple(kwargs), FractalInput[], a.fx)
+    return FractalUserMethod(final_kwargs, fis, a.fx)
 end
 

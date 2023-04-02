@@ -27,6 +27,11 @@ end
     @inbounds y = bounds.ymin + (i/res[1])*(bounds.ymax - bounds.ymin)
     @inbounds x = bounds.xmin + (j/res[2])*(bounds.xmax - bounds.xmin)
 
+    red = 0.0
+    green = 0.0
+    blue = 0.0
+    alpha = 0.0
+
     for i = 1:length(fxs)
         red, green, blue, alpha = fxs[i](y, x, red, green, blue, alpha, frame;
                                          kwargs[i]...)
