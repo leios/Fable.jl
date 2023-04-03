@@ -26,14 +26,11 @@ function run!(layer::ShaderLayer; diagnostic = false, frame = 0)
 
     bounds = find_bounds(layer)
 
-    println(combine(layer.shader.kwargs, layer.shader.fis))
-
     wait(kernel!(layer.canvas, bounds,
-                               layer.shader.fxs,
-                               combine(layer.shader.kwargs, layer.shader.fis),
-                               frame,
-                               #ndrange = (10,100)))
-                               ndrange = size(layer.canvas)))
+                 layer.shader.fxs,
+                 combine(layer.shader.kwargs, layer.shader.fis),
+                 frame,
+                 ndrange = size(layer.canvas)))
 end
 
 @kernel function shader_kernel!(canvas, bounds, fxs, kwargs, frame)
@@ -45,16 +42,6 @@ end
     @inbounds x = bounds.xmin + (j/res[2])*(bounds.xmax - bounds.xmin)
 
     color = RGBA{Float32}(0,0,0,0)
-
-    #@print(length(fxs))
-    #@eval Base.Cartesian.@nexprs $(length(fxs)) q->$(fxs)[q]($y, $x, $color, $frame; $(kwargs)[q]...)
-    #lt = 2
-    #Fae.@nexprs lt q->color = fxs[q](y, x, color, frame; kwargs[q]...)
-#=
-    for q = 1:length(fxs)
-        @inbounds color = fxs[q](y, x, color, frame; kwargs[q]...)
-    end
-=#
 
     color = shader_loop(fxs, y, x, color, frame, kwargs)
 
