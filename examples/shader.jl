@@ -14,17 +14,9 @@ end
 rectangle = @fum shader function rectangle(; position = (0,0), rotation = 0,
                                       scale_x = 1, scale_y = 1)
     if in_rectangle(x, y, position, rotation, scale_x, scale_y)
-        red = 1
-        green = 1
-        blue = 1
-        alpha = 1
-    else
-        red = 0
-        green = 0
-        blue = 0
-        alpha = 0
+        return RGBA(1,1,1,1)
     end
-    return red, green, blue, alpha
+    return color
 end
 
 ellipse = @fum shader function ellipse(; position = (0,0), rotation = 0,

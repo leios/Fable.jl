@@ -1,5 +1,19 @@
 export run!
 
+@generated function shader_loop(fxs, y, x, color, frame, kwargs)
+    exs = Expr[]
+    for i = 1:length(fxs.parameters)
+        ex = :(color = fxs[$i](y, x, color, frame; kwargs[$i]...))
+        push!(exs, ex)
+    end
+
+    # to return 3 separate colors to mix separately
+    # return :(Expr(:tuple, $exs...))
+
+    return Expr(:block, exs...)
+end
+
+
 function run!(layer::ShaderLayer; diagnostic = false, frame = 0) 
 
     if layer.params.ArrayType <: Array
@@ -14,10 +28,11 @@ function run!(layer::ShaderLayer; diagnostic = false, frame = 0)
 
     println(combine(layer.shader.kwargs, layer.shader.fis))
 
-    wait(@invokelatest kernel!(layer.canvas, bounds,
+    wait(kernel!(layer.canvas, bounds,
                                layer.shader.fxs,
                                combine(layer.shader.kwargs, layer.shader.fis),
                                frame,
+                               #ndrange = (10,100)))
                                ndrange = size(layer.canvas)))
 end
 
@@ -31,9 +46,17 @@ end
 
     color = RGBA{Float32}(0,0,0,0)
 
-    for i = 1:length(fxs)
-        @inbounds color = fxs[i](y, x, color, frame; kwargs[i]...)
+    #@print(length(fxs))
+    #@eval Base.Cartesian.@nexprs $(length(fxs)) q->$(fxs)[q]($y, $x, $color, $frame; $(kwargs)[q]...)
+    #lt = 2
+    #Fae.@nexprs lt q->color = fxs[q](y, x, color, frame; kwargs[q]...)
+#=
+    for q = 1:length(fxs)
+        @inbounds color = fxs[q](y, x, color, frame; kwargs[q]...)
     end
+=#
+
+    color = shader_loop(fxs, y, x, color, frame, kwargs)
 
     @inbounds canvas[i,j] = RGBA{Float32}(color)
 end
