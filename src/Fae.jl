@@ -28,10 +28,10 @@ set_output(tf) = (global OUTPUT = tf)
 include("structs/time.jl")
 
 # Geometries
-include("math/geometries.jl")
+include("utils/geometries.jl")
 
 # KA kernels
-include("math/histogram.jl")
+include("utils/histogram.jl")
 
 # Fractal flame structures
 include("structs/fractal_input.jl")
@@ -44,7 +44,7 @@ include("structs/fractal_executable/fractal_executable.jl")
 include("structs/fractal_executable/shader.jl")
 
 # Operations
-include("math/simple_rng.jl")
+include("utils/simple_rng.jl")
 include("fums/flames.jl")
 include("fums/smears.jl")
 

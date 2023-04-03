@@ -6,7 +6,7 @@ import Fae.@fum
 
 custom = @fum color custom(; r = 0, g = 0, b = 0, a = 0) = RGBA(r, g, b, a)
 
-previous = @fum color function previous() = color
+previous = @fum color previous() = color
 
 red = @fum color red() = RGBA(1, 0, 0, 1)
 green = @fum color green() = RGBA(0,1,0,1)
