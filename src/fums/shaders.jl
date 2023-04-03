@@ -4,85 +4,18 @@ module Shaders
 
 import Fae.@fum
 
-previous = @fum color function previous()
-    return (red, green, blue, alpha)
-end
+custom = @fum color custom(; r = 0, g = 0, b = 0, a = 0) = RGBA(r, g, b, a)
 
-# for now, to force a color, just make each color channel = -channel + 2*color
-# used only for final colors
-force_red = @fum color function force_red()
-    red = -red + 2
-    green = -green
-    blue = -blue
-    alpha = -alpha + 2
-    return (red, green, blue, alpha)
-end
+previous = @fum color function previous() = color
 
-custom = @fum color function custom(; r = 0, g = 0, b = 0, a = 0)
-    red = red
-    green = green
-    blue = blue
-    alpha = alpha
-    return (red, green, blue, alpha)
-end
-
-gray = @fum color function gray()
-    red = 0.5
-    green = 0.5
-    blue = 0.5
-    alpha = 1
-    return (red, green, blue, alpha)
-end
-
+red = @fum color red() = RGBA(1, 0, 0, 1)
+green = @fum color green() = RGBA(0,1,0,1)
+blue = @fum color blue() = RGBA(0,0,1,1)
+magenta = @fum color magenta() = RGBA(1,0,1,1)
+white = @fum color white() = RGBA(1,1,1,1)
+black = @fum color black() = RGBA(0,0,0,1)
+gray = @fum color gray() = RGBA(0.5, 0.5, 0.5, 1)
 grey = gray
-
-red = @fum color function red()
-    red = 1
-    green = 0
-    blue = 0
-    alpha = 1
-    return (red, green, blue, alpha)
-end
-
-green = @fum color function green()
-    red = 0
-    green = 1
-    blue = 0
-    alpha = 1
-    return (red, green, blue, alpha)
-end
-
-blue = @fum color function blue()
-    red = 0
-    green = 0
-    blue = 1
-    alpha = 1
-    return (red, green, blue, alpha)
-end
-
-magenta = @fum color function magenta()
-    red = 1
-    green = 0
-    blue = 1
-    alpha = 1
-    return (red, green, blue, alpha)
-end
-
-white = @fum color function white()
-    red = 1
-    green = 1
-    blue = 1
-    alpha = 1
-    return (red, green, blue, alpha)
-end
-
-black = @fum color function black()
-    red = 0
-    green = 0
-    blue = 0
-    alpha = 1
-    return (red, green, blue, alpha)
-end
 
 end
 

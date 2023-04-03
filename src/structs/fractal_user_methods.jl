@@ -14,7 +14,7 @@ function __set_args(args, config)
     if config == :fractal
         correct_args = [:y, :x, :frame]
     elseif config == :shader
-        correct_args = [:y, :x, :red, :green, :blue, :alpha, :frame]
+        correct_args = [:y, :x, :color, :frame]
     end
     if !issubset(args, correct_args)
         error("Function arguments must be one of the following:\n"*

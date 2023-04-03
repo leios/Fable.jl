@@ -12,6 +12,8 @@ function run!(layer::ShaderLayer; diagnostic = false, frame = 0)
 
     bounds = find_bounds(layer)
 
+    println(combine(layer.shader.kwargs, layer.shader.fis))
+
     wait(@invokelatest kernel!(layer.canvas, bounds,
                                layer.shader.fxs,
                                combine(layer.shader.kwargs, layer.shader.fis),
@@ -27,15 +29,11 @@ end
     @inbounds y = bounds.ymin + (i/res[1])*(bounds.ymax - bounds.ymin)
     @inbounds x = bounds.xmin + (j/res[2])*(bounds.xmax - bounds.xmin)
 
-    red = 0.0
-    green = 0.0
-    blue = 0.0
-    alpha = 0.0
+    color = RGBA{Float32}(0,0,0,0)
 
     for i = 1:length(fxs)
-        red, green, blue, alpha = fxs[i](y, x, red, green, blue, alpha, frame;
-                                         kwargs[i]...)
+        @inbounds color = fxs[i](y, x, color, frame; kwargs[i]...)
     end
 
-    canvas[i,j] = RGBA(red, green, blue, alpha)
+    @inbounds canvas[i,j] = RGBA{Float32}(color)
 end
