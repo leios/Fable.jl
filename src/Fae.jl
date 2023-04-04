@@ -39,7 +39,7 @@ include("structs/fractal_user_methods.jl")
 include("fums/shaders.jl")
 include("structs/fractal_operators.jl")
 include("structs/fractal_executable/fractal_executable.jl")
-#include("structs/fractal_executable/hutchinson.jl")
+include("structs/fractal_executable/hutchinson.jl")
 include("structs/fractal_executable/shader.jl")
 
 # Operations
