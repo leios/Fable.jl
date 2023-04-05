@@ -1,5 +1,4 @@
-# fee = Fractal Executable
-export fee, Shader
+export Shader
 
 mutable struct Shader <: FractalExecutable
     fxs::Tuple
@@ -8,8 +7,6 @@ mutable struct Shader <: FractalExecutable
 end
 
 Shader() = Shader((),(),())
-
-fee(S::Type{Shader}, args...; kwargs...) = Shader(args...; kwargs...)
 
 function Shader(fum::FractalUserMethod)
     return Shader((fum.fx,), (fum.kwargs,), (fum.fis,))

@@ -1,5 +1,4 @@
-# fee = Fractal Executable
-export fee, Hutchinson
+export Hutchinson
 
 mutable struct Hutchinson <: FractalExecutable
     fxs::Tuple
@@ -13,8 +12,7 @@ mutable struct Hutchinson <: FractalExecutable
 end
 
 Hutchinson() = Hutchinson((),(),(),(),(),(),(),())
-
-fee(H::Type{Hutchinson}, args...; kwargs...) = Hutchinson(args...; kwargs...)
+Hutchinson(H::Hutchinson) = H
 
 function Hutchinson(fum::FractalUserMethod, color_fum::FractalUserMethod,
                     prob::Number)
