@@ -47,3 +47,11 @@ function to_args(nt::NamedTuple, fis::Vector{FractalInput})
     fi_vals = (remove_vectors(fis[i].x.x) for i = 1:length(fis))
     return (values(nt)..., fi_vals...)
 end
+
+function find_fi_index(s, fis::Vector{FractalInput})
+    for i = 1:length(fis)
+        if Symbol(fis[i].s) == Symbol(s)
+            return i
+        end
+    end
+end

@@ -14,7 +14,7 @@ export run!
 end
 
 
-function run!(layer::ShaderLayer; diagnostic = false, frame = 0) 
+function run!(layer::ShaderLayer; frame = 0) 
 
     if layer.params.ArrayType <: Array
         kernel! = shader_kernel!(CPU(), layer.params.numcores)

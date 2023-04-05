@@ -21,61 +21,37 @@ end
 
 create_color(a::FractalUserMethod) = a
 
-function create_color(a::Union{Array, Tuple, RGB, RGBA})
-    if isa(a, Array) || isa(a, Tuple)
-        if length(a) == 3
-            choice = "_" * string(round(a[1]; digits=4))*
-                           string(round(a[2]; digits=4))*
-                           string(round(a[3]; digits=4))
-            choice = replace(choice, "." => "_")
-            return Shaders.custom(red = a[1],
-                                  green = a[2],
-                                  blue = a[3],
-                                  alpha = 1, name = choice)
-        elseif length(a) == 4
-            if a[4] > 0
-                choice = "_" * string(round(a[1]; digits=4))*
-                               string(round(a[2]; digits=4))*
-                               string(round(a[3]; digits=4))*
-                               string(round(a[4]; digits=4))
-                choice = replace(choice, "." => "_")
-                return Shaders.custom(red = a[1],
-                                      green = a[2],
-                                      blue = a[3],
-                                      alpha = a[4], name = choice)
-            else
-                return Shaders.previous
-            end
-        else
-            error("Colors must have either 3 or 4 elements!")
-        end
-    elseif isa(a, RGB)
-        choice = "_" * string(round(a.r; digits=4))*
-                       string(round(a.g; digits=4))*
-                       string(round(a.b; digits=4))
-        choice = replace(choice, "." => "_")
-        return Shaders.custom(red = a.r,
-                              green = a.g,
-                              blue = a.b,
-                              alpha = 1, name = choice)
-    elseif isa(a, RGBA)
-        choice = "_" * string(round(a.r; digits=4))*
-                       string(round(a.g; digits=4))*
-                       string(round(a.b; digits=4))*
-                       string(round(a.alpha; digits=4))
-        choice = replace(choice, "." => "_")
-        if a.alpha > 0
-            return Shaders.custom(red = a.r,
-                                  green = a.g,
-                                  blue = a.b,
-                                  alpha = a.alpha, name = choice)
-        else
-                return Shaders.previous
-        end
+function create_color(a::Union{Array, Tuple})
+    if length(a) == 3
+        return Shaders.custom(r = a[1], g = a[2], b = a[3], a = 1)
+    elseif length(a) == 4
+        return Shaders.custom(r = a[1], g = a[2], b = a[3], a = a[4])
     else
-        error("Element " * string(i) * " of color array is a " *
-              string(typeof(a)) *
-              " which cannot be converted to Fractal User Method!")
+        error("Colors must have either 3 or 4 elements!")
     end
+
+end
+
+function create_color(a::RGB)
+    return Shaders.custom(r = a.r, g = a.g, b = a.b, a = 1)
+end
+
+function create_color(a::RGBA)
+    return Shaders.custom(r = a.r, g = a.g, b = a.b, a = a.alpha)
+end
+
+function define_color_operators(color::Union{RGBA, RGB, FractalUserMethod};
+                                fnum = 4)
+    color = create_color(color)
+    return [color for i = 1:fnum]
+end
+
+function define_color_operators(t_color::Union{Tuple, Vector}; fnum = 4)
+    if length(t_color) != fnum
+        error("Expected color tuple of length "*string(fnum)*"!\n"*
+              "Got "*string(length(t_color))*" instead!")
+    end
+    color = create_color(color)
+    return [color for i = 1:fnum]
 end
 

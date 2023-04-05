@@ -1,16 +1,3 @@
-#TODO: 1. Super sampling must be implemented by increasing the number of bins 
-#         before sampling down. Gamma correction at that stage
-#TODO: Parallelize with large number of initial points
-#TODO: Allow Affine transforms to have a time variable and allow for 
-#      supersampling across time with different timesteps all falling into the
-#      same bin -- might require 2 buffers: one for log of each step, another
-#      for all logs
-#TODO: think about directional motion blur
-# Example H:
-# H = Fae.Hutchinson(
-#   (Fae.swirl, Fae.heart, Fae.polar, Fae.horseshoe),
-#   [RGB(0,1,0), RGB(0,0,1), RGB(1,0,1), RGB(1,0,0)],
-#   [0.25, 0.25, 0.25, 0.25])
 export run!
 
 # couldn't figure out how to get an n-dim version working for GPU
@@ -30,7 +17,7 @@ end
 
 function iterate!(ps::Points, layer::FractalLayer, H::Hutchinson, n,
                   bounds, bin_widths, H2::Union{Nothing, Hutchinson};
-                  frame = 0, diagnostic = false)
+                  frame = 0)
     if isnothing(H2) 
         fx = naive_chaos_kernel!
     elseif layer.params.solver_type == :semi_random
@@ -50,13 +37,6 @@ function iterate!(ps::Points, layer::FractalLayer, H::Hutchinson, n,
         kernel! = fx(CUDADevice(), layer.params.numthreads)
     elseif has_rocm_gpu() && layer.params.ArrayType <: ROCArray
         kernel! = fx(ROCDevice(), layer.params.numthreads)
-    end
-
-    if diagnostic
-        println("H1 symbols:\n", H.symbols)
-        if !isnothing(H2)
-            println("H2 symbols:\n", H2.symbols)
-        end
     end
 
     if isnothing(H2)
@@ -337,7 +317,7 @@ end
 end
 
 
-function run!(layer::FractalLayer; diagnostic = false, frame = 0)
+function run!(layer::FractalLayer; frame = 0)
 
     res = size(layer.canvas)
     bounds = find_bounds(layer)
@@ -353,8 +333,7 @@ function run!(layer::FractalLayer; diagnostic = false, frame = 0)
     bounds = find_bounds(layer)
 
     wait(iterate!(pts, layer, layer.H1, layer.params.num_iterations,
-                  bounds, bin_widths, layer.H2; diagnostic = diagnostic,
-                  frame = frame))
+                  bounds, bin_widths, layer.H2; frame = frame))
 
     return layer
 

@@ -48,10 +48,10 @@ include("fums/flames.jl")
 include("fums/smears.jl")
 
 # Objects
-#include("objects/rectangle.jl")
-#include("objects/circle.jl")
-#include("objects/triangle.jl")
-#include("objects/barnsley.jl")
+include("objects/rectangle.jl")
+include("objects/circle.jl")
+include("objects/triangle.jl")
+include("objects/barnsley.jl")
 
 # IO
 include("structs/layers/layers.jl")

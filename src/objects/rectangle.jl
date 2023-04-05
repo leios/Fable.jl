@@ -36,23 +36,13 @@ function define_rectangle(; position::Union{Vector, Tuple, FractalInput}=(0,0),
                             scale_x::Union{Number, FractalInput} = 1.0,
                             scale_y::Union{Number, FractalInput} = 1.0,
                             color = Shaders.grey,
-                            name = "rectangle",
-                            diagnostic = false,
                             additional_fis = FractalInput[])
 
-    fums, fis = define_rectangle_operators(position, rotation, scale_x, scale_y;
-                                           name = name)
-    if length(color) == 1 || eltype(color) <: Number
-        color_set = [create_color(color) for i = 1:4]
-    elseif length(color) == 4
-        color_set = [create_color(color[i]) for i = 1:4]
-    else
-        error("cannot convert colors for rectangle, "*
-              "maybe improper number of functions?")
-    end
+    fums, fis = define_rectangle_operators(position, rotation, scale_x, scale_y)
+    color_set = define_color_operators(color; fnum = 4)
+
     fos = [FractalOperator(fums[i], color_set[i], 0.25) for i = 1:4]
-    return Hutchinson(fos, vcat(fis, additional_fis);
-                      name = name, diagnostic = diagnostic)
+    return Hutchinson(fos, vcat(fis, additional_fis))
 end
 
 # Returns back H, colors, and probs for a square
@@ -60,13 +50,10 @@ function define_square(; position::Union{Vector, Tuple, FractalInput}=(0,0),
                          rotation::Union{Number, FractalInput} = 0.0,
                          scale::Union{Number, FractalInput} = 1.0,
                          color = Shaders.grey,
-                         name = "square",
-                         diagnostic = false,
                          additional_fis = FractalInput[])
 
     return define_rectangle(; position = position, rotation = rotation,
                               scale_x = scale, scale_y = scale, color = color,
-                              name = name, diagnostic = diagnostic,
                               additional_fis = additional_fis)
 end
 
@@ -74,8 +61,7 @@ end
 function define_rectangle_operators(position::Union{Vector,Tuple,FractalInput},
                                     rotation::Union{Number, FractalInput},
                                     scale_x::Union{Number, FractalInput},
-                                    scale_y::Union{Number, FractalInput};
-                                    name="rectangle")
+                                    scale_y::Union{Number, FractalInput})
 
     if !isa(position, FractalInput)
         position = fi("position", Tuple(position))
@@ -104,75 +90,4 @@ function define_rectangle_operators(position::Union{Vector,Tuple,FractalInput},
 
     return [square_1, square_2, square_3, square_4],
            [position, rotation, scale_x, scale_y]
-end
-
-function update_rectangle!(H, position, rotation, scale_x, scale_y; fnum = 4)
-    update_rectangle!(H, position, rotation, scale_x, scale_y, nothing; fnum = fnum)
-end
-
-function update_square!(H, position, rotation, scale; fnum = 4)
-    update_rectangle!(H, position, rotation, scale, scale, nothing; fnum = fnum)
-end
-
-function update_square!(H::Hutchinson, position::Union{Vector, Tuple}, rotation,
-                        scale, color::Union{Array, Tuple, Nothing}; fnum = 4)
-    update_rectangle!(H, position, rotation, scale, scale, color; fnum = fnum)
-end
-
-function update_rectangle!(H::Hutchinson;
-                           position::Union{Vector, Tuple,
-                                           FractalInput, Nothing}=nothing,
-                           rotation::Union{Number, FractalInput,
-                                           Nothing}=nothing,
-                           scale_x::Union{Number, FractalInput,
-                                           Nothing}=nothing,
-                           scale_y::Union{Number, FractalInput,
-                                           Nothing}=nothing,
-                           color::Union{Array, Tuple, Nothing}, fnum = 4)
-
-    if position != nothing
-        if isa(position, FractalInput)
-            H.fi_set[1] = position
-        else
-            H.fi_set[1] = FractalInput(H.fi_set[3].index,
-                                       H.fi_set[3].name,
-                                       Tuple(position))
-        end
-    end
-
-    if rotation != nothing
-        if isa(rotation, FractalInput)
-            H.fi_set[2] = rotation
-        else
-            H.fi_set[2] = FractalInput(H.fi_set[4].index,
-                                       H.fi_set[4].name,
-                                       value(rotation))
-        end
-    end
-
-    if scale_x != nothing
-        if isa(scale_x, FractalInput)
-            H.fi_set[2] = scale_x
-        else
-            H.fi_set[2] = FractalInput(H.fi_set[4].index,
-                                       H.fi_set[4].name,
-                                       value(scale_x))
-        end
-    end
-
-    if scale_y != nothing
-        if isa(scale_y, FractalInput)
-            H.fi_set[2] = scale_y
-        else
-            H.fi_set[2] = FractalInput(H.fi_set[4].index,
-                                       H.fi_set[4].name,
-                                       value(scale_y))
-        end
-    end
-
-    H.symbols = configure_fis!(H.fi_set)
-    if color != nothing
-        H.color_set = new_color_array([color for i = 1:4], fnum)
-    end
-
 end

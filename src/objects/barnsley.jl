@@ -1,20 +1,10 @@
 export define_barnsley, update_barnsley!
-function define_barnsley(; color = Shaders.grey,
-                           name = "barnsley",
-                           diagnostic = false,
-                           tilt = 0)
+function define_barnsley(; color = Shaders.grey, tilt = 0)
     fums, fis = define_barnsley_operators(tilt = tilt)
-    if length(color) == 1 || eltype(color) <: Number
-        color_set = [create_color(color) for i = 1:4]
-    elseif length(color) == 4
-        color_set = [create_color(color[i]) for i = 1:4]
-    else
-        error("cannot convert colors for Barnsley fern, "*
-              "maybe improper number of functions?")
-    end
+    color_set = define_color_operators(color; fnum = 4)
     prob_set = (0.01, 0.85, 0.07, 0.07)
     fos = [FractalOperator(fums[i], color_set[i], prob_set[i]) for i = 1:4]
-    return Hutchinson(fos, fis; name = name, diagnostic = diagnostic)
+    return Hutchinson(fos, fis)
 end
 
 # This specifically returns the fums for a barnsley fern
