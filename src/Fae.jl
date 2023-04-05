@@ -56,7 +56,7 @@ include("objects/barnsley.jl")
 # IO
 include("structs/layers/layers.jl")
 include("io/postprocess/postprocess.jl")
-#include("structs/layers/fractal_layer.jl")
+include("structs/layers/fractal_layer.jl")
 include("structs/layers/color_layer.jl")
 include("structs/layers/image_layer.jl")
 include("structs/layers/shader_layer.jl")

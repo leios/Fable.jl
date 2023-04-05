@@ -3,16 +3,6 @@ export write_image, write_video!, zero!, reset!, create_canvas, mix_layers!
 function mix_layers!(layer_1::AL1, layer_2::AL2;
                      mode = :simple) where {AL1 <: AbstractLayer,
                                             AL2 <: AbstractLayer}
-#=
-    if AL1 <: FractalLayer
-        to_canvas!(layer_1)
-    end
-
-    if AL2 <: FractalLayer
-        to_canvas!(layer_2)
-    end
-=#
-
     overlap = find_overlap(layer_1, layer_2)
     wait(mix_layers!(layer_1, layer_2, overlap))
 end
@@ -100,14 +90,6 @@ function create_canvas(s; ArrayType = Array)
     return ArrayType(fill(RGBA(0,0,0,0), s))
 end
 
-@kernel function zero_kernel!(layer_values, layer_reds, layer_greens, layer_blues)
-    tid = @index(Global, Cartesian)
-    layer_values[tid] = 0
-    layer_reds[tid] = 0
-    layer_greens[tid] = 0
-    layer_blues[tid] = 0
-end
-
 function zero!(layer::AL) where AL <: AbstractLayer
     layer.canvas[:] .= RGBA(0.0, 0.0, 0.0, 0.0)
 end
@@ -117,22 +99,6 @@ function zero!(a::Union{Array{T},
                         ROCArray{T}}) where T <: Union{RGB, RGBA}
     a[:] .= RGBA(0.0, 0.0, 0.0, 0.0)
 end
-
-#=
-function zero!(layer::FractalLayer)
-    
-    if layer.params.ArrayType <: Array
-        kernel! = zero_kernel!(CPU(), layer.params.numcores)
-    elseif has_cuda_gpu() && layer.params.ArrayType <: CuArray
-        kernel! = zero_kernel!(CUDADevice(), layer.params.numthreads)
-    elseif has_rocm_gpu() && layer.params.ArrayType <: ROCArray
-        kernel! = zero_kernel!(ROCDevice(), layer.params.numthreads)
-    end
-
-    wait(kernel!(layer.values, layer.reds, layer.greens, layer.blues,
-                 ndrange = size(layer.values)))
-end
-=#
 
 function reset!(layers::Vector{AL}) where AL <: AbstractLayer
     for i = 1:length(layers)
