@@ -1,51 +1,5 @@
 export FractalLayer, default_params, params
 
-# Might need the following interface for GPU compatability:
-# Can otherwise use NamedTuples:
-# point(x) = (x=x,)
-# point(x, y) = (x=x, y=y)
-# point(x, y, z) = (x=x, y=y, z=z)
-# point(x, y, z, w) = (x=x, y=y, z=z, w=w)
-
-abstract type AbstractPoint end
-
-struct Point1D{N} <: AbstractPoint
-    x::N
-end
-
-struct Point2D{N} <: AbstractPoint
-    x::N
-    y::N
-end
-
-struct Point3D{N} <: AbstractPoint
-    x::N
-    y::N
-    z::N
-end
-
-struct Point4D{N} <: AbstractPoint
-    x::N
-    y::N
-    z::N
-    w::N
-end
-
-point(x) = Point1D(x)
-point(x, y) = Point2D(x, y)
-point(x, y, z) = Point3D(x, y, z)
-point(x, y, z, w) = Point4D(x, y, z, w)
-
-function generate_point(; dims=2, bounds = find_bounds((0,0), (2,2)))
-    return point([rand() * (bounds[i*2] - bounds[i*2-1]) +
-                  bounds[i*2-1] for i=1:dims]...)
-end
-
-function generate_points(N::Int; ArrayType=Array, dims=2,
-                         bounds=find_bounds((0,0), (2,2)))
-    return ArrayType([generate_point(dims = dims, bounds = bounds) for i = 1:N])
-end
-
 # Note: the rgb components needed to be spread into separate arrays for indexing
 #       reasons in the KA kernels
 mutable struct FractalLayer <: AbstractLayer

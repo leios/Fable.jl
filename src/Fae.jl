@@ -26,6 +26,7 @@ set_output(tf) = (global OUTPUT = tf)
 
 # Interfaces
 include("structs/time.jl")
+include("structs/point.jl")
 
 # Geometries
 include("utils/geometries.jl")
@@ -47,7 +48,7 @@ include("utils/simple_rng.jl")
 include("fums/flames.jl")
 include("fums/smears.jl")
 
-# Objects
+# Shapes
 include("objects/rectangle.jl")
 include("objects/circle.jl")
 include("objects/triangle.jl")
@@ -71,11 +72,11 @@ include("io/postprocess/outline.jl")
 
 # Main file
 include("run/run.jl")
-#include("run/fractal_flame.jl")
+include("run/fractal_flame.jl")
 include("run/shader.jl")
 include("run/color.jl")
 
-# Lollipeople
+# Complex objects
 #include("objects/lollipeople.jl")
 
 end # module
