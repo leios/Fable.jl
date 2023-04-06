@@ -38,11 +38,12 @@ function define_rectangle(; position::Union{Vector, Tuple, FractalInput}=(0,0),
                             color = Shaders.grey,
                             additional_fis = FractalInput[])
 
-    fums, fis = define_rectangle_operators(position, rotation, scale_x, scale_y)
+    fums = define_rectangle_operators(position, rotation, scale_x, scale_y)
     color_set = define_color_operators(color; fnum = 4)
 
-    fos = [FractalOperator(fums[i], color_set[i], 0.25) for i = 1:4]
-    return Hutchinson(fos, vcat(fis, additional_fis))
+    fos = Tuple(FractalOperator(fums[i], color_set[i], 0.25) for i = 1:4)
+    println(typeof(fos))
+    return Hutchinson((fos,))
 end
 
 # Returns back H, colors, and probs for a square
@@ -63,22 +64,6 @@ function define_rectangle_operators(position::Union{Vector,Tuple,FractalInput},
                                     scale_x::Union{Number, FractalInput},
                                     scale_y::Union{Number, FractalInput})
 
-    if !isa(position, FractalInput)
-        position = fi("position", Tuple(position))
-    end
-
-    if !isa(rotation, FractalInput)
-        rotation = fi("rotation", rotation)
-    end
-
-    if !isa(scale_x, FractalInput)
-        scale_x = fi("scale_x", scale_x)
-    end
-
-    if !isa(scale_y, FractalInput)
-        scale_y = fi("scale_y", scale_y)
-    end
-
     square_1 = rectangle_fum(position = position, rotation = rotation,
                              scale_x = scale_x, scale_y = scale_y, vertex = 1)
     square_2 = rectangle_fum(position = position, rotation = rotation,
@@ -88,6 +73,5 @@ function define_rectangle_operators(position::Union{Vector,Tuple,FractalInput},
     square_4 = rectangle_fum(position = position, rotation = rotation,
                              scale_x = scale_x, scale_y = scale_y, vertex = 4)
 
-    return [square_1, square_2, square_3, square_4],
-           [position, rotation, scale_x, scale_y]
+    return (square_1, square_2, square_3, square_4)
 end

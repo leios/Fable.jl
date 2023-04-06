@@ -44,7 +44,7 @@ function Hutchinson(H1::Hutchinson, H2::Hutchinson)
                       (H1.fnums..., H2.fnums...))
 end
 
-function Hutchinson(fos::Tuple; depth = 0)
+function Hutchinson(fos::Union{Tuple, Vector}; depth = 0)
     if depth > 1
         error("Cannot create Hutchinson operators of depth > 2! (#65)")
     end
@@ -52,7 +52,7 @@ function Hutchinson(fos::Tuple; depth = 0)
     if length(fos) == 0
         error("No FractalOperator provided!")
     elseif length(fos) == 1
-        return Hutchinson(fos[1])
+        return Hutchinson(fos[1]; depth = 1)
     else
         H = Hutchinson()
         multilayer_flag = false
@@ -62,7 +62,6 @@ function Hutchinson(fos::Tuple; depth = 0)
                 multilayer_flag = true
             elseif depth > 0
                 prob += fos[i].prob
-         
             end
 
             H = Hutchinson(H, Hutchinson(fos[i]; depth = depth+1))

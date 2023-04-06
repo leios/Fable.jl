@@ -54,10 +54,10 @@ function define_circle(; position::Union{Tuple, Vector, FractalInput} = (0, 0),
                          chosen_fx = :constant_disk,
                          additional_fis = FractalInput[])
 
-    fums, fis = define_circle_operators(position, radius; chosen_fx = chosen_fx)
+    fums = define_circle_operators(position, radius; chosen_fx = chosen_fx)
     color_set = define_color_operators(color; fnum = 2)
-    fos = [FractalOperator(fums[i], color_set[i], 0.5) for i = 1:2]
-    return Hutchinson(fos, vcat(fis, additional_fis))
+    fos = Tuple((FractalOperator(fums[i], color_set[i], 0.5) for i = 1:2))
+    return Hutchinson((fos,))
 end
 
 # This specifically returns the fums for a circle
@@ -67,12 +67,6 @@ function define_circle_operators(position::Union{Vector, Tuple, FractalInput},
 
     f_0 = fi("f_0", 0)
     f_1 = fi("f_1", 1)
-    if !isa(position, FractalInput)
-        position = fi("position", Tuple(position))
-    end
-    if !isa(radius, FractalInput)
-        radius = fi("radius", radius)
-    end
     if chosen_fx == :naive_disk
         d_0 = naive_disk(function_index = f_0, position = position, radius = radius)
         d_1 = naive_disk(function_index = f_1, position = position, radius = radius)
@@ -82,6 +76,6 @@ function define_circle_operators(position::Union{Vector, Tuple, FractalInput},
     else
         error("function not found for circle IFS!")
     end
-    return [d_0, d_1], [f_0, f_1, position, radius]
+    return [d_0, d_1]
 
 end

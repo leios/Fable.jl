@@ -1,14 +1,14 @@
 export define_barnsley, update_barnsley!
 function define_barnsley(; color = Shaders.grey, tilt = 0)
-    fums, fis = define_barnsley_operators(tilt = tilt)
+    fums = define_barnsley_operators(tilt = tilt)
     color_set = define_color_operators(color; fnum = 4)
     prob_set = (0.01, 0.85, 0.07, 0.07)
-    fos = [FractalOperator(fums[i], color_set[i], prob_set[i]) for i = 1:4]
-    return Hutchinson(fos, fis)
+    fos = Tuple(FractalOperator(fums[i], color_set[i], prob_set[i]) for i = 1:4)
+    return Hutchinson((fos,))
 end
 
 # This specifically returns the fums for a barnsley fern
-function define_barnsley_operators(; tilt = 0)
+function define_barnsley_operators(; tilt::Union{Number, FractalInput} = 0)
 
     s_1 = @fum function s_1()
         x = 0
@@ -33,5 +33,5 @@ function define_barnsley_operators(; tilt = 0)
         y = 0.26*x_temp + 0.24*y + 0.44
     end
 
-    return [s_1, s_2(tilt = tilt), s_3, s_4], []
+    return [s_1, s_2(tilt = tilt), s_3, s_4]
 end

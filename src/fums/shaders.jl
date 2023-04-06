@@ -51,7 +51,7 @@ function define_color_operators(t_color::Union{Tuple, Vector}; fnum = 4)
         error("Expected color tuple of length "*string(fnum)*"!\n"*
               "Got "*string(length(t_color))*" instead!")
     end
-    color = create_color(color)
+    color = create_color(t_color)
     return [color for i = 1:fnum]
 end
 
