@@ -22,7 +22,7 @@ function Hutchinson(fum::FractalUserMethod, color_fum::FractalUserMethod,
 end
 
 function Hutchinson(fo::FractalOperator; depth = 0)
-    if depth == 1 && fo.prob != 1
+    if depth <= 1 && fo.prob != 1
         @warn("Setting probability to 1 for standalone FractalOperator...")
         prob = 1
     else
@@ -52,13 +52,15 @@ function Hutchinson(fos::Union{Tuple, Vector}; depth = 0)
     if length(fos) == 0
         error("No FractalOperator provided!")
     elseif length(fos) == 1
-        return Hutchinson(fos[1]; depth = 1)
+        H = Hutchinson(fos[1]; depth = 1)
+        H.fnums = (length(fos[1]),)
+        return H
     else
         H = Hutchinson()
         multilayer_flag = false
         prob = 0.0
         for i = 1:length(fos)
-            if typeof(fos[i]) <: Tuple
+            if isa(fos[i], Union{Tuple, Vector})
                 multilayer_flag = true
             elseif depth > 0
                 prob += fos[i].prob
@@ -68,6 +70,7 @@ function Hutchinson(fos::Union{Tuple, Vector}; depth = 0)
         end
 
         if multilayer_flag
+            println("yo")
             H.fnums = length.(fos)
         else
             H.fnums = Tuple(1 for i = 1:length(fos))

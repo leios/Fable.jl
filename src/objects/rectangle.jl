@@ -24,7 +24,8 @@ rectangle_fum = @fum function rectangle_fum(y,x;
         p_x = - scale_x*cos(rotation) - scale_y*sin(rotation) + position[2]
         p_y = - scale_x*sin(rotation) + scale_y*cos(rotation) + position[1]
     else
-        error("vertex "*string(vertex)*" not available for rectangles!")
+        p_x = 0.0
+        p_y = 0.0
     end
 
     return point(0.5*(p_y + y), 0.5*(p_x + x))

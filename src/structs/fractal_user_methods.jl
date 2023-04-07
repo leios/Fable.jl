@@ -126,13 +126,13 @@ function (a::FractalUserMethod)(args...; kwargs...)
     if error_flag
         error("one or more keys not found in set of fum key-word args!\n"*
               "Maybe consider creating a new fum function with the right "*
-               "key-word arguments?")
+              "key-word arguments?")
     end
 
     fis = [FractalInput(ks[i], vals[i].x) for i in final_fi_idxs]
 
     ks = Tuple(ks[final_kwarg_idxs])
-    vals = Tuple(vals[final_kwarg_idxs])
+    vals = Tuple(remove_vectors.(vals[final_kwarg_idxs]))
 
     final_kwargs = NamedTuple{ks}(vals)
     return FractalUserMethod(final_kwargs, fis, a.fx)

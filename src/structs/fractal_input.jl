@@ -11,14 +11,6 @@ function set!(fi::FractalInput, val)
     fi.x.x = val
 end
 
-function remove_vectors(a)
-    return a
-end
-
-function remove_vectors(a::Vector)
-    return Tuple(a)
-end
-
 function combine(nt::Tuple, fis::Tuple)
     return Tuple(combine(nt[i], fis[i]) for i = 1:length(fis))
 end

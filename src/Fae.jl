@@ -28,6 +28,9 @@ set_output(tf) = (global OUTPUT = tf)
 include("structs/time.jl")
 include("structs/point.jl")
 
+# Utilities
+include("utils/aux.jl")
+
 # Geometries
 include("utils/geometries.jl")
 

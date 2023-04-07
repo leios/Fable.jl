@@ -9,6 +9,7 @@ export run!
         ex = quote
             idx = decode_fid(fid, bit_offset, fnums[$i])
             pt = fxs[idx](pt.y, pt.x, frame; kwargs[idx]...)
+            #pt = fxs[idx](pt.y, pt.x, frame)
             bit_offset += ceil(UInt,log2(fnums[$i]))
         end
         push!(exs, ex)
@@ -272,10 +273,12 @@ end
             clr = clr_loop(H1_clrs, fid, pt, clr,
                            frame, H1_fnums, H1_clr_kwargs)
 
-            output_pt = pt_loop(H2_fxs, fid, pt, frame, H2_fnums, H2_kwargs)
-            output_clr = clr_loop(H2_clrs, fid_2, pt, clr,
-                                  frame, H2_fnums, H2_clr_kwargs)
+            #output_pt = pt_loop(H2_fxs, fid, pt, frame, H2_fnums, H2_kwargs)
+            #output_clr = clr_loop(H2_clrs, fid_2, pt, clr,
+            #                      frame, H2_fnums, H2_clr_kwargs)
 
+            output_pt = pt
+            output_clr = clr
             histogram_output!(layer_values, canvas, output_pt, output_clr,
                               bounds, dims, bin_widths, i, num_ignore)
 
