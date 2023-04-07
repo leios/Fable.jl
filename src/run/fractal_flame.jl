@@ -167,7 +167,7 @@ end
                 seed = simple_rand(seed)
                 fid = create_fid(H_probs, H_fnums, seed)
             else
-                fid = 1
+                fid = UInt(1)
             end
 
             pt = pt_loop(H_fxs, fid, pt, frame, H_fnums, H_kwargs)
@@ -209,7 +209,7 @@ end
                 seed = simple_rand(seed)
                 fid = create_fid(H1_probs, H1_fnums, seed)
             else
-                fid = 1
+                fid = UInt(1)
             end
 
             pt = pt_loop(H1_fxs, fid, pt, frame, H1_fnums, H1_kwargs)
@@ -247,6 +247,7 @@ end
 
     seed = quick_seed(tid)
     fid = create_fid(H1_probs, H1_fnums, seed)
+    fid_2 = create_fid(H2_probs, H2_fnums, seed)
 
     for i = 1:n
         # quick way to tell if in range to be calculated or not
@@ -257,7 +258,14 @@ end
                 seed = simple_rand(seed)
                 fid = create_fid(H1_probs, H1_fnums, seed)
             else
-                fid = 1
+                fid = UInt(1)
+            end
+
+            if length(H2_fnums) > 1 || H2_fnums[1] > 1
+                seed = simple_rand(seed)
+                fid_2 = create_fid(H2_probs, H2_fnums, seed)
+            else
+                fid_2 = UInt(1)
             end
 
             pt = pt_loop(H1_fxs, fid, pt, frame, H1_fnums, H1_kwargs)
@@ -265,7 +273,7 @@ end
                            frame, H1_fnums, H1_clr_kwargs)
 
             output_pt = pt_loop(H2_fxs, fid, pt, frame, H2_fnums, H2_kwargs)
-            output_clr = clr_loop(H2_clrs, fid, pt, clr,
+            output_clr = clr_loop(H2_clrs, fid_2, pt, clr,
                                   frame, H2_fnums, H2_clr_kwargs)
 
             histogram_output!(layer_values, canvas, output_pt, output_clr,

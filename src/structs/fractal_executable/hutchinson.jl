@@ -18,11 +18,11 @@ function Hutchinson(fum::FractalUserMethod, color_fum::FractalUserMethod,
                     prob::Number)
     return Hutchinson((fum.fx,), (fum.kwargs,), (fum.fis,),
                       (color_fum.fx,), (color_fum.kwargs,), (color_fum.fis,),
-                      (prob,), ())
+                      (prob,), (1,))
 end
 
 function Hutchinson(fo::FractalOperator; depth = 0)
-    if depth == 1
+    if depth == 1 && fo.prob != 1
         @warn("Setting probability to 1 for standalone FractalOperator...")
         prob = 1
     else
@@ -30,7 +30,7 @@ function Hutchinson(fo::FractalOperator; depth = 0)
     end
     return Hutchinson((fo.op.fx,), (fo.op.kwargs,), (fo.op.fis,),
                       (fo.color.fx,), (fo.color.kwargs,), (fo.color.fis,),
-                      (prob,), ())
+                      (prob,), (1,))
 end
 
 function Hutchinson(H1::Hutchinson, H2::Hutchinson)
@@ -70,7 +70,7 @@ function Hutchinson(fos::Union{Tuple, Vector}; depth = 0)
         if multilayer_flag
             H.fnums = length.(fos)
         else
-            H.fnums = (length(fos),)
+            H.fnums = Tuple(1 for i = 1:length(fos))
             if prob > 1.0
                 @warn("Probabilities do not add up to 1!\n"*
                       "Setting all operators to be equally likely...")
