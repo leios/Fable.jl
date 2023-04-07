@@ -1,16 +1,20 @@
 export run!
 
-@generated function hutchinson_loop(fxs, fid, thing, frame, fnums, kwargs)
+# These functions essentially unroll the loops in the kernel because of a
+# known julia bug preventing us from using for i = 1:10...
+@generated function pt_loop(fxs, fid, pt, frame, fnums, kwargs)
     exs = Expr[]
-    offset = 0
+    push!(exs, :(bit_offset = 0))
     for i = 1:length(fnums.parameters)
         ex = quote
-            idx = decode_fid(fid, offset, fnums[$i])
-            thing = fxs[idx](thing, frame; kwargs[idx]...)
+            idx = decode_fid(fid, bit_offset, fnums[$i])
+            pt = fxs[idx](pt.y, pt.x, frame; kwargs[idx]...)
             bit_offset += ceil(UInt,log2(fnums[$i]))
         end
         push!(exs, ex)
     end
+
+    push!(exs, :(return pt))
 
     # to return 3 separate colors to mix separately
     # return :(Expr(:tuple, $exs...))
@@ -18,19 +22,41 @@ export run!
     return Expr(:block, exs...)
 end
 
-@generated function semi_random_loop!(layer_values, canvas, fxs, clr_fxs, 
-                                      pt, clr, frame, fnums, kwargs, clr_kwargs,
-                                      bounds, dims, bin_widths)
+@generated function clr_loop(fxs, fid, pt, clr, frame, fnums, kwargs)
     exs = Expr[]
-    offset = 0
+    push!(exs, :(bit_offset = 0))
     for i = 1:length(fnums.parameters)
         ex = quote
-            idx = decode_fid(fid, offset, fnums[$i])
-            pt = fxs[idx](pt, frame; kwargs[idx]...)
-            clr = clr_fxs[idx](clr, frame; clr_kwargs[idx]...)
+            idx = decode_fid(fid, bit_offset, fnums[$i])
+            clr = fxs[idx](pt.y, pt.x, clr, frame; kwargs[idx]...)
+            bit_offset += ceil(UInt,log2(fnums[$i]))
+        end
+        push!(exs, ex)
+    end
+
+    push!(exs, :(return clr))
+
+    # to return 3 separate colors to mix separately
+    # return :(Expr(:tuple, $exs...))
+
+    return Expr(:block, exs...)
+end
+
+
+@generated function semi_random_loop!(layer_values, canvas, fxs, clr_fxs, 
+                                      pt, clr, frame, fnums, kwargs, clr_kwargs,
+                                      bounds, dims, bin_widths,
+                                      iteration, num_iignore)
+    exs = Expr[]
+    push!(exs, :(bit_offset = 0))
+    for i = 1:length(fnums.parameters)
+        ex = quote
+            idx = decode_fid(fid, bit_offset, fnums[$i])
+            pt = fxs[idx](pt.y, pt.x, frame; kwargs[idx]...)
+            clr = clr_fxs[idx](pt.y, pt.x, clr, frame; clr_kwargs[idx]...)
             bit_offset += ceil(UInt,log2(fnums[$i]))
             histogram_output!(layer_values, canvas, pt, clr,
-                              bounds, dims, bin_widths)
+                              bounds, dims, bin_widths, iteration, num_ignore)
         end
         push!(exs, ex)
     end
@@ -42,13 +68,15 @@ end
 end
 
 @inline function histogram_output!(layer_values, canvas, pt, clr,
-                                   bounds, dims, bin_widths)
+                                   bounds, dims, bin_widths, i, num_ignore)
     on_img_flag = on_image(pt.y,pt.x, bounds, dims)
     if i > num_ignore && on_img_flag
         @inbounds bin = find_bin(layer_values, pt.y, pt.x, bounds, bin_widths)
         if bin > 0 && bin <= length(layer_values)
             @inbounds @atomic layer_values[bin] += 1
-            @inbounds @atomic canvas[bin] = 0.5*canvas[bin] + 0.5*clr
+            #@inbounds @atomic canvas[bin] = 0.5*canvas[bin] + 0.5*clr
+            #@inbounds Atomix.@atomic canvas[bin] += RGBA{Float32}(0,0,0,0)
+            canvas[bin] = 0.5*canvas[bin] + 0.5*clr
         end
     end
 end
@@ -69,7 +97,7 @@ end
     return flag
 end
 
-function iterate!(layer::FractalLayer, H::Hutchinson, n,
+function iterate!(layer::FractalLayer, H1::Hutchinson, n,
                   bounds, bin_widths, H2::Union{Nothing, Hutchinson};
                   frame = 0)
     if isnothing(H2) 
@@ -85,7 +113,7 @@ function iterate!(layer::FractalLayer, H::Hutchinson, n,
     end
 
     max_range = maximum(values(bounds))*10
-    if isa(ps.positions, Array)
+    if layer.params.ArrayType <: Array
         kernel! = fx(CPU(), layer.params.numcores)
     elseif has_cuda_gpu() && layer.params.ArrayType <: CuArray
         kernel! = fx(CUDADevice(), layer.params.numthreads)
@@ -99,7 +127,7 @@ function iterate!(layer::FractalLayer, H::Hutchinson, n,
                 H1.prob_set, H1.fnums, layer.values, layer.canvas,
                 frame, bounds, Tuple(bin_widths),
                 layer.params.num_ignore, max_range,
-                ndrange=size(ps.positions)[1])
+                ndrange=size(layer.particles)[1])
     else
         kernel!(layer.particles, n, H1.fxs, combine(H1.kwargs, H1.fis),
                 H1.color_fxs, combine(H1.color_kwargs, H1.color_fis),
@@ -110,14 +138,7 @@ function iterate!(layer::FractalLayer, H::Hutchinson, n,
                 layer.values, layer.canvas,
                 frame, bounds, Tuple(bin_widths),
                 layer.params.num_ignore, max_range,
-                ndrange=size(ps.positions)[1])
-        kernel!(layer.particles, n,
-                              H.op, H.cop, H.prob_set, H.symbols, H.fnums,
-                              H2.op, H2.cop, H2.symbols, H2.prob_set, H2.fnums,
-                              layer.values, layer.canvas, frame, 
-                              bounds, Tuple(bin_widths),
-                              layer.params.num_ignore, max_range,
-                              ndrange=size(ps.positions)[1])
+                ndrange=size(layer.particles)[1])
     end
 end
 
@@ -131,7 +152,7 @@ end
 
  
     pt = points[tid]
-    @uniform dims = dims(pt)
+    dims = Fae.dims(pt)
     clr = RGBA{Float32}(0,0,0,0)
 
     seed = quick_seed(tid)
@@ -149,11 +170,11 @@ end
                 fid = 1
             end
 
-            pt = hutchinson_loop(H_fxs, fid, pt, frame, fnums, H_kwargs)
-            clr = hutchinson_loop(H_clrs, fid, clr, frame, fnums, H_clr_kwargs)
+            pt = pt_loop(H_fxs, fid, pt, frame, H_fnums, H_kwargs)
+            clr = clr_loop(H_clrs, fid, pt, clr, frame, H_fnums, H_clr_kwargs)
 
             histogram_output!(layer_values, canvas, pt, clr,
-                              bounds, dims, bin_widths)
+                              bounds, dims, bin_widths, i, num_ignore)
         end
     end
 
@@ -174,7 +195,7 @@ end
 
     pt = points[tid]
     clr = RGBA{Float32}(0,0,0,0)
-    @uniform dims = dims(pt)
+    dims = Fae.dims(pt)
 
     seed = quick_seed(tid)
     fid = create_fid(H1_probs, H1_fnums, seed)
@@ -191,20 +212,19 @@ end
                 fid = 1
             end
 
-            pt = hutchinson_loop(H1_fxs, fid, pt, frame, fnums, H1_kwargs)
-            clr = hutchinson_loop(H1_clrs, fid, clr,
-                                  frame, fnums, H1_clr_kwargs)
+            pt = pt_loop(H1_fxs, fid, pt, frame, H1_fnums, H1_kwargs)
+            clr = clr_loop(H1_clrs, fid, pt, clr,
+                           frame, H1_fnums, H1_clr_kwargs)
 
-            semi_random_loop!(layer_values, canvas, H2.fxs, H2.clr_fxs, 
-                              pt, clr, frame, fnums, H2.kwargs, H2.clr_kwargs,
-                              bounds, dims, bin_widths)
+            semi_random_loop!(layer_values, canvas, H2_fxs, H2_clrs, 
+                              pt, clr, frame, H2_fnums, H2_kwargs,
+                              H2_clr_kwargs, bounds, dims, bin_widths, i,
+                              num_ignore )
 
         end
     end
 
-    for i = 1:dims
-        @inbounds points[tid] = pt
-    end
+    @inbounds points[tid] = pt
 end
 
 @kernel function naive_chaos_kernel!(points, n, H1_fxs, H1_kwargs,
@@ -220,7 +240,7 @@ end
 
     pt = points[tid]
     output_pt = points[tid]
-    @uniform dims = dims(pt)
+    dims = Fae.dims(pt)
 
     clr = RGBA{Float32}(0,0,0,0)
     output_clr = RGBA{Float32}(0,0,0,0)
@@ -240,24 +260,21 @@ end
                 fid = 1
             end
 
-            pt = hutchinson_loop(H1_fxs, fid, pt, frame, fnums, H1_kwargs)
-            clr = hutchinson_loop(H1_clrs, fid, clr,
-                                  frame, fnums, H1_clr_kwargs)
+            pt = pt_loop(H1_fxs, fid, pt, frame, H1_fnums, H1_kwargs)
+            clr = clr_loop(H1_clrs, fid, pt, clr,
+                           frame, H1_fnums, H1_clr_kwargs)
 
-            output_pt = hutchinson_loop(H2_fxs, fid, pt,
-                                        frame, fnums, H2_kwargs)
-            output_clr = hutchinson_loop(H2_clrs, fid, clr,
-                                         frame, fnums, H2_clr_kwargs)
+            output_pt = pt_loop(H2_fxs, fid, pt, frame, H2_fnums, H2_kwargs)
+            output_clr = clr_loop(H2_clrs, fid, pt, clr,
+                                  frame, H2_fnums, H2_clr_kwargs)
 
             histogram_output!(layer_values, canvas, output_pt, output_clr,
-                              bounds, dims, bin_widths)
+                              bounds, dims, bin_widths, i, num_ignore)
 
         end
     end
 
-    for i = 1:dims
-        @inbounds points[tid] = pt
-    end
+    @inbounds points[tid] = pt
 
 end
 
@@ -266,9 +283,6 @@ function run!(layer::FractalLayer; frame = 0)
 
     res = size(layer.canvas)
     bounds = find_bounds(layer)
-    pts = Points(layer.params.num_particles; FloatType = eltype(layer.reds),
-                 dims = layer.params.dims,
-                 ArrayType = layer.params.ArrayType, bounds = bounds)
 
     bin_widths = zeros(div(length(values(bounds)),2))
     for i = 1:length(bin_widths)
@@ -277,22 +291,9 @@ function run!(layer::FractalLayer; frame = 0)
 
     bounds = find_bounds(layer)
 
-    wait(iterate!(pts, layer, layer.H1, layer.params.num_iterations,
+    wait(iterate!(layer, layer.H1, layer.params.num_iterations,
                   bounds, bin_widths, layer.H2; frame = frame))
 
     return layer
 
-end
-
-function chaos_game(n::Int, bounds)
-    points = [Point(0, 0) for i = 1:n]
-
-    triangle_points = [Point(-1, -1), Point(1,-1), Point(0, sqrt(3)/2)]
-    [points[1].x, points[1].y] .= -0.5.*(bounds) + rand(2).*bounds
-
-    for i = 2:n
-        points[i] = sierpinski(points[i-1], triangle_points)
-    end
-
-    return points
 end

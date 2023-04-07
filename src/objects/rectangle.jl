@@ -1,7 +1,7 @@
 export define_rectangle, update_rectangle!, define_square, update_square!
 # Returns back H, colors, and probs for a square
 
-rectangle_fum = @fum function rectangle_fum(x, y;
+rectangle_fum = @fum function rectangle_fum(y,x;
                                             vertex = 1,
                                             rotation = 0,
                                             position = (0,0),
@@ -27,8 +27,7 @@ rectangle_fum = @fum function rectangle_fum(x, y;
         error("vertex "*string(vertex)*" not available for rectangles!")
     end
 
-    x = 0.5*(p_x + x)
-    y = 0.5*(p_y + y)
+    return point(0.5*(p_y + y), 0.5*(p_x + x))
 end
 
 function define_rectangle(; position::Union{Vector, Tuple, FractalInput}=(0,0),
@@ -42,7 +41,6 @@ function define_rectangle(; position::Union{Vector, Tuple, FractalInput}=(0,0),
     color_set = define_color_operators(color; fnum = 4)
 
     fos = Tuple(FractalOperator(fums[i], color_set[i], 0.25) for i = 1:4)
-    println(typeof(fos))
     return Hutchinson((fos,))
 end
 

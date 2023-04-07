@@ -1,4 +1,4 @@
-export point, generate_points, generate_points
+export point, generate_points, generate_points, absum, dims
 
 # Might need the following interface for GPU compatability:
 # Can otherwise use NamedTuples:

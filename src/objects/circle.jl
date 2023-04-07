@@ -21,6 +21,7 @@ naive_disk = Fae.@fum function naive_disk(x, y; radius = 1, position = (0,0),
 
     x = radius*r2*cos(theta2)+position[2]
     y = radius*r2*sin(theta2)+position[1]
+    return point(y,x)
 end
 
 constant_disk = Fae.@fum function constant_disk(x, y; radius = 1,

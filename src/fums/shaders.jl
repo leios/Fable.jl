@@ -47,11 +47,17 @@ function define_color_operators(color::Union{RGBA, RGB, FractalUserMethod};
 end
 
 function define_color_operators(t_color::Union{Tuple, Vector}; fnum = 4)
-    if length(t_color) != fnum
-        error("Expected color tuple of length "*string(fnum)*"!\n"*
+    if length(t_color) == 1
+        color = create_color(t_color[1])
+        return [color for i = 1:fnum]
+    elseif eltype(t_color) <: Number
+        color = create_color(t_color)
+        return [color for i = 1:fnum]
+    elseif length(t_color) == fnum
+        return [create_color(t_color[i]) for i = 1:fnum]
+    else length(t_color) != fnum
+        error("Expected color tuple of length "*string(fnum)*" or 1!\n"*
               "Got "*string(length(t_color))*" instead!")
     end
-    color = create_color(t_color)
-    return [color for i = 1:fnum]
 end
 

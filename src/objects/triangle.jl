@@ -8,6 +8,7 @@ triangle_fill = @fum function triangle_fill(x,y;
 
     x = midpoint[2] - (x - midpoint[2]) * 0.5
     y = midpoint[1] - (y - midpoint[1]) * 0.5
+    return point(y,x)
 end
 
 function define_triangle(; A::Union{Vector,Tuple,FractalInput}=(sqrt(3)/4,-0.5),

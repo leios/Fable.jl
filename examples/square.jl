@@ -8,8 +8,6 @@ using Fae, Images
 #     Array for parallel CPU 
 function square_example(num_particles, num_iterations;
                         ArrayType = Array, dark = true)
-    FloatType = Float32
-
     # Physical space location. 
     world_size = (9*0.15, 16*0.15)
 
@@ -30,19 +28,18 @@ function square_example(num_particles, num_iterations;
     end
 
     H = define_square(; position = [0.0, 0.0], rotation = pi/4,  color = colors)
-    H2 = Hutchinson([Flames.swirl],
-                    [Shaders.previous],
-                    (1.0,);
-                    diagnostic = true, name = "2", final = true)
+    swirl_operator = fo(Flames.swirl)
+    H2 = Hutchinson(swirl_operator)
+    #H2 = nothing
 
     # To combine a different way, use the final_H defined here
     # final_H = fee(Hutchinson, [H, H2])
 
     layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
                          world_size = world_size, ppu = ppu,
-                         FloatType = FloatType, H1 = H, H2 = H2,
+                         H1 = H, H2 = H2,
                          num_particles = num_particles,
-                         num_iterations = num_iterations)
+                         num_iterations = num_iterations, solver_type = :random)
 
     run!(layer)
 
