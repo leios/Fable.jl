@@ -9,7 +9,6 @@ export run!
         ex = quote
             idx = decode_fid(fid, bit_offset, fnums[$i])
             pt = fxs[idx](pt.y, pt.x, frame; kwargs[idx]...)
-            #pt = fxs[idx](pt.y, pt.x, frame)
             bit_offset += ceil(UInt,log2(fnums[$i]))
         end
         push!(exs, ex)
@@ -47,17 +46,15 @@ end
 @generated function semi_random_loop!(layer_values, canvas, fxs, clr_fxs, 
                                       pt, clr, frame, fnums, kwargs, clr_kwargs,
                                       bounds, dims, bin_widths,
-                                      iteration, num_iignore)
+                                      iteration, num_ignore)
     exs = Expr[]
-    push!(exs, :(bit_offset = 0))
-    for i = 1:length(fnums.parameters)
+    for i = 1:length(fxs.parameters)
         ex = quote
-            idx = decode_fid(fid, bit_offset, fnums[$i])
-            pt = fxs[idx](pt.y, pt.x, frame; kwargs[idx]...)
-            clr = clr_fxs[idx](pt.y, pt.x, clr, frame; clr_kwargs[idx]...)
-            bit_offset += ceil(UInt,log2(fnums[$i]))
+            pt = fxs[$i](pt.y, pt.x, frame; kwargs[$i]...)
+            clr = clr_fxs[$i](pt.y, pt.x, clr, frame; clr_kwargs[$i]...)
             histogram_output!(layer_values, canvas, pt, clr,
-                              bounds, dims, bin_widths, iteration, num_ignore)
+                              bounds, dims, bin_widths,
+                              iteration, num_ignore)
         end
         push!(exs, ex)
     end
@@ -217,7 +214,7 @@ end
             clr = clr_loop(H1_clrs, fid, pt, clr,
                            frame, H1_fnums, H1_clr_kwargs)
 
-            semi_random_loop!(layer_values, canvas, H2_fxs, H2_clrs, 
+            semi_random_loop!(layer_values, canvas, H2_fxs, H2_clrs,
                               pt, clr, frame, H2_fnums, H2_kwargs,
                               H2_clr_kwargs, bounds, dims, bin_widths, i,
                               num_ignore )
@@ -273,12 +270,10 @@ end
             clr = clr_loop(H1_clrs, fid, pt, clr,
                            frame, H1_fnums, H1_clr_kwargs)
 
-            #output_pt = pt_loop(H2_fxs, fid, pt, frame, H2_fnums, H2_kwargs)
-            #output_clr = clr_loop(H2_clrs, fid_2, pt, clr,
-            #                      frame, H2_fnums, H2_clr_kwargs)
+            output_pt = pt_loop(H2_fxs, fid, pt, frame, H2_fnums, H2_kwargs)
+            output_clr = clr_loop(H2_clrs, fid_2, pt, clr,
+                                  frame, H2_fnums, H2_clr_kwargs)
 
-            output_pt = pt
-            output_clr = clr
             histogram_output!(layer_values, canvas, output_pt, output_clr,
                               bounds, dims, bin_widths, i, num_ignore)
 

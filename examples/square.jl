@@ -39,7 +39,8 @@ function square_example(num_particles, num_iterations;
                          world_size = world_size, ppu = ppu,
                          H1 = H, H2 = H2,
                          num_particles = num_particles,
-                         num_iterations = num_iterations, solver_type = :random)
+                         num_iterations = num_iterations,
+                         solver_type = :semi_random)
 
     run!(layer)
 
