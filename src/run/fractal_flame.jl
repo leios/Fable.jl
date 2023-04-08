@@ -43,7 +43,8 @@ end
 end
 
 
-@generated function semi_random_loop!(layer_values, canvas, fxs, clr_fxs, 
+@generated function semi_random_loop!(layer_values, layer_reds, layer_greens,
+                                      layer_blues, layer_alphas, fxs, clr_fxs, 
                                       pt, clr, frame, fnums, kwargs, clr_kwargs,
                                       bounds, dims, bin_widths,
                                       iteration, num_ignore)
@@ -52,7 +53,8 @@ end
         ex = quote
             pt = fxs[$i](pt.y, pt.x, frame; kwargs[$i]...)
             clr = clr_fxs[$i](pt.y, pt.x, clr, frame; clr_kwargs[$i]...)
-            histogram_output!(layer_values, canvas, pt, clr,
+            histogram_output!(layer_values, layer_reds, layer_greens,
+                              layer_blues, layer_alphas, pt, clr,
                               bounds, dims, bin_widths,
                               iteration, num_ignore)
         end
@@ -65,16 +67,18 @@ end
     return Expr(:block, exs...)
 end
 
-@inline function histogram_output!(layer_values, canvas, pt, clr,
+@inline function histogram_output!(layer_values, layer_reds, layer_greens,
+                                   layer_blues, layer_alphas, pt, clr,
                                    bounds, dims, bin_widths, i, num_ignore)
     on_img_flag = on_image(pt.y,pt.x, bounds, dims)
     if i > num_ignore && on_img_flag
         @inbounds bin = find_bin(layer_values, pt.y, pt.x, bounds, bin_widths)
         if bin > 0 && bin <= length(layer_values)
             @inbounds @atomic layer_values[bin] += 1
-            #@inbounds @atomic canvas[bin] = 0.5*canvas[bin] + 0.5*clr
-            #@inbounds Atomix.@atomic canvas[bin] += RGBA{Float32}(0,0,0,0)
-            canvas[bin] = 0.5*canvas[bin] + 0.5*clr
+            @inbounds @atomic layer_reds[bin] += clr.r
+            @inbounds @atomic layer_greens[bin] += clr.g
+            @inbounds @atomic layer_blues[bin] += clr.b
+            @inbounds @atomic layer_alphas[bin] += clr.alpha
         end
     end
 end
@@ -122,7 +126,8 @@ function iterate!(layer::FractalLayer, H1::Hutchinson, n,
     if isnothing(H2)
         kernel!(layer.particles, n, H1.fxs, combine(H1.kwargs, H1.fis),
                 H1.color_fxs, combine(H1.color_kwargs, H1.color_fis),
-                H1.prob_set, H1.fnums, layer.values, layer.canvas,
+                H1.prob_set, H1.fnums, layer.values,
+                layer.reds, layer.greens, layer.blues, layer.alphas,
                 frame, bounds, Tuple(bin_widths),
                 layer.params.num_ignore, max_range,
                 ndrange=size(layer.particles)[1])
@@ -132,8 +137,8 @@ function iterate!(layer::FractalLayer, H1::Hutchinson, n,
                 H1.prob_set, H1.fnums,
                 H2.fxs, combine(H2.kwargs, H2.fis),
                 H2.color_fxs, combine(H2.color_kwargs, H2.color_fis),
-                H2.prob_set, H2.fnums,
-                layer.values, layer.canvas,
+                H2.prob_set, H2.fnums, layer.values,
+                layer.reds, layer.greens, layer.blues, layer.alphas,
                 frame, bounds, Tuple(bin_widths),
                 layer.params.num_ignore, max_range,
                 ndrange=size(layer.particles)[1])
@@ -143,7 +148,8 @@ end
 @kernel function naive_chaos_kernel!(points, n, H_fxs, H_kwargs,
                                      H_clrs, H_clr_kwargs,
                                      H_probs, H_fnums,
-                                     layer_values, canvas, frame, bounds,
+                                     layer_values, layer_reds, layer_greens,
+                                     layer_blues, layer_alphas, frame, bounds,
                                      bin_widths, num_ignore, max_range)
 
     tid = @index(Global,Linear)
@@ -171,7 +177,8 @@ end
             pt = pt_loop(H_fxs, fid, pt, frame, H_fnums, H_kwargs)
             clr = clr_loop(H_clrs, fid, pt, clr, frame, H_fnums, H_clr_kwargs)
 
-            histogram_output!(layer_values, canvas, pt, clr,
+            histogram_output!(layer_values, layer_reds, layer_greens,
+                              layer_blues, layer_alphas, pt, clr,
                               bounds, dims, bin_widths, i, num_ignore)
         end
     end
@@ -186,7 +193,9 @@ end
                                            H2_fxs, H2_kwargs,
                                            H2_clrs, H2_clr_kwargs,
                                            H2_probs, H2_fnums,
-                                           layer_values, canvas, frame, bounds,
+                                           layer_values, layer_reds,
+                                           layer_greens, layer_blues,
+                                           layer_alphas, frame, bounds,
                                            bin_widths, num_ignore, max_range)
 
     tid = @index(Global,Linear)
@@ -214,7 +223,8 @@ end
             clr = clr_loop(H1_clrs, fid, pt, clr,
                            frame, H1_fnums, H1_clr_kwargs)
 
-            semi_random_loop!(layer_values, canvas, H2_fxs, H2_clrs,
+            semi_random_loop!(layer_values, layer_reds, layer_greens,
+                              layer_blues, layer_alphas, H2_fxs, H2_clrs,
                               pt, clr, frame, H2_fnums, H2_kwargs,
                               H2_clr_kwargs, bounds, dims, bin_widths, i,
                               num_ignore )
@@ -231,7 +241,8 @@ end
                                      H2_fxs, H2_kwargs,
                                      H2_clrs, H2_clr_kwargs,
                                      H2_probs, H2_fnums,
-                                     layer_values, canvas, frame, bounds,
+                                     layer_values, layer_reds, layer_greens,
+                                     layer_blues, layer_alphas, frame, bounds,
                                      bin_widths, num_ignore, max_range)
 
     tid = @index(Global,Linear)
@@ -274,7 +285,8 @@ end
             output_clr = clr_loop(H2_clrs, fid_2, pt, clr,
                                   frame, H2_fnums, H2_clr_kwargs)
 
-            histogram_output!(layer_values, canvas, output_pt, output_clr,
+            histogram_output!(layer_values, layer_reds, layer_greens,
+                              layer_blues, layer_alphas, output_pt, output_clr,
                               bounds, dims, bin_widths, i, num_ignore)
 
         end

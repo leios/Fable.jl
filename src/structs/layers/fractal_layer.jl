@@ -7,6 +7,10 @@ mutable struct FractalLayer <: AbstractLayer
     H2::Union{Nothing, Hutchinson}
     particles::Union{Array{P}, CuArray{P}, ROCArray{P}} where P <: AbstractPoint
     values::Union{Array{I}, CuArray{I}, ROCArray{I}} where I <: Integer
+    reds::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
+    greens::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
+    blues::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
+    alphas::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
     canvas::Union{Array{C}, CuArray{C}, ROCArray{C}} where C <: RGBA
     position::Tuple
     world_size::Tuple
@@ -57,12 +61,12 @@ end
 
 
 # Creating a default call
-function FractalLayer(p, v, c, position, world_size, ppu;
+function FractalLayer(p, v, r, g, b, a, c, position, world_size, ppu;
                       postprocessing_steps = AbstractPostProcess[],
                       config = standard,
                       H1 = Hutchinson(), H2 = nothing)
     postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
-    return FractalLayer(H1, H2, p, v, c, position, world_size, ppu,
+    return FractalLayer(H1, H2, p, v, r, g, b, a, c, position, world_size, ppu,
                         default_params(FractalLayer,
                                        config = config,
                                        ArrayType = typeof(v),
@@ -80,16 +84,19 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                       num_particles = 1000, num_iterations = 1000, dims = 2,
                       H1 = Hutchinson(), H2 = nothing,
                       solver_type = :semi_random)
-    if logscale
-        postprocessing_steps = vcat([FLLogscale()], postprocessing_steps)
-    end
+    postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
 
     res = (ceil(Int, world_size[1]*ppu), ceil(Int, world_size[2]*ppu))
     p = generate_points(num_particles; dims = dims, ArrayType = ArrayType)
     v = ArrayType(zeros(Int,res))
+    r = ArrayType(zeros(FloatType,res))
+    g = ArrayType(zeros(FloatType,res))
+    b = ArrayType(zeros(FloatType,res))
+    a = ArrayType(zeros(FloatType,res))
     c = ArrayType(fill(RGBA(FloatType(0),0,0,0), res))
     if config == :standard || config == :fractal_flame
-        return FractalLayer(H1, H2, p, v, c, position, world_size, ppu,
+        return FractalLayer(H1, H2, p, v, r, g, b, a, c,
+                            position, world_size, ppu,
                             default_params(FractalLayer;
                                            ArrayType = ArrayType,
                                            FloatType = FloatType,
@@ -99,7 +106,8 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                                            dims = dims),
                             postprocessing_steps)
     else
-        return FractalLayer(H1, H2, p, v, c, position, world_size, ppu,
+        return FractalLayer(H1, H2, p, v, r, g, b, a, c,
+                            position, world_size, ppu,
                             params(FractalLayer;
                                    ArrayType=ArrayType,
                                    FloatType = FloatType,
@@ -118,24 +126,46 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
 end
 
 #------------------------------------------------------------------------------#
-# Logscale for FractalLayer
+# CopyToCanvas for FractalLayer
 #------------------------------------------------------------------------------#
 
-struct FLLogscale <: AbstractPostProcess
+struct CopyToCanvas <: AbstractPostProcess
     op::Function
     initialized::Bool
 end
 
-FLLogscale() = FLLogscale(fractal_logscale!, true)
+CopyToCanvas() = CopyToCanvas(to_canvas!, true)
+
+function norm_layer!(layer::FractalLayer)
+    layer.reds .= norm_component.(layer.reds, layer.values)
+    layer.greens .= norm_component.(layer.greens, layer.values)
+    layer.blues .= norm_component.(layer.blues, layer.values)
+    layer.alphas .= norm_component.(layer.alphas, layer.values)
+end
+
+function norm_component(color, value)
+    if value == 0 || isnan(value)
+        return color
+    else
+        return color / value
+    end
+end
+
+function to_canvas!(layer::FractalLayer, canvas_params::CopyToCanvas)
+    to_canvas!(layer)
+end
 
 function to_canvas!(layer::FractalLayer)
 
-    f = FL_logscale_kernel!
+    f = FL_canvas_kernel!
+    if layer.params.logscale
+        norm_layer!(layer)
+        f = FL_logscale_kernel!
+    end
 
     if layer.params.calc_max_value != 0
         update_params!(layer; max_value = maximum(layer.values))
     end
-
     if layer.params.ArrayType <: Array
         kernel! = f(CPU(), layer.params.numcores)
     elseif has_cuda_gpu() && layer.params.ArrayType <: CuArray
@@ -144,24 +174,53 @@ function to_canvas!(layer::FractalLayer)
         kernel! = f(ROCDevice(), layer.params.numthreads)
     end
 
-    wait(kernel!(layer.canvas, layer.values, layer.params.gamma,
-                 layer.params.max_value, ndrange = length(layer.canvas)))
+    if layer.params.logscale
+        wait(kernel!(layer.canvas, layer.reds, layer.greens, layer.blues,
+                     layer.alphas, layer.values, layer.params.gamma,
+                     layer.params.max_value, ndrange = length(layer.canvas)))
+    else
+        wait(kernel!(layer.canvas, layer.reds, layer.greens, layer.blues,
+                     layer.alphas, layer.values,
+                     ndrange = length(layer.canvas)))
+    end
 
     return nothing
 end
 
-@kernel function FL_logscale_kernel!(canvas, layer_values,
+@kernel function FL_canvas_kernel!(canvas, layer_reds, layer_greens,
+                                   layer_blues, layer_alphas, layer_values)
+    tid = @index(Global, Linear)
+    FT = eltype(layer_reds)
+
+    val = layer_values[tid]
+
+    # warp divergence, WOOOoooOOO
+    if val > 0
+        @inbounds r = min(layer_reds[tid]/val,1)
+        @inbounds g = min(layer_greens[tid]/val,1)
+        @inbounds b = min(layer_blues[tid]/val,1)
+        @inbounds a = min(layer_alphas[tid]/val,1)
+
+        @inbounds canvas[tid] = RGBA(r,g,b,a)
+    else
+        @inbounds canvas[tid] = RGBA(FT(0), 0, 0, 0)
+    end
+end
+
+@kernel function FL_logscale_kernel!(canvas, layer_reds, layer_greens,
+                                     layer_blues, layer_alphas, layer_values,
                                      layer_gamma, layer_max_value)
 
     tid = @index(Global, Linear)
+    FT = eltype(layer_reds)
 
     if layer_max_value != 0
         @inbounds alpha = log10((9*layer_values[tid]/layer_max_value)+1)
+        @inbounds r = layer_reds[tid]^(1/layer_gamma)
+        @inbounds g = layer_greens[tid]^(1/layer_gamma)
+        @inbounds b = layer_blues[tid]^(1/layer_gamma)
         @inbounds a = layer_alphas[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
-        @inbounds canvas[tid] = RGBA(canvas[tid].r,
-                                     canvas[tid].g,
-                                     canvas[tid].b,
-                                     a)
+        @inbounds canvas[tid] = RGBA(r,g,b,a)
     else
         @inbounds canvas[tid] = RGBA(FT(0), 0, 0, 0)
     end
