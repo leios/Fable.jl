@@ -179,7 +179,7 @@ simple_eyes = @fum color function simple_eyes(x, y;
         end
     end
 
-    return RGBA(red, green, blue, alpha)
+    return RGBA{Float32}(red, green, blue, alpha)
 
 end
 
