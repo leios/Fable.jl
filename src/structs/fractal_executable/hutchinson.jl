@@ -21,6 +21,18 @@ function Hutchinson(fum::FractalUserMethod, color_fum::FractalUserMethod,
                       (prob,), (1,))
 end
 
+function color_splat(fo_color::FractalUserMethod)
+    return ((fo_color.fx,), (fo_color.kwargs,), (fo_color.fis,))
+end
+
+function color_splat(fo_color::Tuple)
+    fxs = [fo_color[i].fx for i = 1:length(fo_color)]
+    kwargs = [fo_color[i].kwargs for i = 1:length(fo_color)]
+    fis = [fo_color[i].fis for i = 1:length(fo_color)]
+
+    return ((Tuple(fxs),), (Tuple(kwargs),), (Tuple(fis),))
+end
+
 function Hutchinson(fo::FractalOperator; depth = 0)
     if depth <= 1 && fo.prob != 1
         @warn("Setting probability to 1 for standalone FractalOperator...")
@@ -29,7 +41,7 @@ function Hutchinson(fo::FractalOperator; depth = 0)
         prob = fo.prob
     end
     return Hutchinson((fo.op.fx,), (fo.op.kwargs,), (fo.op.fis,),
-                      (fo.color.fx,), (fo.color.kwargs,), (fo.color.fis,),
+                      color_splat(fo.color)...,
                       (prob,), (1,))
 end
 

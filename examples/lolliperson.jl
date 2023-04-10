@@ -3,8 +3,7 @@ using Fae, Images
 function lolli_example(num_particles, num_iterations;
                        height = 2.0, brow_height = 0.5,
                        ArrayType = Array, num_frames = 10,
-                       transform_type = :check,
-                       diagnostic = false, filename = "out.png")
+                       transform_type = :check, filename = "out.png")
     bg = ColorLayer(RGBA(0.5, 0.5, 0.5, 1); ArrayType = ArrayType)
     res = (1080, 1920)
 
@@ -89,8 +88,7 @@ function lolli_example(num_particles, num_iterations;
         lolli = LolliPerson(height; fis = [lean_angle, lean_velocity],
                             ArrayType = ArrayType,
                             num_particles = num_particles,
-                            num_iterations = num_iterations,
-                            diagnostic = diagnostic)
+                            num_iterations = num_iterations)
 
         video_out = open_video(res; framerate = 30, filename = "out.mp4")
         for i = 1:num_frames

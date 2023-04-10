@@ -47,6 +47,9 @@ function define_color_operators(color::Union{RGBA, RGB, FractalUserMethod};
 end
 
 function define_color_operators(t_color::Union{Tuple, Vector}; fnum = 4)
+    if eltype(t_color) <: FractalUserMethod
+        return [t_color for i = 1:fnum]
+    end
     if length(t_color) == 1
         color = create_color(t_color[1])
         return [color for i = 1:fnum]

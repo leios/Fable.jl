@@ -45,15 +45,14 @@ constant_disk = Fae.@fum function constant_disk(x, y; radius = 1,
 
     x = radius*r2*cos(theta2)+position[2]
     y = radius*r2*sin(theta2)+position[1]
-
+    return point(y,x)
 end
 
 # Returns back H, colors, and probs for a circle
 function define_circle(; position::Union{Tuple, Vector, FractalInput} = (0, 0),
                          radius::Union{Number, FractalInput} = 1.0,
                          color = Shaders.gray,
-                         chosen_fx = :constant_disk,
-                         additional_fis = FractalInput[])
+                         chosen_fx = :constant_disk)
 
     fums = define_circle_operators(position, radius; chosen_fx = chosen_fx)
     color_set = define_color_operators(color; fnum = 2)

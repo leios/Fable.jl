@@ -22,13 +22,30 @@ export run!
     return Expr(:block, exs...)
 end
 
+@inline function call_fx(fx, pt, clr, frame, kwargs)
+    return fx(pt.y, pt.x, clr, frame; kwargs...)
+end
+
+@generated function call_fx(fx::Tuple, pt::Point2D, clr, frame, kwargs::Tuple)
+    exs = Expr[]
+    for i = 1:length(fx.parameters)
+        ex = :(clr = fx[$i](pt.y, pt.x, clr, frame; kwargs[$i]...))
+        push!(exs, ex)
+    end
+
+    push!(exs, :(return clr))
+
+    return Expr(:block, exs...)
+end
+
 @generated function clr_loop(fxs, fid, pt, clr, frame, fnums, kwargs)
     exs = Expr[]
     push!(exs, :(bit_offset = 0))
     for i = 1:length(fnums.parameters)
         ex = quote
             idx = decode_fid(fid, bit_offset, fnums[$i])
-            clr = fxs[idx](pt.y, pt.x, clr, frame; kwargs[idx]...)
+            clr = call_fx(fxs[idx], pt, clr, frame, kwargs[idx])
+            #clr = fxs[idx](pt.y, pt.x, clr, frame; kwargs[idx]...)
             bit_offset += ceil(UInt,log2(fnums[$i]))
         end
         push!(exs, ex)
@@ -154,7 +171,6 @@ end
 
     tid = @index(Global,Linear)
 
- 
     pt = points[tid]
     dims = Fae.dims(pt)
     clr = RGBA{Float32}(0,0,0,0)

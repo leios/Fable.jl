@@ -35,8 +35,7 @@ function define_rectangle(; position::Union{Vector, Tuple, FractalInput}=(0,0),
                             rotation::Union{Number, FractalInput} = 0.0,
                             scale_x::Union{Number, FractalInput} = 1.0,
                             scale_y::Union{Number, FractalInput} = 1.0,
-                            color = Shaders.grey,
-                            additional_fis = FractalInput[])
+                            color = Shaders.grey)
 
     fums = define_rectangle_operators(position, rotation, scale_x, scale_y)
     color_set = define_color_operators(color; fnum = 4)
@@ -49,12 +48,10 @@ end
 function define_square(; position::Union{Vector, Tuple, FractalInput}=(0,0),
                          rotation::Union{Number, FractalInput} = 0.0,
                          scale::Union{Number, FractalInput} = 1.0,
-                         color = Shaders.grey,
-                         additional_fis = FractalInput[])
+                         color = Shaders.grey)
 
     return define_rectangle(; position = position, rotation = rotation,
-                              scale_x = scale, scale_y = scale, color = color,
-                              additional_fis = additional_fis)
+                              scale_x = scale, scale_y = scale, color = color)
 end
 
 # This specifically returns the fums for a square

@@ -2,7 +2,7 @@ export FractalOperator, fo
 
 struct FractalOperator
     op::FractalUserMethod
-    color::FractalUserMethod
+    color::Union{FractalUserMethod, Tuple}
     prob::Number
 end
 

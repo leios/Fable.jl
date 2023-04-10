@@ -37,9 +37,9 @@ function dump(lolli::LolliLayer)
     println(lolli)
 end
 
-function run!(layer::LolliLayer; diagnostic = false, frame = 0)
-    run!(layer.head; diagnostic = diagnostic, frame = frame)
-    run!(layer.body; diagnostic = diagnostic, frame = frame)
+function run!(layer::LolliLayer; frame = 0)
+    run!(layer.head; frame = frame)
+    run!(layer.body; frame = frame)
 end
 
 function postprocess!(layer::LolliLayer)
@@ -84,88 +84,6 @@ end
         canvas_out[tid] = body_canvas[tid]
     else
         canvas_out[tid] = head_canvas[tid]
-    end
-end
-
-function update_fis!(layer::LolliLayer;
-                     fis::Vector{FractalInput} = FractalInput[],
-                     head_fis::Vector{FractalInput} = FractalInput[],
-                     body_fis::Vector{FractalInput} = FractalInput[])
-    l = length(fis) + length(head_fis)
-    if l >= 1
-        H = layer.head.H1
-        H2 = layer.head.H2
-        for i = 1:length(fis)
-            for j = 1:length(H.fi_set)
-                if fis[i].name == H.fi_set[j].name
-                    H.fi_set[j] = fis[i]
-                end
-            end
-            if H2 != nothing
-                for j = 1:length(H2.fi_set)
-                    if fis[i].name == H2.fi_set[j].name
-                        H2.fi_set[j] = fis[i]
-                    end
-                end
-            end
-        end
-        for i = 1:length(head_fis)
-            for j = 1:length(H.fi_set)
-                if head_fis[i].name == H.fi_set[j].name 
-                    H.fi_set[j] = head_fis[i]
-                end
-            end
-            if H2 != nothing
-                for j = 1:length(H2.fi_set)
-                    if head_fis[i].name == H2.fi_set[j].name
-                        H2.fi_set[j] = head_fis[i]
-                    end
-                end
-            end
-
-        end
-        update_fis!(H)
-        if H2 != nothing
-            update_fis!(H2)
-        end
-    end
-
-    l = length(fis) + length(body_fis)
-    if l >= 1
-        H = layer.body.H1
-        H2 = layer.body.H2
-        for i = 1:length(fis)
-            for j = 1:length(H.fi_set)
-                if fis[i].name == H.fi_set[j].name 
-                    H.fi_set[j] = fis[i]
-                end
-            end
-            if H2 != nothing
-                for j = 1:length(H2.fi_set)
-                    if fis[i].name == H2.fi_set[j].name
-                        H2.fi_set[j] = fis[i]
-                    end
-                end
-            end
-        end
-        for i = 1:length(body_fis)
-            for j = 1:length(H.fi_set)
-                if body_fis[i].name == H.fi_set[j].name 
-                    H.fi_set[j] = body_fis[i]
-                end
-            end
-            if H2 != nothing
-                for j = 1:length(H2.fi_set)
-                    if head_fis[i].name == H2.fi_set[j].name
-                        H2.fi_set[j] = head_fis[i]
-                    end
-                end
-            end
-        end
-        update_fis!(H)
-        if H2 != nothing
-            update_fis!(H2)
-        end
     end
 end
 
@@ -216,17 +134,22 @@ lean_body = @fum function lean_body(x, y;
 
 end
 
-simple_eyes = @fum function simple_eyes(x, y;
-                                        height = 1.0,
-                                        ellipticity = 2.5,
-                                        location = (0.0, 0.0),
-                                        inter_eye_distance = height*0.150,
-                                        color = (1,1,1,1),
-                                        size = height*0.08,
-                                        show_brows = false,
-                                        brow_angle = 0.0,
-                                        brow_size = (0.3, 1.25),
-                                        brow_height = 1.0)
+simple_eyes = @fum color function simple_eyes(x, y;
+                                              height = 1.0,
+                                              ellipticity = 2.5,
+                                              location = (0.0, 0.0),
+                                              inter_eye_distance = height*0.150,
+                                              eye_color = (1,1,1,1),
+                                              size = height*0.08,
+                                              show_brows = false,
+                                              brow_angle = 0.0,
+                                              brow_size = (0.3, 1.25),
+                                              brow_height = 1.0)
+    red = color.r
+    green = color.g
+    blue = color.b
+    alpha = color.alpha
+
     head_position = (-height/4, 0.0)
     location = location .+ head_position
     r2 = size*0.5
@@ -235,10 +158,10 @@ simple_eyes = @fum function simple_eyes(x, y;
     if y >= y_height
         if in_ellipse(x,y,location.+(0, 0.5*inter_eye_distance),0.0,r1,r2) ||
            in_ellipse(x,y,location.-(0, 0.5*inter_eye_distance),0.0,r1,r2)
-            red = color[1]
-            green = color[2]
-            blue = color[3]
-            alpha = color[4]
+            red = eye_color[1]
+            green = eye_color[2]
+            blue = eye_color[3]
+            alpha = eye_color[4]
         end
     end
 
@@ -249,12 +172,14 @@ simple_eyes = @fum function simple_eyes(x, y;
                         brow_angle, brow_size[2], brow_size[1]) ||
            in_rectangle(x, y, (y_height-brow_size[1]*0.5, -brow_x),
                         brow_angle, brow_size[2], brow_size[1])
-            red = color[1]
-            green = color[2]
-            blue = color[3]
-            alpha = color[4]
+            red = eye_color[1]
+            green = eye_color[2]
+            blue = eye_color[3]
+            alpha = eye_color[4]
         end
     end
+
+    return RGBA(red, green, blue, alpha)
 
 end
 
@@ -263,7 +188,7 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
                     eye_color = Shaders.white, body_color = Shaders.black,
                     head_position = (-height*1/4, 0.0),
                     head_radius = height*0.25,
-                    name = "", ArrayType = Array, diagnostic = false,
+                    name = "", ArrayType = Array,
                     known_operations = [],
                     ppu = 1200, world_size = (0.9, 1.6),
                     num_particles = 1000, num_iterations = 1000,
@@ -282,7 +207,7 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
     H2_body = nothing
     for i = 1:length(fis)
         if fis[i].name == "lean_angle"
-            lean_velocity_idx = find_fi(fis, "lean_velocity")
+            lean_velocity_idx = find_fi_idx(fis, "lean_velocity")
             if lean_velocity_idx != nothing
                 lean_velocity = fis[lean_velocity_idx]
             else
@@ -291,10 +216,7 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
             H_head = Hutchinson(lean_head(lean_angle = fis[i],
                                           lean_velocity = lean_velocity,
                                           head_radius = head_radius,
-                                          foot_position = foot_position);
-                                diagnostic = diagnostic,
-                                name = "lean_head_"*name,
-                                final = true, fis = head_fis)
+                                          foot_position = foot_position))
             if H2_head == nothing
                 H2_head = H_head
             else
@@ -304,10 +226,7 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
             H_body = Hutchinson(lean_body(lean_angle = fis[i],
                                           lean_velocity = lean_velocity,
                                           foot_position = foot_position,
-                                          height = height);
-                                diagnostic = diagnostic,
-                                name = "lean_body_"*name,
-                                final = true, fis = body_fis)
+                                          height = height))
             if H2_body == nothing
                 H2_body = H_body
             else
@@ -327,10 +246,7 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
                               rotation = 0.0,
                               scale_x = 0.1*body_multiplier,
                               scale_y = 0.5*height-offset,
-                              color = body_color,
-                              name = "body"*name,
-                              diagnostic = diagnostic,
-                              additional_fis = body_fis)
+                              color = body_color)
 
     body_layer = FractalLayer(num_particles = num_particles,
                               num_iterations = num_iterations,
@@ -340,10 +256,7 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
 
     head = define_circle(; position = head_position,
                            radius = head_radius,
-                           color = overlay(body_color, eye_fum),
-                           name = "head"*name,
-                           diagnostic = diagnostic,
-                           additional_fis = head_fis)
+                           color = (body_color, eye_fum))
 
     head_layer = FractalLayer(num_particles = num_particles,
                               num_iterations = num_iterations,

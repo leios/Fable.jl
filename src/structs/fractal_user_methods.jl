@@ -137,4 +137,3 @@ function (a::FractalUserMethod)(args...; kwargs...)
     final_kwargs = NamedTuple{ks}(vals)
     return FractalUserMethod(final_kwargs, fis, a.fx)
 end
-
