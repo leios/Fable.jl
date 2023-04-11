@@ -7,7 +7,8 @@ using Fae, Images
 #     ROCArray for AMD GPUs
 #     Array for parallel CPU 
 function square_example(num_particles, num_iterations;
-                        ArrayType = Array, dark = true)
+                        ArrayType = Array, dark = true,
+                        transform_type = :standard)
     # Physical space location. 
     world_size = (9*0.15, 16*0.15)
 
@@ -29,18 +30,18 @@ function square_example(num_particles, num_iterations;
 
     H = define_square(; position = [0.0, 0.0], rotation = pi/4,  color = colors)
     swirl_operator = fo(Flames.swirl)
-    H2 = Hutchinson(swirl_operator)
-    #H2 = nothing
-
-    # To combine a different way, use the final_H defined here
-    # final_H = fee(Hutchinson, [H, H2])
+    H2 = nothing
+    if transform_type == :outer_swirl
+        H2 = Hutchinson(swirl_operator)
+    elseif transform_type == :inner_swirl
+        H1 = fee(Hutchinson, [H, Hutchinson(swirl_operator)])
+    end
 
     layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
                          world_size = world_size, ppu = ppu,
-                         H1 = H, H2 = H2,
+                         H1 = H1, H2 = H2,
                          num_particles = num_particles,
-                         num_iterations = num_iterations,
-                         solver_type = :random)
+                         num_iterations = num_iterations)
 
     run!(layer)
 

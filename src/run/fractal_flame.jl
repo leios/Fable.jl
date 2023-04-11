@@ -5,11 +5,13 @@ export run!
 @generated function pt_loop(fxs, fid, pt, frame, fnums, kwargs)
     exs = Expr[]
     push!(exs, :(bit_offset = 0))
+    push!(exs, :(fx_offset = 0))
     for i = 1:length(fnums.parameters)
         ex = quote
-            idx = decode_fid(fid, bit_offset, fnums[$i])
-            pt = fxs[idx](pt.y, pt.x, frame; kwargs[idx]...)
+            idx = decode_fid(fid, bit_offset, fnums[$i]) + fx_offset
+            #pt = fxs[idx](pt.y, pt.x, frame; kwargs[idx]...)
             bit_offset += ceil(UInt,log2(fnums[$i]))
+            fx_offset += fnums[$i]
         end
         push!(exs, ex)
     end
@@ -41,17 +43,18 @@ end
 @generated function clr_loop(fxs, fid, pt, clr, frame, fnums, kwargs)
     exs = Expr[]
     push!(exs, :(bit_offset = 0))
+    push!(exs, :(fx_offset = 0))
     for i = 1:length(fnums.parameters)
         ex = quote
-            idx = decode_fid(fid, bit_offset, fnums[$i])
-            clr = call_fx(fxs[idx], pt, clr, frame, kwargs[idx])
-            #clr = fxs[idx](pt.y, pt.x, clr, frame; kwargs[idx]...)
+            idx = decode_fid(fid, bit_offset, fnums[$i]) + fx_offset
+            #clr = call_fx(fxs[idx], pt, clr, frame, kwargs[idx])
             bit_offset += ceil(UInt,log2(fnums[$i]))
+            fx_offset += fnums[$i]
         end
         push!(exs, ex)
     end
 
-    push!(exs, :(return clr))
+    push!(exs, :(return RGBA{Float32}(clr)))
 
     # to return 3 separate colors to mix separately
     # return :(Expr(:tuple, $exs...))
@@ -177,6 +180,7 @@ end
 
     seed = quick_seed(tid)
     fid = create_fid(H_probs, H_fnums, seed)
+    #fid = UInt(1)
 
     for i = 1:n
         # quick way to tell if in range to be calculated or not
@@ -186,16 +190,19 @@ end
             if length(H_fnums) > 1 || H_fnums[1] > 1
                 seed = simple_rand(seed)
                 fid = create_fid(H_probs, H_fnums, seed)
+                #fid = UInt(1)
             else
                 fid = UInt(1)
             end
 
+#=
             pt = pt_loop(H_fxs, fid, pt, frame, H_fnums, H_kwargs)
             clr = clr_loop(H_clrs, fid, pt, clr, frame, H_fnums, H_clr_kwargs)
 
             histogram_output!(layer_values, layer_reds, layer_greens,
                               layer_blues, layer_alphas, pt, clr,
                               bounds, dims, bin_widths, i, num_ignore)
+=#
         end
     end
 

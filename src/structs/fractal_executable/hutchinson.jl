@@ -12,7 +12,7 @@ mutable struct Hutchinson <: FractalExecutable
 end
 
 Hutchinson() = Hutchinson((),(),(),(),(),(),(),())
-Hutchinson(H::Hutchinson) = H
+Hutchinson(H::Hutchinson; depth = 0) = H
 
 function Hutchinson(fum::FractalUserMethod, color_fum::FractalUserMethod,
                     prob::Number)
@@ -82,10 +82,11 @@ function Hutchinson(fos::Union{Tuple, Vector}; depth = 0)
         end
 
         if multilayer_flag
-            println("yo")
             H.fnums = length.(fos)
         else
-            H.fnums = Tuple(1 for i = 1:length(fos))
+            if !(eltype(fos) <: Hutchinson)
+                H.fnums = Tuple(1 for i = 1:length(fos))
+            end
             if prob > 1.0
                 @warn("Probabilities do not add up to 1!\n"*
                       "Setting all operators to be equally likely...")
