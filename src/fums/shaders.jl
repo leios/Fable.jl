@@ -4,17 +4,17 @@ module Shaders
 
 import Fae.@fum
 
-custom = @fum color custom(; r = 0, g = 0, b = 0, a = 0) = RGBA(r, g, b, a)
+custom = @fum color custom(; r = 0, g = 0, b = 0, a = 0) = RGBA{Float32}(r, g, b, a)
 
 previous = @fum color previous() = color
 
-red = @fum color red() = RGBA(1, 0, 0, 1)
-green = @fum color green() = RGBA(0,1,0,1)
-blue = @fum color blue() = RGBA(0,0,1,1)
-magenta = @fum color magenta() = RGBA(1,0,1,1)
-white = @fum color white() = RGBA(1,1,1,1)
-black = @fum color black() = RGBA(0,0,0,1)
-gray = @fum color gray() = RGBA(0.5, 0.5, 0.5, 1)
+red = @fum color red() = RGBA{Float32}(1, 0, 0, 1)
+green = @fum color green() = RGBA{Float32}(0,1,0,1)
+blue = @fum color blue() = RGBA{Float32}(0,0,1,1)
+magenta = @fum color magenta() = RGBA{Float32}(1,0,1,1)
+white = @fum color white() = RGBA{Float32}(1,1,1,1)
+black = @fum color black() = RGBA{Float32}(0,0,0,1)
+gray = @fum color gray() = RGBA{Float32}(0.5, 0.5, 0.5, 1)
 grey = gray
 
 end

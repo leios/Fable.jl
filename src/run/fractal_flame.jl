@@ -1,5 +1,26 @@
 export run!
 
+@generated function call_pt_fx(fxs, pt, frame, kwargs, idx)
+    exs = Expr[]
+    ex = quote
+        if idx == 1
+            pt = fxs[1](pt.y, pt.x, frame; kwargs[1]...) 
+        end
+    end
+    push!(exs, ex)
+    for i = 2:length(fxs.parameters)
+        ex = quote
+            if idx == $i
+                pt = fxs[$i](pt.y, pt.x, frame; kwargs[$i]...) 
+            end
+        end
+        push!(exs, ex)
+    end
+    push!(exs, :(return pt))
+
+    return Expr(:block, exs...)
+end
+
 # These functions essentially unroll the loops in the kernel because of a
 # known julia bug preventing us from using for i = 1:10...
 @generated function pt_loop(fxs, fid, pt, frame, fnums, kwargs)
@@ -9,6 +30,7 @@ export run!
     for i = 1:length(fnums.parameters)
         ex = quote
             idx = decode_fid(fid, bit_offset, fnums[$i]) + fx_offset
+            pt = call_pt_fx(fxs, pt, frame, kwargs, idx)
             #pt = fxs[idx](pt.y, pt.x, frame; kwargs[idx]...)
             bit_offset += ceil(UInt,log2(fnums[$i]))
             fx_offset += fnums[$i]
@@ -24,11 +46,32 @@ export run!
     return Expr(:block, exs...)
 end
 
-@inline function call_fx(fx, pt, clr, frame, kwargs)
+@generated function call_clr_fx(fxs, pt, clr, frame, kwargs, idx)
+    exs = Expr[]
+    ex = quote
+        if idx == 1
+            clr = call_clr_fx(fxs[1], pt, clr, frame, kwargs[1]) 
+        end
+    end
+    push!(exs, ex)
+    for i = 2:length(fxs.parameters)
+        ex = quote
+            if idx == $i
+                clr = call_clr_fx(fxs[$i], pt, clr, frame, kwargs[$i])
+            end
+        end
+        push!(exs, ex)
+    end
+    push!(exs, :(return clr))
+
+    return Expr(:block, exs...)
+end
+
+@inline function call_clr_fx(fx, pt, clr, frame, kwargs)
     return fx(pt.y, pt.x, clr, frame; kwargs...)
 end
 
-@generated function call_fx(fx::Tuple, pt::Point2D, clr, frame, kwargs::Tuple)
+@generated function call_clr_fx(fx::Tuple, pt::Point2D, clr, frame, kwargs::Tuple)
     exs = Expr[]
     for i = 1:length(fx.parameters)
         ex = :(clr = fx[$i](pt.y, pt.x, clr, frame; kwargs[$i]...))
@@ -47,14 +90,14 @@ end
     for i = 1:length(fnums.parameters)
         ex = quote
             idx = decode_fid(fid, bit_offset, fnums[$i]) + fx_offset
-            #clr = call_fx(fxs[idx], pt, clr, frame, kwargs[idx])
+            clr = call_clr_fx(fxs, pt, clr, frame, kwargs, idx)
             bit_offset += ceil(UInt,log2(fnums[$i]))
             fx_offset += fnums[$i]
         end
         push!(exs, ex)
     end
 
-    push!(exs, :(return RGBA{Float32}(clr)))
+    push!(exs, :(return clr))
 
     # to return 3 separate colors to mix separately
     # return :(Expr(:tuple, $exs...))
@@ -180,7 +223,6 @@ end
 
     seed = quick_seed(tid)
     fid = create_fid(H_probs, H_fnums, seed)
-    #fid = UInt(1)
 
     for i = 1:n
         # quick way to tell if in range to be calculated or not
@@ -190,19 +232,16 @@ end
             if length(H_fnums) > 1 || H_fnums[1] > 1
                 seed = simple_rand(seed)
                 fid = create_fid(H_probs, H_fnums, seed)
-                #fid = UInt(1)
             else
                 fid = UInt(1)
             end
 
-#=
             pt = pt_loop(H_fxs, fid, pt, frame, H_fnums, H_kwargs)
             clr = clr_loop(H_clrs, fid, pt, clr, frame, H_fnums, H_clr_kwargs)
 
             histogram_output!(layer_values, layer_reds, layer_greens,
                               layer_blues, layer_alphas, pt, clr,
                               bounds, dims, bin_widths, i, num_ignore)
-=#
         end
     end
 

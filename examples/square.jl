@@ -34,14 +34,14 @@ function square_example(num_particles, num_iterations;
     if transform_type == :outer_swirl
         H2 = Hutchinson(swirl_operator)
     elseif transform_type == :inner_swirl
-        H1 = fee(Hutchinson, [H, Hutchinson(swirl_operator)])
+        H = fee(Hutchinson, [H, Hutchinson(swirl_operator)])
     end
 
     layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
                          world_size = world_size, ppu = ppu,
-                         H1 = H1, H2 = H2,
+                         H1 = H, H2 = H2,
                          num_particles = num_particles,
-                         num_iterations = num_iterations)
+                         num_iterations = num_iterations, solver_type = :semi_random)
 
     run!(layer)
 
