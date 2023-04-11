@@ -1,3 +1,22 @@
+#-------------fractal_flame.jl-------------------------------------------------#
+# Before reading this file and judging me, please take a look at the errors on
+# PR #64 (https://github.com/leios/Fae.jl/pull/64)
+# 
+# Long story short, I cannot access any Tuples of varying types with iteration:
+#     i = 5
+#     fxs[i](args...;kwargs...)
+# This means that anything that cannot be represented as an NTuple{Type,...},
+# will break. Functions have an inherent type, so they cannot be represented as
+# an NTuple and must instead be represented as a Tuple{f1, f2, f3...}.
+# 
+# To call the functions, I need to call them with a statically known number.
+# So instead of using `idx = 1`, `fxs[idx](...)`, I needed to create an
+# `@generated` function that unrolls the loop for me. In the case of colors,
+# where multiple colors could be used on for the same IFS function, I needed
+# an additional helper function to call the Tuple one by one.
+#
+# It will unfortunately only get more complicated from here until Julia is fixed
+#------------------------------------------------------------------------------#
 export run!
 
 @generated function call_pt_fx(fxs, pt, frame, kwargs, idx)
