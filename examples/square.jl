@@ -7,8 +7,10 @@ using Fae, Images
 #     ROCArray for AMD GPUs
 #     Array for parallel CPU 
 function square_example(num_particles, num_iterations;
-                        ArrayType = Array, dark = true,
-                        transform_type = :standard)
+                        ArrayType = Array,
+                        dark = true,
+                        transform_type = :standard,
+                        filename = "out.png")
     # Physical space location. 
     world_size = (9*0.15, 16*0.15)
 
@@ -16,17 +18,10 @@ function square_example(num_particles, num_iterations;
     # The aspect ratio is 16x9, so if we want 1920x1080, we can say we want...
     ppu = 1920/world_size[2]
 
-    if dark
-        colors = [[1.0, 0.25, 0.25,1],
-                  [0.25, 1.0, 0.25, 1],
-                  [0.25, 0.25, 1.0, 1],
-                  [1.0, 0.25, 1.0, 1]]
-    else
-        colors = [[1.0, 0, 0,1],
-                 [0, 1.0, 0, 1],
-                 [0, 0, 1.0, 1],
-                 [1.0, 0, 1.0, 1]]
-    end
+    colors = [[1.0, 0.25, 0.25,1],
+              [0.25, 1.0, 0.25, 1],
+              [0.25, 0.25, 1.0, 1],
+              [1.0, 0.25, 1.0, 1]]
 
     H = define_square(; position = [0.0, 0.0], rotation = pi/4,  color = colors)
     swirl_operator = fo(Flames.swirl)
@@ -37,13 +32,21 @@ function square_example(num_particles, num_iterations;
         H = fee(Hutchinson, [H, Hutchinson(swirl_operator)])
     end
 
+    #return H
+
     layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
                          world_size = world_size, ppu = ppu,
                          H1 = H, H2 = H2,
                          num_particles = num_particles,
-                         num_iterations = num_iterations, solver_type = :semi_random)
+                         num_iterations = num_iterations)
 
     run!(layer)
 
-    write_image(layer; filename = "out.png")
+    write_image(layer; filename = filename)
 end
+
+@info("Created Function: square_example(num_particles, num_iterations;
+                                       ArrayType = Array,
+                                       transform_type = :standard,
+                                       filename = 'out.png')\n"*
+      "transform_type can be {:standard, :inner_swirl, :outer_swirl}")

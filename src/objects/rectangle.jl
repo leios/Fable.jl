@@ -1,4 +1,4 @@
-export define_rectangle, update_rectangle!, define_square, update_square!
+export define_rectangle, define_square
 # Returns back H, colors, and probs for a square
 
 rectangle_fum = @fum function rectangle_fum(y,x;

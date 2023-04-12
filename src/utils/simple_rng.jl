@@ -112,3 +112,17 @@ end
     value = UI((fid & bitmask) >> offset) + 1
     return value
 end
+
+@inline function find_random_fxs(fid::UI, fnums, probs) where UI <: Unsigned
+    bit_offset = 0
+    fx_offset = 0
+    t_out = ()
+    for i = 1:length(fnums)
+        idx = decode_fid(fid, bit_offset, fnums[i]) + fx_offset
+        t_out = (t_out...,idx)
+        bit_offset += ceil(UInt,log2(fnums[i]))
+        fx_offset += fnums[i]
+    end
+
+    return t_out
+end

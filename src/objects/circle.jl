@@ -1,4 +1,4 @@
-export define_circle, update_circle!
+export define_circle
 
 # Code examples modified from: https://www.math.uwaterloo.ca/~wgilbert/FractalGallery/IFS/IFS.html
 

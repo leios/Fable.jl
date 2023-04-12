@@ -23,12 +23,12 @@ function sierpinski_example(num_particles, num_iterations, num_frames;
                             color = [[1.0, 0.0, 0.0, 1.0],
                                      [0.0, 1.0, 0.0, 1.0],
                                      [0.0, 0.0, 1.0, 1.0]],
-                            name = "s1", chosen_fx = :sierpinski)
+                            chosen_fx = :sierpinski)
     H_2 = Fae.define_triangle(A = A_2, B = B_2, C = C_2,
                               color = [[0.0, 1.0, 1.0, 1.0],
                                        [1.0, 0.0, 1.0, 1.0],
                                        [1.0, 1.0, 0.0, 1.0]],
-                              name = "s2", chosen_fx = :sierpinski)
+                              chosen_fx = :sierpinski)
 
     final_H = fee(Hutchinson, [H, H_2])
 

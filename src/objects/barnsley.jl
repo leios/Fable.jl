@@ -1,4 +1,4 @@
-export define_barnsley, update_barnsley!
+export define_barnsley
 function define_barnsley(; color = Shaders.grey, tilt = 0)
     fums = define_barnsley_operators(tilt = tilt)
     color_set = define_color_operators(color; fnum = 4)
@@ -11,7 +11,7 @@ end
 function define_barnsley_operators(; tilt::Union{Number, FractalInput} = 0)
 
     s_1 = @fum function s_1()
-        return point(0.16*y, 0)
+        return point(0.16*y, 0.0)
     end
 
     s_2 = @fum function s_2(;tilt = 0)

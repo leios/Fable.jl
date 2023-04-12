@@ -1,22 +1,18 @@
 using Fae
 
-scale_and_translate = @fo function scale_and_translate(x, y;
-                                                       translation = (0,0),
-                                                       scale = 1)
+scale_and_translate = @fum function scale_and_translate(y, x;
+                                                       translation = (0.0,0.0),
+                                                       scale = 1.0)
     x = scale*x + translation[2]
     y = scale*y + translation[1]
+    return point(y,x)
 end
 
-function barnsley_example(num_particles, num_iterations; ArrayType = Array)
-    FloatType = Float32
-
-    layer = FractalLayer(; ArrayType = ArrayType, FloatType = FloatType,
-                         world_size = (10, 16), position = (5, 0),
-                         ppu = 1920/16, num_particles = num_particles,
-                         num_iterations = num_iterations)
+function barnsley_example(num_particles, num_iterations;
+                          ArrayType = Array,
+                          filename = "out.png")
 
     pos = [0, 0.]
-    color = [1., 1, 1, 1]
     radius = 1
 
     color_1 = [1.,1,1,1]
@@ -24,20 +20,22 @@ function barnsley_example(num_particles, num_iterations; ArrayType = Array)
     color_3 = [0.,1,0,1]
     color_4 = [0.,0,1,1]
 
-    H = define_barnsley(; color = [color_1, color_2, color_3, color_4],
-                          diagnostic=true, tilt = -0.04)
-    H.prob_set = (0.01, 0.5, 0.245, 0.245)
+    H = define_barnsley(; color = [color_1, color_2, color_3, color_4])
+    #H.prob_set = (0.01, 0.5, 0.245, 0.245)
 
-    fo_1 = scale_and_translate(prob = 0.5, color = Shaders.previous,
-                               translation = (0.5, 0.5), scale = 0.5)
-    fo_2 = FractalOperator(Flames.identity, Shaders.magenta, 0.5)
+    fo_1 = fo(Flames.identity, Shaders.previous, 1)
+    fo_2 = fo(scale_and_translate(translation = (0.5, 0.5), scale = 0.5),
+              Shaders.magenta, 1)
 
-    H2 = fee(Hutchinson, [fo_1, fo_2]; name = "2", final = true)
+    #H2 = fee(Hutchinson, (fo_1, fo_2))
+    H2 = nothing
 
-    layer.H1 = H
-    layer.H2 = H2
+    layer = FractalLayer(; ArrayType = ArrayType,
+                         world_size = (10, 16), position = (5, 0),
+                         ppu = 1920/16, num_particles = num_particles,
+                         num_iterations = num_iterations, H1 = H, H2 = H2)
 
     run!(layer)
 
-    @time write_image([layer], filename = "out.png")
+    write_image([layer], filename = filename)
 end

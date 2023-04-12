@@ -1,4 +1,4 @@
-export define_triangle, update_triangle!
+export define_triangle
 
 triangle_fill = @fum function triangle_fill(x,y;
                                             A = (0,0),

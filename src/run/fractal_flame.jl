@@ -50,7 +50,6 @@ end
         ex = quote
             idx = decode_fid(fid, bit_offset, fnums[$i]) + fx_offset
             pt = call_pt_fx(fxs, pt, frame, kwargs, idx)
-            #pt = fxs[idx](pt.y, pt.x, frame; kwargs[idx]...)
             bit_offset += ceil(UInt,log2(fnums[$i]))
             fx_offset += fnums[$i]
         end
