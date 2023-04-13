@@ -1,6 +1,6 @@
 # Layering
 
-Fae.jl has multiple layer types that can all be composed together to create a final image (or frame in a video).
+Fae.jl has multiple layer types that can be composed together to create a final image (or frame in a video).
 These layers indicate how the user would like to create an object or field.
 Right now, the following layers are available:
 
@@ -62,6 +62,8 @@ radial = @fum function radial(y, x; origin = (0,0))
     green = min(1, 1/r)
     blue = 1
     alpha = min(1, 1/r)
+
+    return RGBA{Float32}(red, green, blue, alpha)
 end
 ```
 

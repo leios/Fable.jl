@@ -32,8 +32,6 @@ function square_example(num_particles, num_iterations;
         H = fee(Hutchinson, [H, Hutchinson(swirl_operator)])
     end
 
-    #return H
-
     layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
                          world_size = world_size, ppu = ppu,
                          H1 = H, H2 = H2,

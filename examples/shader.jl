@@ -8,7 +8,7 @@ radial = @fum shader function radial(y, x; origin = (0,0))
     blue = 1
     alpha = min(1, 1/r)
 
-    return red, green, blue, alpha
+    return RGBA{Float32}(red, green, blue, alpha)
 end
 
 rectangle = @fum shader function rectangle(; position = (0,0), rotation = 0,
@@ -22,17 +22,10 @@ end
 ellipse = @fum shader function ellipse(; position = (0,0), rotation = 0,
                                   r1 = 1, r2 = 1)
     if in_ellipse(x, y, position, rotation, r1, r2)
-        red = 1
-        green = 1
-        blue = 1
-        alpha = 1
+        return RGBA{Float32}(1,1,1,1)
     else
-        red = 0
-        green = 0
-        blue = 0
-        alpha = 0
+        return RGBA{Float32}(0,0,0,0)
     end
-    return red, green, blue, alpha
 end
 
 function shader_example(fum; ArrayType = Array, filename = "out.png")

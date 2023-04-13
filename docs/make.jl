@@ -4,8 +4,7 @@ makedocs(
     sitename="Fae.jl",
     authors="James Schloss (Leios) and contributors",
     pages = [
-        "Home" => "index.md",
-        "General Information" => "general_info.md",
+        "General Information" => "index.md",
         "Layering" => "layering.md",
         "Time Interface" => "time_interface.md",
         "Post Processing" => "postprocessing.md",

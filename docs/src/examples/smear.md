@@ -64,7 +64,7 @@ Now I will define the image and video parameters:
     world_size = (9, 16)
     ppu = 1920 / 16
     res = (1080, 1920)
-    layer = FractalLayer(; ArrayType = ArrayType, FloatType = FloatType,
+    layer = FractalLayer(; ArrayType = ArrayType,
                          world_size = world_size, ppu = ppu,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
@@ -96,15 +96,12 @@ And now we start getting ready for the smear frame transformation:
     scale = fi("scale", (1,1))
     theta = fi("theta", 0)
 
-    fis = [object_position, scale, theta]
-    
     # first defining the fractal user method
     smear = Smears.stretch_and_rotate(object_position = object_position,
                                       scale = scale, theta = theta)
 
     # now turning it into a fractal operator
-    smear_transform = fee(Hutchinson, [FractalOperator(smear)], fis;
-                          name = "smear", final = true, diagnostic = true)
+    smear_transform = fee(Hutchinson, FractalOperator(smear))
 ```
 
 For this, we are creating fractal inputs (`object_position`, `scale`, and `theta`) for the `stretch_and_rotate` fractal user method. We then turn this into a fractal operator.
@@ -126,8 +123,8 @@ stretch_and_rotate = @fum function stretch_and_rotate(
 
     x = temp_x + object_position[2]
     y = temp_y + object_position[1]
+    return (y,x)
 end
-
 ```
 
 After this, we need to attach the newly generated operators to the `FractalLayer`:
@@ -148,18 +145,15 @@ Finally, we have the animation loop:
         pos = [-2.0+4*(i-1)/(total_frames-1),
                -2.0+4*(i-1)/(total_frames-1)]
 
-        update_circle!(ball, pos, radius)
-
         # creating a value that grows as it gets closer to total_frames / 2
         # and shrinks as it gets closer to total_frames
         scale_x = 2 - abs((i-1)*2-(total_frames-1))/(total_frames-1)
 
         # modifying fractal inputs for smear
-        object_position = set(object_position, pos)
-        scale = set(scale, (1,scale_x))
-        theta = set(theta, pi/4)
+        set!(object_position, pos)
+        set!(scale, (1,scale_x))
+        set!(theta, pi/4)
 
-        update_fis!(smear_transform, [object_position, scale, theta])
         run!(layer)
 
         if output_type == :video
@@ -198,8 +192,6 @@ If we run `main(10000, 10000, 10, CuArray; output_tupe = :video)`, we will get t
 
 And here is the full code:
 ```
-using Fae
-
 function smear_example(num_particles, num_iterations, total_frames;
                        ArrayType = Array, output_type = :video)
     FloatType = Float32
@@ -219,25 +211,21 @@ function smear_example(num_particles, num_iterations, total_frames;
     end
 
     # define ball parameters
-    position = [-2.0, -2.0]
-    ball = define_circle(; position = position,
+    object_position = fi("object_position", [-2.0, -2.0])
+    ball = define_circle(; position = object_position,
                            radius = 1.0,
                            color = (1,1,1))
 
     # fractal inputs to track changes in position, scale, and theta for smear 
-    object_position = fi("object_position", position)
     scale = fi("scale", (1,1))
     theta = fi("theta", 0)
 
-    fis = [object_position, scale, theta]
-    
     # first defining the fractal user method
     smear = Smears.stretch_and_rotate(object_position = object_position,
                                       scale = scale, theta = theta)
 
     # now turning it into a fractal operator
-    smear_transform = fee(Hutchinson, [FractalOperator(smear)],
-                          fis; name = "smear", final = true, diagnostic = true)
+    smear_transform = fee(Hutchinson, fo(smear))
 
     layer.H1 = ball
     layer.H2 = smear_transform
@@ -249,25 +237,22 @@ function smear_example(num_particles, num_iterations, total_frames;
         pos = [-2.0+4*(i-1)/(total_frames-1),
                -2.0+4*(i-1)/(total_frames-1)]
 
-        update_circle!(ball, pos, radius)
-
         # creating a value that grows as it gets closer to total_frames / 2
         # and shrinks as it gets closer to total_frames
         scale_x = 2 - abs((i-1)*2-(total_frames-1))/(total_frames-1)
 
         # modifying fractal inputs for smear
-        object_position = set(object_position, pos)
-        scale = set(scale, (1,scale_x))
-        theta = set(theta, pi/4)
+        set!(object_position, pos)
+        set!(scale, (1,scale_x))
+        set!(theta, pi/4)
 
-        update_fis!(smear_transform, [object_position, scale, theta])
         run!(layer)
 
         if output_type == :video
             write_video!(video_out, [layer])
         elseif output_type == :image
             filename = "check"*lpad(i,5,"0")*".png"
-            write_image([layer], filename)
+            write_image([layer]; filename=filename)
         end
 
         # clearing frame
@@ -279,5 +264,4 @@ function smear_example(num_particles, num_iterations, total_frames;
     end
 
 end
-
 ```
