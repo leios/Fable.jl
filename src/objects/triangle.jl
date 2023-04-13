@@ -4,10 +4,11 @@ triangle_fill = @fum function triangle_fill(x,y;
                                             A = (0,0),
                                             B = (0,0),
                                             C = (0,0))
-    midpoint = (A .+ B .+ C) ./ 3
+    midpoint_y = (A[1] + B[1] + C[1]) ./ 3
+    midpoint_x = (A[2] + B[2] + C[2]) ./ 3
 
-    x = midpoint[2] - (x - midpoint[2]) * 0.5
-    y = midpoint[1] - (y - midpoint[1]) * 0.5
+    y = midpoint_y - (y - midpoint_y) * 0.5
+    x = midpoint_x - (x - midpoint_x) * 0.5
     return point(y,x)
 end
 
