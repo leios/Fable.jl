@@ -113,6 +113,7 @@ lean_head = @fum function lean_head(x, y;
     x = x_temp2 + foot_position[2]
     y = y_temp + foot_position[1]
     
+    return point(y,x)
 end
 
 lean_body = @fum function lean_body(x, y;
@@ -132,6 +133,7 @@ lean_body = @fum function lean_body(x, y;
     x = x_temp2 + foot_position[2]
     y = y_temp + foot_position[1]
 
+    return point(y,x)
 end
 
 simple_eyes = @fum color function simple_eyes(x, y;
@@ -194,44 +196,23 @@ function LolliLayer(height; angle=0.0, foot_position=(height*0.5,0.0),
                     num_particles = 1000, num_iterations = 1000,
                     postprocessing_steps = Vector{AbstractPostProcess}([]),
                     eye_fum::Union{FractalUserMethod, Nothing} = nothing,
-                    fis::Vector{FractalInput} = FractalInput[],
-                    head_fis::Vector{FractalInput} = FractalInput[],
-                    body_fis::Vector{FractalInput} = FractalInput[])
+                    head_smears = Vector{FractalOperator}([]),
+                    body_smears = Vector{FractalOperator}([]))
 
-    head_fis = vcat(head_fis, fis)
-    body_fis = vcat(body_fis, fis)
-
-    # Going through all Fractal Inputs and checking to see if we need additional
-    # Hutchinson operators
     H2_head = nothing
     H2_body = nothing
-    for i = 1:length(fis)
-        if fis[i].name == "lean_angle"
-            lean_velocity_idx = find_fi_idx(fis, "lean_velocity")
-            if lean_velocity_idx != nothing
-                lean_velocity = fis[lean_velocity_idx]
-            else
-                lean_velocity = 0.0
-            end
-            H_head = Hutchinson(lean_head(lean_angle = fis[i],
-                                          lean_velocity = lean_velocity,
-                                          head_radius = head_radius,
-                                          foot_position = foot_position))
-            if H2_head == nothing
-                H2_head = H_head
-            else
-                H2_head = fee(Hutchinson, (H_head, H2_head))
-            end
 
-            H_body = Hutchinson(lean_body(lean_angle = fis[i],
-                                          lean_velocity = lean_velocity,
-                                          foot_position = foot_position,
-                                          height = height))
-            if H2_body == nothing
-                H2_body = H_body
-            else
-                H2_body = fee(Hutchinson, (H_body, H2_body))
-            end
+    if length(head_smears) > 0
+        H2_head = Hutchinson()
+        for i = 1:length(head_smears)
+            H2_head = Hutchinson(H2_head, Hutchinson(head_smears[i]))
+        end
+    end
+
+    if length(body_smears) > 0
+        H2_body = Hutchinson()
+        for i = 1:length(body_smears)
+            H2_body = Hutchinson(H2_body, Hutchinson(body_smears[i]))
         end
     end
 
@@ -282,7 +263,7 @@ function blink!(lolli::LolliLayer, curr_frame, start_frame, end_frame)
     # split into 3rds, 1 close, 1 closed, 1 open
     third_frame = (end_frame - start_frame)*0.333
 
-    fi_set = lolli.head.H1.fi_set
+    fis = lolli.head.H1.color_fis[1][2]
     if curr_frame < start_frame + third_frame
         brow_height = 1 - (curr_frame - start_frame)/(third_frame)
     elseif curr_frame >= start_frame + third_frame &&
@@ -298,20 +279,17 @@ function blink!(lolli::LolliLayer, curr_frame, start_frame, end_frame)
         show_brows = false
     end
 
-    brow_height_idx = find_fi(fi_set, "brow_height")
+    brow_height_idx = find_fi_index(:brow_height, fis)
     if isnothing(brow_height_idx)
         @warn("Brow height not set as FractalInput. Blinking will not work!")
     else
-        fi_set[brow_height_idx] = set(fi_set[brow_height_idx], brow_height)
-
+        set!(fis[brow_height_idx], brow_height)
     end
 
-    show_brows_idx = find_fi(fi_set, "show_brows")
+    show_brows_idx = find_fi_index(:show_brows, fis)
     if isnothing(show_brows_idx)
         @warn("show_brows not set as FractalInput. Blinking will not work!")
     else
-        fi_set[show_brows_idx] = set(fi_set[show_brows_idx], show_brows)
+        set!(fis[show_brows_idx], show_brows)
     end
-
-    update_fis!(lolli; head_fis = fi_set)
 end

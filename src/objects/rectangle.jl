@@ -60,14 +60,18 @@ function define_rectangle_operators(position::Union{Vector,Tuple,FractalInput},
                                     scale_x::Union{Number, FractalInput},
                                     scale_y::Union{Number, FractalInput})
 
-    square_1 = rectangle_fum(position = position, rotation = rotation,
-                             scale_x = scale_x, scale_y = scale_y, vertex = 1)
-    square_2 = rectangle_fum(position = position, rotation = rotation,
-                             scale_x = scale_x, scale_y = scale_y, vertex = 2)
-    square_3 = rectangle_fum(position = position, rotation = rotation,
-                             scale_x = scale_x, scale_y = scale_y, vertex = 3)
-    square_4 = rectangle_fum(position = position, rotation = rotation,
-                             scale_x = scale_x, scale_y = scale_y, vertex = 4)
+    square_1 = rectangle_object(position = position, rotation = rotation,
+                                scale_x = scale_x, scale_y = scale_y,
+                                vertex = 1)
+    square_2 = rectangle_object(position = position, rotation = rotation,
+                                scale_x = scale_x, scale_y = scale_y,
+                                vertex = 2)
+    square_3 = rectangle_object(position = position, rotation = rotation,
+                                scale_x = scale_x, scale_y = scale_y,
+                                vertex = 3)
+    square_4 = rectangle_object(position = position, rotation = rotation,
+                                scale_x = scale_x, scale_y = scale_y,
+                                vertex = 4)
 
     return (square_1, square_2, square_3, square_4)
 end

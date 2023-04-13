@@ -1,4 +1,4 @@
-export FractalInput, fi, @fi, set!, combine, to_args
+export FractalInput, fi, @fi, set!, combine, to_args, find_fi_index, value
 
 struct FractalInput
     s::Union{Symbol, String}
@@ -47,3 +47,5 @@ function find_fi_index(s, fis::Vector{FractalInput})
         end
     end
 end
+
+value(fi::FractalInput) = fi.x.x
