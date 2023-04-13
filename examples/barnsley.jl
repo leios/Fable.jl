@@ -1,3 +1,7 @@
+#-------------barnsley.jl------------------------------------------------------#
+# This is a simple test to make sure Fae.jl can deal with H operators with
+# non-uniform probability. It also shows how to output multiple objects.
+#------------------------------------------------------------------------------#
 using Fae
 
 scale_and_translate = @fum function scale_and_translate(y, x;
@@ -21,14 +25,12 @@ function barnsley_example(num_particles, num_iterations;
     color_4 = [0.,0,1,1]
 
     H = define_barnsley(; color = [color_1, color_2, color_3, color_4])
-    #H.prob_set = (0.01, 0.5, 0.245, 0.245)
 
     fo_1 = fo(Flames.identity, Shaders.previous, 1)
     fo_2 = fo(scale_and_translate(translation = (0.5, 0.5), scale = 0.5),
               Shaders.magenta, 1)
 
-    #H2 = fee(Hutchinson, (fo_1, fo_2))
-    H2 = nothing
+    H2 = fee(Hutchinson, (fo_1, fo_2))
 
     layer = FractalLayer(; ArrayType = ArrayType,
                          world_size = (10, 16), position = (5, 0),
@@ -39,3 +41,8 @@ function barnsley_example(num_particles, num_iterations;
 
     write_image([layer], filename = filename)
 end
+
+@info("Created Function: barnsley_example(num_particles, num_iterations;
+                                         ArrayType = Array,
+                                         filename = 'out.png')")
+

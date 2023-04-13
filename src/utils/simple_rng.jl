@@ -96,11 +96,7 @@ end
         end
         fx_offset += fnums[i]
     end
-    if length(fnums) == 1
-        return fid + 1
-    else
-        return fid
-    end
+    return fid
 end
 
 # Decoding takes an offset, which is the number of digits on the fid bitstring
