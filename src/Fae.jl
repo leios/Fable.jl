@@ -29,7 +29,7 @@ include("structs/time.jl")
 include("structs/point.jl")
 
 # Utilities
-include("utils/aux.jl")
+include("utils/extras.jl")
 
 # Geometries
 include("utils/geometries.jl")
