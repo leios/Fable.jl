@@ -1,6 +1,2 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-Fable = "a3ea4736-0a3b-4c29-ac8a-20364318a635"
-
-[compat]
-Documenter = "~0.24"
