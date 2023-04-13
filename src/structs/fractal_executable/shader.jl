@@ -1,73 +1,44 @@
-# fee = Fractal Executable
-export fee, Shader
+export Shader
 
 mutable struct Shader <: FractalExecutable
-    op
-    fum::FractalUserMethod
-    fi_set::Vector{FractalInput}
-    name::String
-    symbols::Union{NTuple, Tuple}
+    fxs::Tuple
+    kwargs::Tuple
+    fis::Tuple
 end
 
-fee(S::Type{Shader}, args...; kwargs...) = Shader(args...; kwargs...)
+Shader() = Shader((),(),())
 
-function Shader(; name = "shader")
-    return Shader(configure_fum(color_null; fum_type = :shader, name = name),
-                  color_null, Vector{FractalInput}(), name, Tuple(1))
+function Shader(fum::FractalUserMethod)
+    return Shader((fum.fx,), (fum.kwargs,), (fum.fis,))
 end
 
-function Shader(fum::FractalUserMethod, fis::Vector{FractalInput};
-                name = "shader")
-    return Shader(configure_fum(fum, fis; fum_type = :shader, name = name), fum,
-                  fis, name, configure_fis!(fis))
-end
+function Shader(fums::Tuple)
+    if length(fums) == 0
+        error("No FractalUserMethod provided!")
+    elseif length(fums) == 1
+        return Shader(fums[1])
+    else
+        # recursive
+        shader = Shader()
+        for i = 1:length(fums)
+            shader = Shader(shader, Shader(fums[i]))
+        end
 
-function Shader(fum::FractalUserMethod; name = "shader")
-    return Shader(configure_fum(fum; fum_type = :shader, name = name), fum,
-                  Vector{FractalInput}(), name, Tuple(1))
-end
-
-function Shader(a::Shader, b::Shader; mix_function = overlay)
-    if mix_function != overlay && mix_function != mix
-        @warn("Shader mix type "*string(mix_function)*" not found!\n"*
-              "Defaulting to standard mixing...")
-        mix_function = mix
+        return shader
     end
-
-    new_fis = vcat(a.fi_set, b.fi_set)
-    new_name = a.name*"_"*b.name
-
-    new_fum = mix_function(a.fum, b.fum)
-
-    symbols = configure_fis!(new_fis)
-    return Shader(configure_fum(new_fum; fum_type = :shader, name = new_name),
-                  new_fum, new_fis, new_name, symbols)
-    
 end
 
-function Shader(shaders::Vector{Shader}; mix_function = mix)
-    if mix_function != overlay && mix_function != mix
-        @warn("Shader mix type "*string(mix_function)*" not found!\n"*
-              "Defaulting to standard mixing...")
-        mix_function = mix
-    end
+function Shader(a::Shader, b::Shader)
+    return Shader((a.fxs..., b.fxs...),
+                  (a.kwargs..., b.kwargs...),
+                  (a.fis..., b.fis...))
+end
 
-    new_fis = shaders[1].fi_set
-    new_name = shaders[1].name
-    all_fums = shaders[1].fum
-
+function Shader(shaders::Vector{Shader})
+    shader = shaders[1]
     for i = 2:length(shaders)
-        new_fis = vcat(new_fis, shaders[i].fi_set)
-        new_name = new_name*"_"*shaders[i].name
-        all_fums = vcat(all_fums, shaders[i].fum)
+        shader = Shader(shader, shaders[i])
     end
 
-    symbols = configure_fis!(new_fis)
-    new_fum = mix_function(all_fums; fum_type = :shader)
-    return Shader(configure_fum(new_fum; fum_type = :shader, name = new_name),
-                  new_fum, new_fis, new_name, symbols)
-end
-
-function update_fis!(S::Shader, fis::Vector{FractalInput})
-    S.symbols = configure_fis!(fis)
+    return shader
 end

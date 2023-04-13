@@ -97,16 +97,31 @@ end
                                                          size(canvas),
                                                          size(filter))
 
-    val = zero(eltype(canvas))
+    red = 0.0
+    green = 0.0
+    blue = 0.0
+    alpha = 0.0
 
     for i = 1:range[1]
         for j = 1:range[2]
-            @inbounds val += canvas[start_index_1[1] + i - 1,
-                                    start_index_1[2] + j - 1] *
+            @inbounds red += canvas[start_index_1[1] + i - 1,
+                                    start_index_1[2] + j - 1].r *
                              filter[start_index_2[1] + i - 1,
                                     start_index_2[2] + j - 1]
+            @inbounds green += canvas[start_index_1[1] + i - 1,
+                                     start_index_1[2] + j - 1].g *
+                              filter[start_index_2[1] + i - 1,
+                                     start_index_2[2] + j - 1]
+            @inbounds blue += canvas[start_index_1[1] + i - 1,
+                                     start_index_1[2] + j - 1].b *
+                              filter[start_index_2[1] + i - 1,
+                                     start_index_2[2] + j - 1]
+            @inbounds alpha += canvas[start_index_1[1] + i - 1,
+                                      start_index_1[2] + j - 1].alpha *
+                               filter[start_index_2[1] + i - 1,
+                                      start_index_2[2] + j - 1]
         end
     end
 
-    @inbounds canvas_out[tid] = val
+    @inbounds canvas_out[tid] = RGBA{Float32}(red, green, blue, alpha)
 end

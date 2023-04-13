@@ -1,6 +1,20 @@
 export run!
 
-function run!(layer::ShaderLayer; diagnostic = false, frame = 0) 
+@generated function shader_loop(fxs, y, x, color, frame, kwargs)
+    exs = Expr[]
+    for i = 1:length(fxs.parameters)
+        ex = :(color = fxs[$i](y, x, color, frame; kwargs[$i]...))
+        push!(exs, ex)
+    end
+
+    # to return 3 separate colors to mix separately
+    # return :(Expr(:tuple, $exs...))
+
+    return Expr(:block, exs...)
+end
+
+
+function run!(layer::ShaderLayer; frame = 0) 
 
     if layer.params.ArrayType <: Array
         kernel! = shader_kernel!(CPU(), layer.params.numcores)
@@ -12,24 +26,24 @@ function run!(layer::ShaderLayer; diagnostic = false, frame = 0)
 
     bounds = find_bounds(layer)
 
-    wait(@invokelatest kernel!(layer.shader.symbols, layer.canvas, bounds,
-                 layer.shader.op, frame, ndrange = size(layer.canvas)))
+    wait(kernel!(layer.canvas, bounds,
+                 layer.shader.fxs,
+                 combine(layer.shader.kwargs, layer.shader.fis),
+                 frame,
+                 ndrange = size(layer.canvas)))
 end
 
-@kernel function shader_kernel!(symbols, canvas, bounds, op, frame)
+@kernel function shader_kernel!(canvas, bounds, fxs, kwargs, frame)
 
     i, j = @index(Global, NTuple)
-    tid = @index(Global, Linear)
-    lid = @index(Local, Linear)
     res = @ndrange()
-
-    shared_colors = @localmem eltype(canvas[1]) (@groupsize()[1], 4)
 
     @inbounds y = bounds.ymin + (i/res[1])*(bounds.ymax - bounds.ymin)
     @inbounds x = bounds.xmin + (j/res[2])*(bounds.xmax - bounds.xmin)
 
-    op(shared_colors, y, x, lid, symbols, frame)
+    color = RGBA{Float32}(0,0,0,0)
 
-    canvas[tid] = RGBA(shared_colors[lid, 1], shared_colors[lid, 2],
-                       shared_colors[lid, 3], shared_colors[lid, 4])
+    color = shader_loop(fxs, y, x, color, frame, kwargs)
+
+    @inbounds canvas[i,j] = RGBA{Float32}(color)
 end

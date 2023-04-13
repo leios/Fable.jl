@@ -1,8 +1,7 @@
 using Fae
 
 function smear_example(num_particles, num_iterations, total_frames;
-                       ArrayType = Array, output_type = :video, 
-                       diagnostic = true)
+                       ArrayType = Array, output_type = :video)
     FloatType = Float32
 
     # define image domain
@@ -23,23 +22,18 @@ function smear_example(num_particles, num_iterations, total_frames;
     object_position = fi("object_position", [-2.0, -2.0])
     ball = define_circle(; position = object_position,
                            radius = 1.0,
-                           color = (1,1,1),
-                           diagnostic = diagnostic)
+                           color = (1,1,1))
 
     # fractal inputs to track changes in position, scale, and theta for smear 
     scale = fi("scale", (1,1))
     theta = fi("theta", 0)
 
-    fis = [object_position, scale, theta]
-    
     # first defining the fractal user method
     smear = Smears.stretch_and_rotate(object_position = object_position,
                                       scale = scale, theta = theta)
 
     # now turning it into a fractal operator
-    smear_transform = fee(Hutchinson, [FractalOperator(smear)],
-                          fis; name = "smear", final = true,
-                          diagnostic = diagnostic)
+    smear_transform = fee(Hutchinson, fo(smear))
 
     layer.H1 = ball
     layer.H2 = smear_transform
@@ -56,12 +50,10 @@ function smear_example(num_particles, num_iterations, total_frames;
         scale_x = 2 - abs((i-1)*2-(total_frames-1))/(total_frames-1)
 
         # modifying fractal inputs for smear
-        object_position = set(object_position, pos)
-        scale = set(scale, (1,scale_x))
-        theta = set(theta, pi/4)
+        set!(object_position, pos)
+        set!(scale, (1,scale_x))
+        set!(theta, pi/4)
 
-        update_fis!(smear_transform, [object_position, scale, theta])
-        update_circle!(ball; position = object_position)
         run!(layer)
 
         if output_type == :video
@@ -80,3 +72,8 @@ function smear_example(num_particles, num_iterations, total_frames;
     end
 
 end
+
+@info("Created Function: smear_example(num_particles, num_iterations,
+                                      total_frames; ArrayType = Array,
+                                      output_type = :video)\n"*
+      "output_type can be {:video, :image}")

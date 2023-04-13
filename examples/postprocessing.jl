@@ -24,7 +24,7 @@ function clip_example(num_particles, num_iterations; ArrayType = Array,
     write_image(fl; filename = filename)
 end
 
-function identity_example(num_particles, num_iterations, ArrayType = Array,
+function identity_example(num_particles, num_iterations; ArrayType = Array,
                           filename = "identity_out.png")
     circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
 
@@ -77,3 +77,22 @@ function outline_example(num_particles, num_iterations; ArrayType = Array,
     write_image(fl; filename = filename)
 end
 
+@info("Created Functions: quick_circle(num_particles, num_iterations;
+                                      ArrayType = Array, filename = 'out.png')
+                         clip_example(num_particles, num_iterations;
+                                      ArrayType = Array,
+                                      filename = 'clip_out.png')
+                         identity_example(num_particles, num_iterations;
+                                          ArrayType = Array,
+                                          filename = 'identity_out.png')
+                         blur_example(num_particles, num_iterations;
+                                      ArrayType = Array, filter_size = 3,
+                                      filename = 'blur_out.png')
+                         sobel_example(num_particles, num_iterations;
+                                       ArrayType = Array,
+                                       filename = 'sobel_out.png')
+                         outline_example(num_particles, num_iterations;
+                                         ArrayType = Array,
+                                         filename = 'outline_out.png',
+                                         linewidth = 1,
+                                         object_outline = false)")

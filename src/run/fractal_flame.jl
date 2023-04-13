@@ -1,17 +1,169 @@
-#TODO: 1. Super sampling must be implemented by increasing the number of bins 
-#         before sampling down. Gamma correction at that stage
-#TODO: Parallelize with large number of initial points
-#TODO: Allow Affine transforms to have a time variable and allow for 
-#      supersampling across time with different timesteps all falling into the
-#      same bin -- might require 2 buffers: one for log of each step, another
-#      for all logs
-#TODO: think about directional motion blur
-# Example H:
-# H = Fae.Hutchinson(
-#   (Fae.swirl, Fae.heart, Fae.polar, Fae.horseshoe),
-#   [RGB(0,1,0), RGB(0,0,1), RGB(1,0,1), RGB(1,0,0)],
-#   [0.25, 0.25, 0.25, 0.25])
+#-------------fractal_flame.jl-------------------------------------------------#
+# Before reading this file and judging me, please take a look at the errors on
+# PR #64 (https://github.com/leios/Fae.jl/pull/64)
+# 
+# Long story short, I cannot access any Tuples of varying types with iteration:
+#     i = 5
+#     fxs[i](args...;kwargs...)
+# This means that anything that cannot be represented as an NTuple{Type,...},
+# will break. Functions have an inherent type, so they cannot be represented as
+# an NTuple and must instead be represented as a Tuple{f1, f2, f3...}.
+# 
+# To call the functions, I need to call them with a statically known number.
+# So instead of using `idx = 1`, `fxs[idx](...)`, I needed to create an
+# `@generated` function that unrolls the loop for me. In the case of colors,
+# where multiple colors could be used on for the same IFS function, I needed
+# an additional helper function to call the Tuple one by one.
+#
+# It will unfortunately only get more complicated from here until Julia is fixed
+#------------------------------------------------------------------------------#
 export run!
+
+@generated function call_pt_fx(fxs, pt, frame, kwargs, idx)
+    exs = Expr[]
+    ex = quote
+        if idx == 1
+            pt = fxs[1](pt.y, pt.x, frame; kwargs[1]...) 
+        end
+    end
+    push!(exs, ex)
+    for i = 2:length(fxs.parameters)
+        ex = quote
+            if idx == $i
+                pt = fxs[$i](pt.y, pt.x, frame; kwargs[$i]...) 
+            end
+        end
+        push!(exs, ex)
+    end
+    push!(exs, :(return pt))
+
+    return Expr(:block, exs...)
+end
+
+# These functions essentially unroll the loops in the kernel because of a
+# known julia bug preventing us from using for i = 1:10...
+@generated function pt_loop(fxs, fid, pt, frame, fnums, kwargs)
+    exs = Expr[]
+    push!(exs, :(bit_offset = 0))
+    push!(exs, :(fx_offset = 0))
+    for i = 1:length(fnums.parameters)
+        ex = quote
+            idx = decode_fid(fid, bit_offset, fnums[$i]) + fx_offset
+            pt = call_pt_fx(fxs, pt, frame, kwargs, idx)
+            bit_offset += ceil(UInt,log2(fnums[$i]))
+            fx_offset += fnums[$i]
+        end
+        push!(exs, ex)
+    end
+
+    push!(exs, :(return pt))
+
+    # to return 3 separate colors to mix separately
+    # return :(Expr(:tuple, $exs...))
+
+    return Expr(:block, exs...)
+end
+
+@generated function call_clr_fx(fxs, pt, clr, frame, kwargs, idx)
+    exs = Expr[]
+    ex = quote
+        if idx == 1
+            clr = call_clr_fx(fxs[1], pt, clr, frame, kwargs[1]) 
+        end
+    end
+    push!(exs, ex)
+    for i = 2:length(fxs.parameters)
+        ex = quote
+            if idx == $i
+                clr = call_clr_fx(fxs[$i], pt, clr, frame, kwargs[$i])
+            end
+        end
+        push!(exs, ex)
+    end
+    push!(exs, :(return clr))
+
+    return Expr(:block, exs...)
+end
+
+@inline function call_clr_fx(fx, pt, clr, frame, kwargs)
+    return fx(pt.y, pt.x, clr, frame; kwargs...)
+end
+
+@generated function call_clr_fx(fx::Tuple, pt::Point2D, clr, frame, kwargs::Tuple)
+    exs = Expr[]
+    for i = 1:length(fx.parameters)
+        ex = :(clr = fx[$i](pt.y, pt.x, clr, frame; kwargs[$i]...))
+        push!(exs, ex)
+    end
+
+    push!(exs, :(return clr))
+
+    return Expr(:block, exs...)
+end
+
+@generated function clr_loop(fxs, fid, pt, clr, frame, fnums, kwargs)
+    exs = Expr[]
+    push!(exs, :(bit_offset = 0))
+    push!(exs, :(fx_offset = 0))
+    for i = 1:length(fnums.parameters)
+        ex = quote
+            idx = decode_fid(fid, bit_offset, fnums[$i]) + fx_offset
+            clr = call_clr_fx(fxs, pt, clr, frame, kwargs, idx)
+            bit_offset += ceil(UInt,log2(fnums[$i]))
+            fx_offset += fnums[$i]
+        end
+        push!(exs, ex)
+    end
+
+    push!(exs, :(return clr))
+
+    # to return 3 separate colors to mix separately
+    # return :(Expr(:tuple, $exs...))
+
+    return Expr(:block, exs...)
+end
+
+
+@generated function semi_random_loop!(layer_values, layer_reds, layer_greens,
+                                      layer_blues, layer_alphas, fxs, clr_fxs, 
+                                      pt, clr, frame, fnums, kwargs, clr_kwargs,
+                                      bounds, dims, bin_widths,
+                                      iteration, num_ignore)
+    exs = Expr[]
+    for i = 1:length(fxs.parameters)
+        ex = quote
+            pt = fxs[$i](pt.y, pt.x, frame; kwargs[$i]...)
+            clr = clr_fxs[$i](pt.y, pt.x, clr, frame; clr_kwargs[$i]...)
+            histogram_output!(layer_values, layer_reds, layer_greens,
+                              layer_blues, layer_alphas, pt, clr,
+                              bounds, dims, bin_widths,
+                              iteration, num_ignore)
+        end
+        push!(exs, ex)
+    end
+
+    # to return 3 separate colors to mix separately
+    # return :(Expr(:tuple, $exs...))
+
+    return Expr(:block, exs...)
+end
+
+@inline function histogram_output!(layer_values, layer_reds, layer_greens,
+                                   layer_blues, layer_alphas, pt, clr,
+                                   bounds, dims, bin_widths, i, num_ignore)
+    on_img_flag = on_image(pt.y,pt.x, bounds, dims)
+    if i > num_ignore && on_img_flag
+        @inbounds bin = find_bin(layer_values, pt.y, pt.x, bounds, bin_widths)
+        if bin > 0 && bin <= length(layer_values)
+            @inbounds @atomic layer_values[bin] += 1
+            @inbounds @atomic layer_reds[bin] += clr.r
+            @inbounds @atomic layer_greens[bin] += clr.g
+            @inbounds @atomic layer_blues[bin] += clr.b
+            @inbounds @atomic layer_alphas[bin] += clr.alpha
+        end
+    end
+end
+
 
 # couldn't figure out how to get an n-dim version working for GPU
 @inline function on_image(p_y, p_x, bounds, dims)
@@ -28,9 +180,9 @@ export run!
     return flag
 end
 
-function iterate!(ps::Points, layer::FractalLayer, H::Hutchinson, n,
+function iterate!(layer::FractalLayer, H1::Hutchinson, n,
                   bounds, bin_widths, H2::Union{Nothing, Hutchinson};
-                  frame = 0, diagnostic = false)
+                  frame = 0)
     if isnothing(H2) 
         fx = naive_chaos_kernel!
     elseif layer.params.solver_type == :semi_random
@@ -44,7 +196,7 @@ function iterate!(ps::Points, layer::FractalLayer, H::Hutchinson, n,
     end
 
     max_range = maximum(values(bounds))*10
-    if isa(ps.positions, Array)
+    if layer.params.ArrayType <: Array
         kernel! = fx(CPU(), layer.params.numcores)
     elseif has_cuda_gpu() && layer.params.ArrayType <: CuArray
         kernel! = fx(CUDADevice(), layer.params.numthreads)
@@ -52,298 +204,183 @@ function iterate!(ps::Points, layer::FractalLayer, H::Hutchinson, n,
         kernel! = fx(ROCDevice(), layer.params.numthreads)
     end
 
-    if diagnostic
-        println("H1 symbols:\n", H.symbols)
-        if !isnothing(H2)
-            println("H2 symbols:\n", H2.symbols)
-        end
-    end
-
     if isnothing(H2)
-        @invokelatest kernel!(ps.positions, n,
-                              H.op, H.cop, H.prob_set, H.symbols, H.fnums,
-                              layer.values, layer.reds, layer.greens,
-                              layer.blues, layer.alphas, frame, 
-                              bounds, Tuple(bin_widths),
-                              layer.params.num_ignore, max_range,
-                              ndrange=size(ps.positions)[1])
+        kernel!(layer.particles, n, H1.fxs, combine(H1.kwargs, H1.fis),
+                H1.color_fxs, combine(H1.color_kwargs, H1.color_fis),
+                H1.prob_set, H1.fnums, layer.values,
+                layer.reds, layer.greens, layer.blues, layer.alphas,
+                frame, bounds, Tuple(bin_widths),
+                layer.params.num_ignore, max_range,
+                ndrange=size(layer.particles)[1])
     else
-        @invokelatest kernel!(ps.positions, n,
-                              H.op, H.cop, H.prob_set, H.symbols, H.fnums,
-                              H2.op, H2.cop, H2.symbols, H2.prob_set, H2.fnums,
-                              layer.values, layer.reds, layer.greens,
-                              layer.blues, layer.alphas, frame, 
-                              bounds, Tuple(bin_widths),
-                              layer.params.num_ignore, max_range,
-                              ndrange=size(ps.positions)[1])
+        kernel!(layer.particles, n, H1.fxs, combine(H1.kwargs, H1.fis),
+                H1.color_fxs, combine(H1.color_kwargs, H1.color_fis),
+                H1.prob_set, H1.fnums,
+                H2.fxs, combine(H2.kwargs, H2.fis),
+                H2.color_fxs, combine(H2.color_kwargs, H2.color_fis),
+                H2.prob_set, H2.fnums, layer.values,
+                layer.reds, layer.greens, layer.blues, layer.alphas,
+                frame, bounds, Tuple(bin_widths),
+                layer.params.num_ignore, max_range,
+                ndrange=size(layer.particles)[1])
     end
 end
 
-@kernel function naive_chaos_kernel!(points, n, H1, H1_clrs, H1_probs,
-                                     H1_symbols, H1_fnums,
+@kernel function naive_chaos_kernel!(points, n, H_fxs, H_kwargs,
+                                     H_clrs, H_clr_kwargs,
+                                     H_probs, H_fnums,
                                      layer_values, layer_reds, layer_greens,
                                      layer_blues, layer_alphas, frame, bounds,
                                      bin_widths, num_ignore, max_range)
 
     tid = @index(Global,Linear)
-    lid = @index(Local, Linear)
 
-    @uniform dims = size(points)[2]
-
-    @uniform FT = eltype(layer_reds)
-
-    @uniform gs = @groupsize()[1]
-    shared_tile = @localmem FT (gs, 2)
-    shared_colors = @localmem FT (gs, 4)
+    pt = points[tid]
+    dims = Fae.dims(pt)
+    clr = RGBA{Float32}(0,0,0,0)
 
     seed = quick_seed(tid)
-    fid = create_fid(H1_probs, H1_fnums, seed)
-
-    offset = 1
+    fid = create_fid(H_probs, H_fnums, seed)
 
     for i = 1:n
-        for k = 1:4
-            @inbounds shared_colors[lid,k] = 0
-        end
-
         # quick way to tell if in range to be calculated or not
-        sketchy_sum = 0
-        for i = 1:dims
-            @inbounds sketchy_sum += abs(shared_tile[lid,i])
-        end
-
+        sketchy_sum = absum(pt)
+        
         if sketchy_sum < max_range
-            if length(H1_fnums) > 1 || H1_fnums[1] > 1
+            if length(H_fnums) > 1 || H_fnums[1] > 1
                 seed = simple_rand(seed)
-                fid = create_fid(H1_probs, H1_fnums, seed)
+                fid = create_fid(H_probs, H_fnums, seed)
             else
-                fid = 1
+                fid = UInt(1)
             end
 
-            H1(shared_tile, lid, H1_symbols, fid, frame)
-            H1_clrs(shared_colors, shared_tile, lid, H1_symbols, fid, frame)
+            pt = pt_loop(H_fxs, fid, pt, frame, H_fnums, H_kwargs)
+            clr = clr_loop(H_clrs, fid, pt, clr, frame, H_fnums, H_clr_kwargs)
 
-            @inbounds on_img_flag = on_image(shared_tile[lid,1],
-                                             shared_tile[lid,2],
-                                             bounds, dims)
-            if i > num_ignore && on_img_flag
-
-                @inbounds bin = find_bin(layer_values, shared_tile[lid,1],
-                                         shared_tile[lid,2], bounds,
-                                         bin_widths)
-                #if tid == 1
-                #    @print(bin, '\n')
-                #end
-                if bin > 0 && bin <= length(layer_values)
-
-                    @inbounds @atomic layer_values[bin] += 1
-                    @inbounds @atomic layer_reds[bin] +=
-                                  shared_colors[lid, 1] *
-                                  shared_colors[lid, 4]
-                    @inbounds @atomic layer_greens[bin] +=
-                                  shared_colors[lid, 2] *
-                                  shared_colors[lid, 4]
-                    @inbounds @atomic layer_blues[bin] +=
-                                  shared_colors[lid, 3] *
-                                  shared_colors[lid, 4]
-                    @inbounds @atomic layer_alphas[bin] += shared_colors[lid, 4]
-                end
-            end
+            histogram_output!(layer_values, layer_reds, layer_greens,
+                              layer_blues, layer_alphas, pt, clr,
+                              bounds, dims, bin_widths, i, num_ignore)
         end
     end
 
-    for i = 1:dims
-        @inbounds points[tid,i] = shared_tile[lid,i]
-    end
+    @inbounds points[tid] = pt
 
 end
 
-@kernel function semi_random_chaos_kernel!(points, n, H1, H1_clrs, H1_probs,
-                                           H1_symbols, H1_fnums, H2, H2_clrs,
-                                           H2_symbols, H2_probs, H2_fnums,
+@kernel function semi_random_chaos_kernel!(points, n, H1_fxs, H1_kwargs,
+                                           H1_clrs, H1_clr_kwargs,
+                                           H1_probs, H1_fnums,
+                                           H2_fxs, H2_kwargs,
+                                           H2_clrs, H2_clr_kwargs,
+                                           H2_probs, H2_fnums,
                                            layer_values, layer_reds,
                                            layer_greens, layer_blues,
                                            layer_alphas, frame, bounds,
                                            bin_widths, num_ignore, max_range)
 
     tid = @index(Global,Linear)
-    lid = @index(Local, Linear)
 
-    @uniform dims = size(points)[2]
-
-    @uniform FT = eltype(layer_reds)
-
-    @uniform gs = @groupsize()[1]
-    shared_tile = @localmem FT (gs, 4)
-    shared_colors = @localmem FT (gs, 4)
+    pt = points[tid]
+    clr = RGBA{Float32}(0,0,0,0)
+    dims = Fae.dims(pt)
 
     seed = quick_seed(tid)
     fid = create_fid(H1_probs, H1_fnums, seed)
 
-    offset = 1
-
     for i = 1:n
-        for k = 1:4
-            @inbounds shared_colors[lid,k] = 0
-        end
-
         # quick way to tell if in range to be calculated or not
-        sketchy_sum = 0
-        for i = 1:dims
-            @inbounds sketchy_sum += abs(shared_tile[lid,i])
-        end
+        sketchy_sum = absum(pt)
 
         if sketchy_sum < max_range
             if length(H1_fnums) > 1 || H1_fnums[1] > 1
                 seed = simple_rand(seed)
                 fid = create_fid(H1_probs, H1_fnums, seed)
             else
-                fid = 1
+                fid = UInt(1)
             end
 
-            H1(shared_tile, lid, H1_symbols, fid, frame)
-            H1_clrs(shared_colors, shared_tile, lid, H1_symbols, fid, frame)
+            pt = pt_loop(H1_fxs, fid, pt, frame, H1_fnums, H1_kwargs)
+            clr = clr_loop(H1_clrs, fid, pt, clr,
+                           frame, H1_fnums, H1_clr_kwargs)
 
-            for j = 1:length(H2_fnums)
-                for fid_2 = 1:H2_fnums[j]
+            semi_random_loop!(layer_values, layer_reds, layer_greens,
+                              layer_blues, layer_alphas, H2_fxs, H2_clrs,
+                              pt, clr, frame, H2_fnums, H2_kwargs,
+                              H2_clr_kwargs, bounds, dims, bin_widths, i,
+                              num_ignore )
 
-                    H2(shared_tile, lid, H2_symbols, fid_2, frame)
-                    H2_clrs(shared_colors, shared_tile, lid,
-                            H2_symbols, fid_2, frame)
-
-                    @inbounds on_img_flag = on_image(shared_tile[lid,3],
-                                                     shared_tile[lid,4],
-                                                     bounds, dims)
-                    if i > num_ignore && on_img_flag
-
-                        @inbounds bin = find_bin(layer_values,
-                                                 shared_tile[lid,3],
-                                                 shared_tile[lid,4], bounds,
-                                                 bin_widths)
-                        if bin > 0 && bin <= length(layer_values)
-    
-                            @inbounds @atomic layer_values[bin] += 1
-                            @inbounds @atomic layer_reds[bin] +=
-                                          shared_colors[lid, 1] *
-                                          shared_colors[lid, 4]
-                            @inbounds @atomic layer_greens[bin] +=
-                                          shared_colors[lid, 2] *
-                                          shared_colors[lid, 4]
-                            @inbounds @atomic layer_blues[bin] +=
-                                          shared_colors[lid, 3] *
-                                          shared_colors[lid, 4]
-                            @inbounds @atomic layer_alphas[bin] +=
-                                          shared_colors[lid, 4]
-                        end
-                    end
-                end
-            end
         end
     end
 
-    for i = 1:dims
-        @inbounds points[tid,i] = shared_tile[lid,i]
-    end
+    @inbounds points[tid] = pt
 end
 
-@kernel function naive_chaos_kernel!(points, n, H1, H1_clrs, H1_probs,
-                                     H1_symbols, H1_fnums, H2, H2_clrs,
-                                     H2_symbols, H2_probs, H2_fnums,
+@kernel function naive_chaos_kernel!(points, n, H1_fxs, H1_kwargs,
+                                     H1_clrs, H1_clr_kwargs,
+                                     H1_probs, H1_fnums,
+                                     H2_fxs, H2_kwargs,
+                                     H2_clrs, H2_clr_kwargs,
+                                     H2_probs, H2_fnums,
                                      layer_values, layer_reds, layer_greens,
                                      layer_blues, layer_alphas, frame, bounds,
                                      bin_widths, num_ignore, max_range)
 
     tid = @index(Global,Linear)
-    lid = @index(Local, Linear)
 
-    @uniform dims = size(points)[2]
+    pt = points[tid]
+    output_pt = points[tid]
+    dims = Fae.dims(pt)
 
-    @uniform FT = eltype(layer_reds)
-
-    @uniform gs = @groupsize()[1]
-    shared_tile = @localmem FT (gs, 4)
-    shared_colors = @localmem FT (gs, 4)
+    clr = RGBA{Float32}(0,0,0,0)
+    output_clr = RGBA{Float32}(0,0,0,0)
 
     seed = quick_seed(tid)
     fid = create_fid(H1_probs, H1_fnums, seed)
     fid_2 = create_fid(H2_probs, H2_fnums, seed)
 
-    offset = 1
-
     for i = 1:n
-        for k = 1:4
-            @inbounds shared_colors[lid,k] = 0
-        end
-
         # quick way to tell if in range to be calculated or not
-        sketchy_sum = 0
-        for i = 1:dims
-            @inbounds sketchy_sum += abs(shared_tile[lid,i])
-        end
+        sketchy_sum = absum(pt)
 
         if sketchy_sum < max_range
             if length(H1_fnums) > 1 || H1_fnums[1] > 1
                 seed = simple_rand(seed)
                 fid = create_fid(H1_probs, H1_fnums, seed)
             else
-                fid = 1
+                fid = UInt(1)
             end
 
-            H1(shared_tile, lid, H1_symbols, fid, frame)
-            H1_clrs(shared_colors, shared_tile, lid, H1_symbols, fid, frame)
-
-            if H2 != Fae.null
-                if length(H2_fnums) > 1 || H2_fnums[1] > 1
-                    seed = simple_rand(seed)
-                    fid_2 = create_fid(H2_probs, H2_fnums, seed)
-                else
-                    fid_2 = 1
-                end
+            if length(H2_fnums) > 1 || H2_fnums[1] > 1
+                seed = simple_rand(seed)
+                fid_2 = create_fid(H2_probs, H2_fnums, seed)
+            else
+                fid_2 = UInt(1)
             end
 
-            H2(shared_tile, lid, H2_symbols, fid_2, frame)
-            H2_clrs(shared_colors, shared_tile, lid, H2_symbols, fid_2, frame)
+            pt = pt_loop(H1_fxs, fid, pt, frame, H1_fnums, H1_kwargs)
+            clr = clr_loop(H1_clrs, fid, pt, clr,
+                           frame, H1_fnums, H1_clr_kwargs)
 
-            @inbounds on_img_flag = on_image(shared_tile[lid,3],
-                                             shared_tile[lid,4],
-                                             bounds, dims)
-            if i > num_ignore && on_img_flag
+            output_pt = pt_loop(H2_fxs, fid, pt, frame, H2_fnums, H2_kwargs)
+            output_clr = clr_loop(H2_clrs, fid_2, pt, clr,
+                                  frame, H2_fnums, H2_clr_kwargs)
 
-                @inbounds bin = find_bin(layer_values, shared_tile[lid,3],
-                                         shared_tile[lid,4], bounds,
-                                         bin_widths)
-                if bin > 0 && bin <= length(layer_values)
+            histogram_output!(layer_values, layer_reds, layer_greens,
+                              layer_blues, layer_alphas, output_pt, output_clr,
+                              bounds, dims, bin_widths, i, num_ignore)
 
-                    @inbounds @atomic layer_values[bin] += 1
-                    @inbounds @atomic layer_reds[bin] +=
-                                  shared_colors[lid, 1] *
-                                  shared_colors[lid, 4]
-                    @inbounds @atomic layer_greens[bin] +=
-                                  shared_colors[lid, 2] *
-                                  shared_colors[lid, 4]
-                    @inbounds @atomic layer_blues[bin] +=
-                                  shared_colors[lid, 3] *
-                                  shared_colors[lid, 4]
-                    @inbounds @atomic layer_alphas[bin] += shared_colors[lid, 4]
-                end
-            end
         end
     end
 
-    for i = 1:dims
-        @inbounds points[tid,i] = shared_tile[lid,i]
-    end
+    @inbounds points[tid] = pt
 
 end
 
 
-function run!(layer::FractalLayer; diagnostic = false, frame = 0)
+function run!(layer::FractalLayer; frame = 0)
 
     res = size(layer.canvas)
     bounds = find_bounds(layer)
-    pts = Points(layer.params.num_particles; FloatType = eltype(layer.reds),
-                 dims = layer.params.dims,
-                 ArrayType = layer.params.ArrayType, bounds = bounds)
 
     bin_widths = zeros(div(length(values(bounds)),2))
     for i = 1:length(bin_widths)
@@ -352,23 +389,9 @@ function run!(layer::FractalLayer; diagnostic = false, frame = 0)
 
     bounds = find_bounds(layer)
 
-    wait(iterate!(pts, layer, layer.H1, layer.params.num_iterations,
-                  bounds, bin_widths, layer.H2; diagnostic = diagnostic,
-                  frame = frame))
+    wait(iterate!(layer, layer.H1, layer.params.num_iterations,
+                  bounds, bin_widths, layer.H2; frame = frame))
 
     return layer
 
-end
-
-function chaos_game(n::Int, bounds)
-    points = [Point(0, 0) for i = 1:n]
-
-    triangle_points = [Point(-1, -1), Point(1,-1), Point(0, sqrt(3)/2)]
-    [points[1].x, points[1].y] .= -0.5.*(bounds) + rand(2).*bounds
-
-    for i = 2:n
-        points[i] = sierpinski(points[i-1], triangle_points)
-    end
-
-    return points
 end

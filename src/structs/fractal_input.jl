@@ -1,92 +1,51 @@
-export FractalInput, fi, configure_fis!, add, set, value
+export FractalInput, fi, @fi, set!, combine, to_args, find_fi_index, value
 
-# Fractal inputs are essentially wrappers for the symbols tuple
-# I would like to use have these outward-facing so users can update the tuple
 struct FractalInput
-    index::Union{Int, UnitRange{Int}}
-    name::String
-    val::Union{Number, Vector, Tuple, NTuple, Array}
+    s::Union{Symbol, String}
+    x::Ref{Union{Number, Tuple, Vector}}
 end
 
-FractalInput() = FractalInput(0,"",0)
+fi(args...) = FractalInput(args...)
 
-function value(a::Any)
-    return a
+function set!(fi::FractalInput, val)
+    fi.x.x = val
 end
 
-function value(a::Array)
-    return Tuple(a)
+function combine(nt::Tuple, fis::Tuple)
+    return Tuple(combine(nt[i], fis[i]) for i = 1:length(fis))
 end
 
-function value(a::FractalInput)
-    return a.val
+combine(fis::Vector{FractalInput}, nt::NamedTuple) = combine(nt, fis)
+
+function combine(nt::NamedTuple, fis::Vector{FractalInput})
+    if length(fis) == 0
+        return nt
+    end
+
+    fi_vals = (remove_vectors(fis[i].x.x) for i = 1:length(fis))
+    fi_keys = (Symbol(fis[i].s) for i = 1:length(fis))
+
+    return NamedTuple{(keys(nt)..., fi_keys...)}((values(nt)..., fi_vals...))
 end
 
-function find_fi(fis, str)
+function to_args(nt::Tuple, fis::Tuple)
+    return Tuple(combine(fis[i], nt[i]) for i = 1:length(fis))
+end
+
+function to_args(nt::NamedTuple, fis::Vector{FractalInput})
+    if length(fis) == 0
+        return values(nt)
+    end
+    fi_vals = (remove_vectors(fis[i].x.x) for i = 1:length(fis))
+    return (values(nt)..., fi_vals...)
+end
+
+function find_fi_index(s, fis::Vector{FractalInput})
     for i = 1:length(fis)
-        if fis[i].name == str
+        if Symbol(fis[i].s) == Symbol(s)
             return i
         end
     end
-
-    return nothing
 end
 
-function set(fi::FractalInput, val)
-    return FractalInput(fi.index, fi.name, val)
-end
-
-function add(fis::Vector{FractalInput}, a::Int)
-    for i = 1:length(fis)
-        fis[i] = add(fis[i],a)
-    end
-
-    return fis
-end
-
-function add(fi::FractalInput, a::Int)
-    index = fi.index
-    if isa(index, Number)
-        index += a
-    else
-        index = index[1]+a:index[end]+a
-    end
-
-    return FractalInput(index, fi.name, fi.val)
-end
-
-function fi(args...)
-    return FractalInput(args...)
-end
-
-function fi(name, val)
-    return FractalInput(0, name, val)
-end
-
-function configure_fis!(fis::Vector{FractalInput})
-    max_symbols = 0
-    for i = 1:length(fis)
-        max_symbols += length(fis[i].val)
-    end
-
-    temp_array = zeros(max_symbols)
-    idx = 1
-    for i = 1:length(fis)
-        if isa(fis[i].val, Union{Vector, Tuple, NTuple, Array})
-            range = idx:idx+length(fis[i].val)-1
-            temp_array[range] .= fis[i].val[:]
-            fis[i] = FractalInput(range, fis[i].name, fis[i].val)
-            idx += length(fis[i].val)
-        else
-            temp_array[idx] = fis[i].val
-            fis[i] = FractalInput(idx, fis[i].name, fis[i].val)
-            idx += 1
-        end
-    end
-
-    return Tuple(temp_array[1:idx-1])
-end
-
-function Base.getindex(fi::FractalInput, idx::Union{Int,UnitRange{Int64}})
-    return FractalInput(idx, fi.name, fi.val)
-end
+value(fi::FractalInput) = fi.x.x

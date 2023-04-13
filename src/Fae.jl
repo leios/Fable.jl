@@ -26,29 +26,32 @@ set_output(tf) = (global OUTPUT = tf)
 
 # Interfaces
 include("structs/time.jl")
+include("structs/point.jl")
+
+# Utilities
+include("utils/extras.jl")
 
 # Geometries
-include("math/geometries.jl")
+include("utils/geometries.jl")
 
 # KA kernels
-include("math/histogram.jl")
+include("utils/histogram.jl")
 
 # Fractal flame structures
 include("structs/fractal_input.jl")
 include("structs/fractal_user_methods.jl")
 include("fums/shaders.jl")
 include("structs/fractal_operators.jl")
-include("structs/flame_structs.jl")
 include("structs/fractal_executable/fractal_executable.jl")
 include("structs/fractal_executable/hutchinson.jl")
 include("structs/fractal_executable/shader.jl")
 
 # Operations
-include("math/simple_rng.jl")
+include("utils/simple_rng.jl")
 include("fums/flames.jl")
 include("fums/smears.jl")
 
-# Objects
+# Shapes
 include("objects/rectangle.jl")
 include("objects/circle.jl")
 include("objects/triangle.jl")
@@ -76,7 +79,7 @@ include("run/fractal_flame.jl")
 include("run/shader.jl")
 include("run/color.jl")
 
-# Lollipeople
+# Complex objects
 include("objects/lollipeople.jl")
 
 end # module

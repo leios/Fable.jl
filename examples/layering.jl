@@ -21,3 +21,7 @@ function layering_example(num_particles, num_iterations; ArrayType = Array)
 
     write_image(layers; filename = "out.png")
 end
+
+@info("Created Function: layering_example(num_particles, num_iterations;
+                                         ArrayType = Array)")
+

@@ -1,6 +1,6 @@
 # Research Directions
 
-Fae.jl is an open research project with the goal of creating a new, general purpose rendering engine based on [Iterated Function Systems](https://www.algorithm-archive.org/contents/IFS/IFS.html)(IFS).
+Fae.jl is an open research project with the goal of creating a new, general purpose rendering engine based on [Iterated Function Systems](https://www.algorithm-archive.org/contents/IFS/IFS.html) (IFS).
 
 Here is a quick list of various research directions for the project:
 

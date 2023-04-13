@@ -96,11 +96,7 @@ end
         end
         fx_offset += fnums[i]
     end
-    if length(fnums) == 1
-        return fid + 1
-    else
-        return fid
-    end
+    return fid
 end
 
 # Decoding takes an offset, which is the number of digits on the fid bitstring
@@ -111,4 +107,18 @@ end
     bitmask = UI(2^(bitsize + offset) - 1 - (2^offset - 1))
     value = UI((fid & bitmask) >> offset) + 1
     return value
+end
+
+@inline function find_random_fxs(fid::UI, fnums, probs) where UI <: Unsigned
+    bit_offset = 0
+    fx_offset = 0
+    t_out = ()
+    for i = 1:length(fnums)
+        idx = decode_fid(fid, bit_offset, fnums[i]) + fx_offset
+        t_out = (t_out...,idx)
+        bit_offset += ceil(UInt,log2(fnums[i]))
+        fx_offset += fnums[i]
+    end
+
+    return t_out
 end

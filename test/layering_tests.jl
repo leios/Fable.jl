@@ -4,17 +4,11 @@
 #------------------------------------------------------------------------------#
 
 # shader that is white above 0, and black below 0
-test_fum = @fum function test_fum(x,y)
+test_fum = @fum color function test_fum(x,y)
     if y > 0
-        red = 1.0
-        green = 1.0
-        blue = 1.0
-        alpha = 1.0
+        return RGBA{Float32}(1,1,1,1)
     else
-        red = 0.0
-        green = 0.0
-        blue = 0.0
-        alpha = 0.0
+        return RGBA{Float32}(0,0,0,0)
     end
 end
 
@@ -29,8 +23,7 @@ function layering_tests(ArrayType::Type{AT}) where AT <: AbstractArray
     sl = ShaderLayer(test_fum;  world_size = (4, 4), ppu = 11/4,
                      ArrayType = ArrayType)
     circle = Fae.define_circle(; position = [0.0,0.0], radius = 2.0, 
-                                 color = [0.0, 0.0, 1.0, 1.0],
-                                 name = "layering_circle_test")
+                                 color = [0.0, 0.0, 1.0, 1.0])
     fl = FractalLayer(; world_size = (4,4), ppu = 11/4, H1 = circle,
                       ArrayType = ArrayType)
 
@@ -90,7 +83,7 @@ function layering_tests(ArrayType::Type{AT}) where AT <: AbstractArray
     write_image(il; filename = "check.png", reset = false)
     il2 = ImageLayer("check.png")
 
-    @test il.canvas == il2.canvas
+    @test Array(il.canvas) == Array(il2.canvas)
 
 end
 
@@ -110,11 +103,9 @@ function layer_mixing_tests(ArrayType::Type{AT}) where AT <: AbstractArray
 
     clayer = ColorLayer(RGB(0.5, 0.5, 0.5); world_size = (1, 2), ppu = 1)
     square_1 = define_square(; color = Shaders.black,
-                               position = (0, -0.5), scale = 1,
-                               name = "square_1")
+                               position = (0, -0.5), scale = 1)
     square_2 = define_square(; color = Shaders.white,
-                               position = (0, 0.5), scale = 1,
-                               name = "square_2")
+                               position = (0, 0.5), scale = 1)
 
     flayer_1 = FractalLayer(; H1 = square_1, world_size = (1, 2), ppu = 1,
                             num_particles = 10, num_iterations = 1000)
