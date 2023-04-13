@@ -44,3 +44,11 @@ function shader_example(fum; ArrayType = Array, filename = "out.png")
 
     write_image(layer; filename = filename)
 end
+
+@info("Created Function: shader_example(fum; ArrayType = Array,
+                                       filename = 'out.png')\n"*
+      "Defined fums: rectangle(; position = (0,0), rotation = 0,
+                          scale_x = 1, scale_y = 1)
+              ellipse(; position = (0,0), rotation = 0,
+                        r1 = 1, r2 = 1)
+              radial(y, x; origin = (0,0))")
