@@ -2,7 +2,7 @@ export Shaders, create_color
 
 module Shaders
 
-import Fae.@fum
+import Fable.@fum
 
 custom = @fum color custom(; r = 0, g = 0, b = 0, a = 0) = RGBA{Float32}(r, g, b, a)
 

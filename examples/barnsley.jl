@@ -1,8 +1,8 @@
 #-------------barnsley.jl------------------------------------------------------#
-# This is a simple test to make sure Fae.jl can deal with H operators with
+# This is a simple test to make sure Fable.jl can deal with H operators with
 # non-uniform probability. It also shows how to output multiple objects.
 #------------------------------------------------------------------------------#
-using Fae
+using Fable
 
 scale_and_translate = @fum function scale_and_translate(y, x;
                                                        translation = (0.0,0.0),

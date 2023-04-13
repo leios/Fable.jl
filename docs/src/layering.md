@@ -1,12 +1,12 @@
 # Layering
 
-Fae.jl has multiple layer types that can be composed together to create a final image (or frame in a video).
+Fable.jl has multiple layer types that can be composed together to create a final image (or frame in a video).
 These layers indicate how the user would like to create an object or field.
 Right now, the following layers are available:
 
 * `ColorLayer`: This layer is essentially a single color spread across some number of pixels in a rectangle.
 * `ShaderLayer`: This layer is a "shader" that uses a `FractalUserMethod` to color every pixel in a rectangle.
-* `ImageLayer`: This layer is used to import images generated outside of Fae.jl. Note that remedial resizing functions are available, but these need to be cleaned up in the future.
+* `ImageLayer`: This layer is used to import images generated outside of Fable.jl. Note that remedial resizing functions are available, but these need to be cleaned up in the future.
 * `FractalLayer`: This layer is for using Iterated Function Systems and generating objects via fractals.
 
 These layers eventually write to their respective `canvas` objects, which are composed into a final image or frame via:
@@ -28,7 +28,7 @@ To get a better understanding of how these work, here are some quick examples:
 
 ## Color Layers
 
-The `ColorLayer` is likely the simplest layer provided by Fae.jl.
+The `ColorLayer` is likely the simplest layer provided by Fable.jl.
 To generate a layer that is only a single color, you just need to create the layer and then run the `write_image(...)` function, like so:
 
 ```
@@ -101,7 +101,7 @@ ilayer = ImageLayer(filename)
 write_image(ilayer, filename_2)
 ```
 
-It can also take all the same arguments as other layers (`position`, `ppu`, and `world_size`), but the resizing is done in a very naive way, so if the image looks odd through Fae.jl, it might be best to figure out the exact pixel size you need and to make the image fit those dimensions with another program.
+It can also take all the same arguments as other layers (`position`, `ppu`, and `world_size`), but the resizing is done in a very naive way, so if the image looks odd through Fable.jl, it might be best to figure out the exact pixel size you need and to make the image fit those dimensions with another program.
 
 ## Fractal Layers and combing layers together
 

@@ -1,4 +1,4 @@
-using Fae
+using Fable
 
 function sierpinski_example(num_particles, num_iterations, num_frames;
                             ArrayType = Array, output_type = :video)
@@ -18,16 +18,16 @@ function sierpinski_example(num_particles, num_iterations, num_frames;
     B_2 = fi(:B_2, [r*cos(-theta + 2*pi/3), r*sin(-theta + 2*pi/3)])
     C_2 = fi(:C_2, [r*cos(-theta + 4*pi/3), r*sin(-theta + 4*pi/3)])
 
-    H = Fae.define_triangle(; A = A_1, B = B_1, C = C_1,
-                            color = [[1.0, 0.0, 0.0, 1.0],
-                                     [0.0, 1.0, 0.0, 1.0],
-                                     [0.0, 0.0, 1.0, 1.0]],
+    H = define_triangle(; A = A_1, B = B_1, C = C_1,
+                          color = [[1.0, 0.0, 0.0, 1.0],
+                                   [0.0, 1.0, 0.0, 1.0],
+                                   [0.0, 0.0, 1.0, 1.0]],
+                          chosen_fx = :sierpinski)
+    H_2 = define_triangle(A = A_2, B = B_2, C = C_2,
+                            color = [[0.0, 1.0, 1.0, 1.0],
+                                     [1.0, 0.0, 1.0, 1.0],
+                                     [1.0, 1.0, 0.0, 1.0]],
                             chosen_fx = :sierpinski)
-    H_2 = Fae.define_triangle(A = A_2, B = B_2, C = C_2,
-                              color = [[0.0, 1.0, 1.0, 1.0],
-                                       [1.0, 0.0, 1.0, 1.0],
-                                       [1.0, 1.0, 0.0, 1.0]],
-                              chosen_fx = :sierpinski)
 
     final_H = fee(Hutchinson, [H, H_2])
 
@@ -46,7 +46,7 @@ function sierpinski_example(num_particles, num_iterations, num_frames;
         set!(B_2, [r*cos(-theta + 2*pi/3), r*sin(-theta + 2*pi/3)])
         set!(C_2, [r*cos(-theta + 4*pi/3), r*sin(-theta + 4*pi/3)])
 
-        Fae.run!(layer)
+        run!(layer)
 
         if output_type == :video
             write_video!(video_out, [layer])

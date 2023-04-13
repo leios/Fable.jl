@@ -45,7 +45,7 @@ This will create a pink circle that looks like this:
 
 By default, the `Clip` post process will turn any `RGBA` value above a pre-defined `threshold` to another designated color; however, you can change the `clip_op`(clip operator) to use any function instead of `>`.
 You may also change how the intensity is calculated by passing in an `intensity_function` argument.
-Fae.jl currently supports the following intensity functions:
+Fable.jl currently supports the following intensity functions:
 
 ```
 @inline function simple_intensity(c::CT) where CT <: Union{RGB}
@@ -97,7 +97,7 @@ The `Filter` post process essentially performs a convolution with a provided fil
 Convolutions are somewhat complicated to understand, but if you want to learn more, please check out the chapter(s) available on the [Algorithm Archive](https://www.algorithm-archive.org/contents/convolutions/convolutions.html).
 All the necessary information for understanding how this post process works can be found there, along with an example using the `Sobel` operator.
 
-By default, Fae.jl provides the following filters:
+By default, Fable.jl provides the following filters:
 
 **Identity**: This is a test filter and just returns the exact image back
 ```
@@ -191,7 +191,7 @@ In general, this operation can be split into 3 steps:
 3. A sum of both gradients: $$\sqrt{G_x^2 + G_y^2}$$
 
 As an important note, many implementations of the Sobel operator also return gradient direction information.
-This part of the operation is not performed in Fae.jl by default.
+This part of the operation is not performed in Fable.jl by default.
 
 Here is a quick example using the Sobel operator:
 ```
@@ -216,7 +216,7 @@ This will produce the following image:
 ## Outlines
 
 Outlines are surprisingly tricky to get right.
-I will not argue that the `Outline` implementation in Fae.jl is perfect, but it works well enough for now.
+I will not argue that the `Outline` implementation in Fable.jl is perfect, but it works well enough for now.
 
 The current implementation was inspired by Canny edge detection and does the following:
 1. Blurs the given image by some factor related to the user-provided `linewidth` variable.
@@ -318,4 +318,4 @@ In practice, these functions are usually used to make sure that the post process
 As a final note: when designing an `op` function to be used for each post process, remember that the `ArrayType` could be a `CuArray` or `ROCArray`, so try to make the functions GPU friendly.
 This is why many of the post processes are written in KernelAbstractions.
 
-Again, this part of the code is sticky, so if you need to add another post process, feel free to create an issue and we can talk about whether it makes sense to add directly to Fae.jl!
+Again, this part of the code is sticky, so if you need to add another post process, feel free to create an issue and we can talk about whether it makes sense to add directly to Fable.jl!

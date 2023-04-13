@@ -2,7 +2,7 @@ export Smears
 
 module Smears
 
-import Fae.@fum
+import Fable.@fum
 
 stretch_and_rotate = @fum function stretch_and_rotate(
     y,x;

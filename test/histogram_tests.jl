@@ -17,7 +17,8 @@ function create_histogram!(histogram_output, input;
                           bin_widths = ones(dims))
  
     for i = 1:size(input)[1]
-        bin = Fae.find_bin(histogram_output, input, i, dims, bounds, bin_widths)
+        bin = Fable.find_bin(histogram_output, input, i,
+                             dims, bounds, bin_widths)
         histogram_output[bin] += 1
     end
 
@@ -100,13 +101,15 @@ function histogram_kernel_tests(ArrayType::Type{AT}) where AT <: AbstractArray
     rand_histogram_2d = ArrayType(zeros(Int, 128, 128))
     rand_histogram_3d = ArrayType(zeros(Int, 32, 32, 32))
 
-    @time wait(Fae.histogram!(rand_histogram, ArrayType(rand_input)))
-    @time wait(Fae.histogram!(linear_histogram, ArrayType(linear_input)))
-    @time wait(Fae.histogram!(linear_2d_histogram, ArrayType(linear_input_2d)))
-    @time wait(Fae.histogram!(offset_2d_histogram, ArrayType(linear_input_2d)))
-    @time wait(Fae.histogram!(histogram_2s, ArrayType(all_2)))
-    @time wait(Fae.histogram!(rand_histogram_2d, ArrayType(rand_input_2d)))
-    @time wait(Fae.histogram!(rand_histogram_3d, ArrayType(rand_input_3d)))
+    @time wait(Fable.histogram!(rand_histogram, ArrayType(rand_input)))
+    @time wait(Fable.histogram!(linear_histogram, ArrayType(linear_input)))
+    @time wait(Fable.histogram!(linear_2d_histogram,
+                                ArrayType(linear_input_2d)))
+    @time wait(Fable.histogram!(offset_2d_histogram,
+                                ArrayType(linear_input_2d)))
+    @time wait(Fable.histogram!(histogram_2s, ArrayType(all_2)))
+    @time wait(Fable.histogram!(rand_histogram_2d, ArrayType(rand_input_2d)))
+    @time wait(Fable.histogram!(rand_histogram_3d, ArrayType(rand_input_3d)))
 
     @test isapprox(Array(rand_histogram), histogram_rand_baseline)
     @test isapprox(Array(linear_histogram), histogram_linear_baseline)
