@@ -1,11 +1,11 @@
 # A Swirled Square
 
-This is a quick example to show how to use Fae.jl
+This is a quick example to show how to use Fable.jl
 
 ## Step 1: create a square
 
 First, we should create a square.
-To do this, we need to set up Fae with the right parameters:
+To do this, we need to set up Fable with the right parameters:
 
 ```
     # Physical space location. 
@@ -68,7 +68,7 @@ The full code can be found at the bottom of this page
 
 ## Step 2: swirl the square
 
-Next, we will try to "swirl the square" by also adding another fractal executable to the mix, the swirl operator (defined already in Fae.jl):
+Next, we will try to "swirl the square" by also adding another fractal executable to the mix, the swirl operator (defined already in Fable.jl):
 
 ```
 swirl = @fum function swirl(x, y)

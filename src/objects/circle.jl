@@ -2,8 +2,8 @@ export define_circle
 
 # Code examples modified from: https://www.math.uwaterloo.ca/~wgilbert/FractalGallery/IFS/IFS.html
 
-naive_disk = Fae.@fum function naive_disk(x, y; radius = 1, position = (0,0),
-                                          function_index = 0)
+naive_disk = @fum function naive_disk(x, y; radius = 1, position = (0,0),
+                                      function_index = 0)
     x_temp = (x-position[2])/radius
     y_temp = (y-position[1])/radius
     r = sqrt(x_temp*x_temp + y_temp*y_temp)
@@ -24,9 +24,9 @@ naive_disk = Fae.@fum function naive_disk(x, y; radius = 1, position = (0,0),
     return point(y,x)
 end
 
-constant_disk = Fae.@fum function constant_disk(x, y; radius = 1,
-                                                position = (0,0),
-                                                function_index = 0)
+constant_disk = @fum function constant_disk(x, y; radius = 1,
+                                            position = (0,0),
+                                            function_index = 0)
 
     x_temp = (x-position[2])/radius
     y_temp = (y-position[1])/radius

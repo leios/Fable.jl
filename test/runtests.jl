@@ -1,6 +1,6 @@
 using Test
 using KernelAbstractions
-using Fae
+using Fable
 using Images
 
 ArrayTypes = [Array]

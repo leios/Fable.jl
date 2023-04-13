@@ -22,7 +22,7 @@ function layering_tests(ArrayType::Type{AT}) where AT <: AbstractArray
                     ArrayType = ArrayType)
     sl = ShaderLayer(test_fum;  world_size = (4, 4), ppu = 11/4,
                      ArrayType = ArrayType)
-    circle = Fae.define_circle(; position = [0.0,0.0], radius = 2.0, 
+    circle = Fable.define_circle(; position = [0.0,0.0], radius = 2.0, 
                                  color = [0.0, 0.0, 1.0, 1.0])
     fl = FractalLayer(; world_size = (4,4), ppu = 11/4, H1 = circle,
                       ArrayType = ArrayType)

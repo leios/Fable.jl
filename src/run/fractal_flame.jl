@@ -1,6 +1,6 @@
 #-------------fractal_flame.jl-------------------------------------------------#
 # Before reading this file and judging me, please take a look at the errors on
-# PR #64 (https://github.com/leios/Fae.jl/pull/64)
+# PR #64 (https://github.com/leios/Fable.jl/pull/64)
 # 
 # Long story short, I cannot access any Tuples of varying types with iteration:
 #     i = 5
@@ -236,7 +236,7 @@ end
     tid = @index(Global,Linear)
 
     pt = points[tid]
-    dims = Fae.dims(pt)
+    dims = Fable.dims(pt)
     clr = RGBA{Float32}(0,0,0,0)
 
     seed = quick_seed(tid)
@@ -282,7 +282,7 @@ end
 
     pt = points[tid]
     clr = RGBA{Float32}(0,0,0,0)
-    dims = Fae.dims(pt)
+    dims = Fable.dims(pt)
 
     seed = quick_seed(tid)
     fid = create_fid(H1_probs, H1_fnums, seed)
@@ -329,7 +329,7 @@ end
 
     pt = points[tid]
     output_pt = points[tid]
-    dims = Fae.dims(pt)
+    dims = Fable.dims(pt)
 
     clr = RGBA{Float32}(0,0,0,0)
     output_clr = RGBA{Float32}(0,0,0,0)

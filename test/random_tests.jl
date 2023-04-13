@@ -5,7 +5,7 @@
 @kernel function random_test_kernel!(a)
     tid = @index(Global, Linear)
 
-    a[tid] = Fae.simple_rand(tid)
+    a[tid] = Fable.simple_rand(tid)
 end
 
 function random_test!(a; numcores = 4, numthreads = 256)
@@ -40,7 +40,7 @@ end
 function fid_tests()
     fnums = Tuple([UInt16(i) for i = 1:7])
     rng = typemax(UInt16)
-    fid = Fae.create_fid(fnums, rng)
+    fid = Fable.create_fid(fnums, rng)
 
     @test bitstring(UInt16(fid)) == "0000101100011001"
 
@@ -52,22 +52,22 @@ function fid_tests()
              1/6, 1/6, 1/6, 1/6, 1/6, 1/6,
              1/7, 1/7, 1/7, 1/7, 1/7, 1/7, 1/7)
 
-    fid_2 = Fae.create_fid(probs, fnums, rng)
+    fid_2 = Fable.create_fid(probs, fnums, rng)
 
     offset = 0
     for i = 1:length(fnums)
-        choice = Fae.decode_fid(fid, offset, fnums[i])
+        choice = Fable.decode_fid(fid, offset, fnums[i])
         if i in (1,2,4)
             @test choice == i
         else
             @test choice != i
         end
 
-        choice_2 = Fae.decode_fid(rng, offset, fnums[i])
+        choice_2 = Fable.decode_fid(rng, offset, fnums[i])
 
         @test choice_2 == 2^(ceil(log2(fnums[i])))
 
-        choice_3 = Fae.decode_fid(fid_2, offset, fnums[i])
+        choice_3 = Fable.decode_fid(fid_2, offset, fnums[i])
         @test choice_3 <= i
 
         offset += ceil(Int, log2(fnums[i]))
