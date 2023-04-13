@@ -141,17 +141,12 @@ simple_eyes = @fum color function simple_eyes(x, y;
                                               ellipticity = 2.5,
                                               location = (0.0, 0.0),
                                               inter_eye_distance = height*0.150,
-                                              eye_color = (1,1,1,1),
+                                              eye_color=RGBA{Float32}(1,1,1,1),
                                               size = height*0.08,
                                               show_brows = false,
                                               brow_angle = 0.0,
                                               brow_size = (0.3, 1.25),
                                               brow_height = 1.0)
-    red = color.r
-    green = color.g
-    blue = color.b
-    alpha = color.alpha
-
     head_position = (-height/4, 0.0)
     location = location .+ head_position
     r2 = size*0.5
@@ -160,10 +155,7 @@ simple_eyes = @fum color function simple_eyes(x, y;
     if y >= y_height
         if in_ellipse(x,y,location.+(0, 0.5*inter_eye_distance),0.0,r1,r2) ||
            in_ellipse(x,y,location.-(0, 0.5*inter_eye_distance),0.0,r1,r2)
-            red = eye_color[1]
-            green = eye_color[2]
-            blue = eye_color[3]
-            alpha = eye_color[4]
+            return eye_color
         end
     end
 
@@ -174,14 +166,11 @@ simple_eyes = @fum color function simple_eyes(x, y;
                         brow_angle, brow_size[2], brow_size[1]) ||
            in_rectangle(x, y, (y_height-brow_size[1]*0.5, -brow_x),
                         brow_angle, brow_size[2], brow_size[1])
-            red = eye_color[1]
-            green = eye_color[2]
-            blue = eye_color[3]
-            alpha = eye_color[4]
+            return eye_color
         end
     end
 
-    return RGBA{Float32}(red, green, blue, alpha)
+    return color
 
 end
 
