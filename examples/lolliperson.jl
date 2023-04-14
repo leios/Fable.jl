@@ -1,4 +1,4 @@
-using Fable, Images
+using Fae, Images
 
 function lolli_example(num_particles, num_iterations;
                        height = 2.0, brow_height = 0.5,
@@ -82,14 +82,14 @@ function lolli_example(num_particles, num_iterations;
     elseif transform_type == :lean
         lean_angle = fi("lean_angle", 0)
         lean_velocity = fi("lean_velocity", 0.0)
-        head_fo = fo(Fable.lean_head(foot_position = (height*0.5,0.0),
-                                     head_radius = height*0.25,
-                                     lean_velocity = lean_velocity,
-                                     lean_angle = lean_angle))
-        body_fo = fo(Fable.lean_body(height = height,
-                                     foot_position = (height*0.5,0.0),
-                                     lean_velocity = lean_velocity,
-                                     lean_angle = lean_angle))
+        head_fo = fo(Fae.lean_head(foot_position = (height*0.5,0.0),
+                                   head_radius = height*0.25,
+                                   lean_velocity = lean_velocity,
+                                   lean_angle = lean_angle))
+        body_fo = fo(Fae.lean_body(height = height,
+                                   foot_position = (height*0.5,0.0),
+                                   lean_velocity = lean_velocity,
+                                   lean_angle = lean_angle))
         lolli = LolliPerson(height; 
                             ArrayType = ArrayType,
                             num_particles = num_particles,

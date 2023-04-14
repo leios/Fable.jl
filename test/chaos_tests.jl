@@ -19,7 +19,7 @@ end
 #------------------------------------------------------------------------------#
 
 function chaos_tests(ArrayType::Type{AT}) where AT <: AbstractArray
-    H = Fable.define_circle(; position = [0.0,0.0], radius = 2.0, 
+    H = Fae.define_circle(; position = [0.0,0.0], radius = 2.0, 
                             color = [1.0, 1.0, 1.0, 1.0],
                             chosen_fx = :naive_disk)
 
@@ -36,7 +36,7 @@ function chaos_tests(ArrayType::Type{AT}) where AT <: AbstractArray
 
     GC.gc()
 
-    H2 = Fable.define_circle(; position = [0.0,0.0], radius = 2.0,
+    H2 = Fae.define_circle(; position = [0.0,0.0], radius = 2.0,
                              color = [1.0, 1.0, 1.0, 1.0],
                            chosen_fx = :constant_disk)
     fl = FractalLayer(; ArrayType = ArrayType, config = :simple, H1 = H2,

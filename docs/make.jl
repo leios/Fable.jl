@@ -1,7 +1,7 @@
 using Documenter
 
 makedocs(
-    sitename="Fable.jl",
+    sitename="Fae.jl",
     authors="James Schloss (Leios) and contributors",
     pages = [
         "General Information" => "index.md",
@@ -17,5 +17,5 @@ makedocs(
 )
 
 deploydocs(;
-    repo="github.com/leios/Fable.jl",
+    repo="github.com/leios/Fae.jl",
 )

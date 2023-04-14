@@ -1,5 +1,6 @@
 # TODO: make kernel, use max(0, filter_corner) for bounds and summing
 # TODO: Probably shouldn't print anything anymore...
+using LinearAlgebra
 
 #TODO: figure out how to select the best deviation factor
 function create_gaussian_kernel(kernel_size; deviation_factor = 1)

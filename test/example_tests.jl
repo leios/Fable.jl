@@ -35,9 +35,9 @@ end
 #------------------------------------------------------------------------------#
 
 function example_testsuite(ArrayType::Type{AT}) where AT <: AbstractArray
-    Fable.set_output(false)
+    Fae.set_output(false)
     @testset "running all examples on $(string(ArrayType))s" begin
         example_tests(ArrayType)
     end
-    Fable.set_output(true)
+    Fae.set_output(true)
 end

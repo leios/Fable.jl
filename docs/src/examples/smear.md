@@ -50,7 +50,7 @@ Note in this case, I am also using `ArrayType` for the Array Type (`Array` for C
 Finally, I will create an `output_type` variable that can be either `:video`, or `:image` to output to video (`out.mp4`) or images (`check*.png`):
 
 ```
-using Fable, CUDA, AMDGPU
+using Fae, CUDA, AMDGPU
 
 function main(num_particles, num_iterations, total_frames; ArrayType = Array,
               output_type = :video)

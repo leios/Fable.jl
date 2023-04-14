@@ -1,4 +1,4 @@
-using Fable, Images
+using Fae, Images
 
 function layering_example(num_particles, num_iterations; ArrayType = Array)
 

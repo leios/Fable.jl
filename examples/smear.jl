@@ -1,4 +1,4 @@
-using Fable
+using Fae
 
 function smear_example(num_particles, num_iterations, total_frames;
                        ArrayType = Array, output_type = :video)
