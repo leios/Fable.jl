@@ -13,8 +13,6 @@ if has_rocm_gpu()
 end
 
 using MacroTools
-using DataStructures
-using LinearAlgebra
 using Unitful
 
 using Images
