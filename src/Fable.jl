@@ -77,7 +77,4 @@ include("run/fractal_flame.jl")
 include("run/shader.jl")
 include("run/color.jl")
 
-# Complex objects
-include("objects/lollipeople.jl")
-
 end # module

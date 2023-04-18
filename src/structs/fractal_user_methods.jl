@@ -32,7 +32,7 @@ end
 #    NamedTuple{Tuple(args.(kwargs[:],1))}(Tuple(args.(kwargs[:],2)))
 #end
 
-function __define_fum_stuff(expr, config)
+function __define_fum_stuff(expr, config, mod)
     def = MacroTools.splitdef(expr)
     def[:name] = name = Symbol(def[:name], :_fum)
     used_args = def[:args]
@@ -40,7 +40,7 @@ function __define_fum_stuff(expr, config)
     def[:args] = args
     kwargs = NamedTuple()
     fum_fx = combinedef(def)
-    return kwargs, eval(fum_fx)
+    return kwargs, Core.eval(mod, fum_fx)
 end
 
 # Note: this operator currently works like this:
@@ -70,17 +70,23 @@ macro fum(ex...)
     elseif expr.head == :(=)
         # inline function definitions
         if isa(expr.args[1], Expr)
-            kwargs, fum_fx = __define_fum_stuff(expr, config)
+            kwargs, fum_fx = __define_fum_stuff(expr, config, __module__)
         else
             error("Cannot create FractalUserMethod.\n"*
                   "Input is not a valid function definition!")
         end
     elseif expr.head == :function
-        kwargs, fum_fx = __define_fum_stuff(expr, config)
+        kwargs, fum_fx = __define_fum_stuff(expr, config, __module__)
     else
         error("Cannot convert expr to Fractal User Method!")
     end
-    return FractalUserMethod(kwargs,FractalInput[], fum_fx)
+
+    return FractalUserMethod(kwargs, FractalInput[], fum_fx)
+#=
+    return Expr(:block,
+                esc(fum_fx),
+                FractalUserMethod(kwargs, FractalInput[], fx_name))
+=#
 end
 
 

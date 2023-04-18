@@ -1,4 +1,5 @@
 using Fable
+using Images
 
 radial = @fum shader function radial(y, x; origin = (0,0))
     r = sqrt((x-origin[2])*(x-origin[2]) + (y-origin[1])*(y-origin[1]))
