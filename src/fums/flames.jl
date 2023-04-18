@@ -2,6 +2,7 @@ export Flames
 
 module Flames
 import Fable.@fum
+import Fable.point
 
 identity = @fum function identity(y, x)
     return point(y, x)
