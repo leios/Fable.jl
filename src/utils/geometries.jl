@@ -1,3 +1,5 @@
+export in_ellipse, in_rectangle
+
 @inline function in_ellipse(x, y, position, rotation, r1, r2)
     r = sqrt(x*x + y*y)
     theta = atan(y,x)

@@ -82,11 +82,6 @@ macro fum(ex...)
     end
 
     return FractalUserMethod(kwargs, FractalInput[], fum_fx)
-#=
-    return Expr(:block,
-                esc(fum_fx),
-                FractalUserMethod(kwargs, FractalInput[], fx_name))
-=#
 end
 
 
