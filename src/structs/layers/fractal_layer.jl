@@ -1,4 +1,4 @@
-export FractalLayer, default_params, params, CopyToCanvas
+export FractalLayer, default_params, params, CopyToCanvas, to_canvas!
 
 # Note: the rgb components needed to be spread into separate arrays for indexing
 #       reasons in the KA kernels

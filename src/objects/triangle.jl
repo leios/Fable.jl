@@ -17,7 +17,7 @@ function define_triangle(; A::Union{Vector,Tuple,FractalInput}=(sqrt(3)/4,-0.5),
                            C::Union{Vector,Tuple,FractalInput}=(sqrt(3)/4,0.5),
                            color = Shaders.gray,
                            chosen_fx = :fill)
-    fums = define_triangle_operators(A, B, C)
+    fums = define_triangle_operators(A, B, C; chosen_fx = chosen_fx)
 
     fnum = 3
     if chosen_fx == :fill
