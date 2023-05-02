@@ -56,16 +56,18 @@ end
     tid = @index(Global, Cartesian)
     idx_1 = CartesianIndex(Tuple(tid) .+ Tuple(start_index_1) .- (1,1))
     idx_2 = CartesianIndex(Tuple(tid) .+ Tuple(start_index_2) .- (1,1))
+    if canvas_2[idx_2].alpha > 0
 
-    @inbounds r = op(canvas_1[idx_1].r*(1-canvas_2[idx_2].alpha),
-                     canvas_2[idx_2].r*canvas_2[idx_2].alpha)
-    @inbounds g = op(canvas_1[idx_1].g*(1-canvas_2[idx_2].alpha),
-                     canvas_2[idx_2].g*canvas_2[idx_2].alpha)
-    @inbounds b = op(canvas_1[idx_1].b*(1-canvas_2[idx_2].alpha),
-                     canvas_2[idx_2].b*canvas_2[idx_2].alpha)
-    @inbounds a = max(canvas_1[idx_1].alpha, canvas_2[idx_2].alpha)
+        @inbounds r = op(canvas_1[idx_1].r*(1-canvas_2[idx_2].alpha),
+                         canvas_2[idx_2].r*canvas_2[idx_2].alpha)
+        @inbounds g = op(canvas_1[idx_1].g*(1-canvas_2[idx_2].alpha),
+                         canvas_2[idx_2].g*canvas_2[idx_2].alpha)
+        @inbounds b = op(canvas_1[idx_1].b*(1-canvas_2[idx_2].alpha),
+                         canvas_2[idx_2].b*canvas_2[idx_2].alpha)
+        @inbounds a = max(canvas_1[idx_1].alpha, canvas_2[idx_2].alpha)
 
-    @inbounds canvas_1[idx_1] = RGBA(r,g,b,a)
+        @inbounds canvas_1[idx_1] = RGBA(r,g,b,a)
+    end
 end
 
 @kernel function simple_rescale_kernel!(canvas_1, canvas_2,
@@ -81,15 +83,17 @@ end
 
     idx_2 = find_bin(canvas_2, x, y, bounds_2, (1/ppu_2, 1/ppu_2))
 
-    @inbounds r = op(canvas_1[idx_1].r*(1-canvas_2[idx_2].alpha),
-                     canvas_2[idx_2].r*canvas_2[idx_2].alpha)
-    @inbounds g = op(canvas_1[idx_1].g*(1-canvas_2[idx_2].alpha),
-                     canvas_2[idx_2].g*canvas_2[idx_2].alpha)
-    @inbounds b = op(canvas_1[idx_1].b*(1-canvas_2[idx_2].alpha),
-                     canvas_2[idx_2].b*canvas_2[idx_2].alpha)
-    @inbounds a = max(canvas_1[idx_1].alpha, canvas_2[idx_2].alpha)
+    if canvas_2[idx_2].alpha > 0
+        @inbounds r = op(canvas_1[idx_1].r*(1-canvas_2[idx_2].alpha),
+                         canvas_2[idx_2].r*canvas_2[idx_2].alpha)
+        @inbounds g = op(canvas_1[idx_1].g*(1-canvas_2[idx_2].alpha),
+                         canvas_2[idx_2].g*canvas_2[idx_2].alpha)
+        @inbounds b = op(canvas_1[idx_1].b*(1-canvas_2[idx_2].alpha),
+                         canvas_2[idx_2].b*canvas_2[idx_2].alpha)
+        @inbounds a = max(canvas_1[idx_1].alpha, canvas_2[idx_2].alpha)
 
-    @inbounds canvas_1[idx_1] = RGBA(r,g,b,a)
+        @inbounds canvas_1[idx_1] = RGBA(r,g,b,a)
+    end
 
 end
 
