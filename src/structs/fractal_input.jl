@@ -40,7 +40,8 @@ function to_args(nt::NamedTuple, fis::Vector{FractalInput})
     return (values(nt)..., fi_vals...)
 end
 
-function find_fi_index(s, fis::Vector{FractalInput})
+function find_fi_index(s, fis::FT) where FT <: Union{Vector{FractalInput},
+                                                     Tuple}
     for i = 1:length(fis)
         if Symbol(fis[i].s) == Symbol(s)
             return i
@@ -49,3 +50,4 @@ function find_fi_index(s, fis::Vector{FractalInput})
 end
 
 value(fi::FractalInput) = fi.x.x
+value(a) = a
