@@ -96,9 +96,7 @@ function create_canvas(s; ArrayType = Array)
     return ArrayType(fill(RGBA(0,0,0,0), s))
 end
 
-function zero!(a::Union{Array{T},
-                        CuArray{T},
-                        ROCArray{T}}) where T <: Union{RGB, RGBA}
+function zero!(a::AT) where AT <: AbstractArray{T} where T <: Union{RGB, RGBA}
     a[:] .= RGBA(0.0, 0.0, 0.0, 0.0)
 end
 
