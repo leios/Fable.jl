@@ -29,7 +29,7 @@ function mix_layers!(layer_1::AL1, layer_2::AL2, overlap::Overlap; op = +,
         error("Mixing mode ", string(mode), " not found!")
     end
 
-    backend = get_backend(layer.canvas)
+    backend = get_backend(layer_1.canvas)
     kernel! = f(backend, layer_1.params.numthreads)
 
     if layer_1.ppu == layer_2.ppu

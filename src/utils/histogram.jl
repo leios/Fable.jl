@@ -98,7 +98,7 @@ function histogram!(histogram_output, input; dims = ndims(histogram_output),
                     bin_widths = [1 for i = 1:dims],
                     numcores = 4, numthreads = 256, AT = Array)
 
-    backend = get_backend(layer.canvas)
+    backend = get_backend(histogram_output)
     kernel! = naive_histogram_kernel!(backend, numthreads)
     kernel!(histogram_output, input, AT(bounds), AT(bin_widths), dims,
             ndrange=size(input)[1])

@@ -16,7 +16,6 @@ if has_rocm_gpu()
     push!(ArrayTypes, ROCArray)
 end
 
-
 include("histogram_tests.jl")
 include("random_tests.jl")
 include("chaos_tests.jl")
