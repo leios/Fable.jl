@@ -8,15 +8,10 @@
     a[tid] = Fable.simple_rand(tid)
 end
 
-function random_test!(a; numcores = 4, numthreads = 256)
+function random_test!(a; numthreads = 256)
 
-    if isa(a, Array)
-        kernel! = random_test_kernel!(CPU(), numcores)
-    elseif isa(a, CuArray)
-        kernel! = random_test_kernel!(CUDADevice(), numthreads)
-    elseif isa(a, ROCArray)
-        kernel! = random_test_kernel!(ROCDevice(), numthreads)
-    end
+    backend = get_backend(a)
+    kernel! = random_test_kernel!(backend, numthreads)
 
     kernel!(a, ndrange = length(a))
 end
@@ -27,7 +22,7 @@ function LCG_tests(ArrayType::Type{AT}) where AT <: AbstractArray
 
     threshold = 0.00001
 
-    wait(random_test!(a))
+    random_test!(a)
 
     a ./= typemax(UInt)
 

@@ -16,21 +16,16 @@ end
 
 function run!(layer::ShaderLayer; frame = 0) 
 
-    if layer.params.ArrayType <: Array
-        kernel! = shader_kernel!(CPU(), layer.params.numcores)
-    elseif has_cuda_gpu() && layer.params.ArrayType <: CuArray
-        kernel! = shader_kernel!(CUDADevice(), layer.params.numthreads)
-    elseif has_rocm_gpu() && layer.params.ArrayType <: ROCArray
-        kernel! = shader_kernel!(ROCDevice(), layer.params.numthreads)
-    end
+    backend = get_backend(layer.canvas)
+    kernel! = shader_kernel!(backend, layer.params.numthreads)
 
     bounds = find_bounds(layer)
 
-    wait(kernel!(layer.canvas, bounds,
-                 layer.shader.fxs,
-                 combine(layer.shader.kwargs, layer.shader.fis),
-                 frame,
-                 ndrange = size(layer.canvas)))
+    kernel!(layer.canvas, bounds,
+            layer.shader.fxs,
+            combine(layer.shader.kwargs, layer.shader.fis),
+            frame,
+            ndrange = size(layer.canvas))
 end
 
 @kernel function shader_kernel!(canvas, bounds, fxs, kwargs, frame)

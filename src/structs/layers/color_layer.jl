@@ -2,7 +2,7 @@ export ColorLayer
 
 mutable struct ColorLayer <: AbstractLayer
     color::Union{RGB, RGBA}
-    canvas::Union{Array{C}, CuArray{C}, ROCArray{C}} where C <: RGBA
+    canvas::AT where AT <: AbstractArray
     position::Tuple
     world_size::Tuple
     ppu::Number
@@ -17,7 +17,6 @@ function ColorLayer(c::CT;
                     ppu = 1200,
                     ArrayType = Array,
                     FloatType = Float32,
-                    numcores = 4,
                     numthreads = 256) where CT <: Union{RGB, RGBA}
     res = (ceil(Int,world_size[1]*ppu), ceil(Int,world_size[2]*ppu))
     if isa(c, RGB)
@@ -33,7 +32,6 @@ function ColorLayer(c::CT;
                       params(ColorLayer;
                              ArrayType = ArrayType,
                              FloatType = FloatType,
-                             numcores = numcores,
                              numthreads = numthreads),
                       postprocessing_steps)
 

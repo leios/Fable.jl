@@ -2,7 +2,7 @@ export ShaderLayer
 
 mutable struct ShaderLayer <: AbstractLayer
     shader::Shader
-    canvas::Union{Array{C}, CuArray{C}, ROCArray{C}} where C <: RGBA
+    canvas::AT where AT <: AbstractArray
     position::Tuple
     world_size::Tuple
     ppu::Number
@@ -17,7 +17,6 @@ function ShaderLayer(shader::Shader;
                      ppu = 1200,
                      ArrayType = Array,
                      FloatType = Float32,
-                     numcores = 4,
                      numthreads = 256)
     res = (ceil(Int, world_size[1]*ppu), ceil(Int, world_size[2]*ppu))
 
@@ -29,7 +28,6 @@ function ShaderLayer(shader::Shader;
                        params(ColorLayer;
                               ArrayType = ArrayType,
                               FloatType = FloatType,
-                              numcores = numcores,
                               numthreads = numthreads),
                        postprocessing_steps)
 
@@ -42,7 +40,6 @@ function ShaderLayer(fums::Union{FractalUserMethod, Tuple};
                      ppu = 1200,
                      ArrayType = Array,
                      FloatType = Float32,
-                     numcores = 4,
                      numthreads = 256)
     res = (ceil(Int, world_size[1]*ppu), ceil(Int, world_size[2]*ppu))
 
@@ -54,7 +51,6 @@ function ShaderLayer(fums::Union{FractalUserMethod, Tuple};
                        params(ColorLayer;
                               ArrayType = ArrayType,
                               FloatType = FloatType,
-                              numcores = numcores,
                               numthreads = numthreads),
                        postprocessing_steps)
 
