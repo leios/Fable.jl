@@ -7,7 +7,7 @@ mutable struct Outline <: AbstractPostProcess
     intensity_function::Function
     threshold::Number
     color::CT where CT <: Union{RGB, RGBA}
-    canvas::AT where AT <: Union{Array, CuArray, ROCArray, Nothing}
+    canvas::AT where AT <: AbstractArray
     object_outline::Bool
     initialized::Bool
 end
@@ -53,28 +53,21 @@ end
 
 function outline!(layer::AL, outline_params::Outline) where AL <: AbstractLayer
 
-    if layer.params.ArrayType <: Array
-        kernel! = ridge_kernel!(CPU(), layer.params.numcores)
-        superimpose! = superimpose_kernel!(CPU(), layer.params.numcores)
-    elseif has_cuda_gpu() && layer.params.ArrayType <: CuArray
-        kernel! = ridge_kernel!(CUDADevice(), layer.params.numthreads)
-        superimpose! = superimpose_kernel!(CUDADevice(),layer.params.numthreads)
-    elseif has_rocm_gpu() && layer.params.ArrayType <: ROCArray
-        kernel! = ridge_kernel!(ROCDevice(), layer.params.numthreads)
-        superimpose! = superimpose_kernel!(ROCDevice(), layer.params.numthreads)
-    end
+    backend = get_backend(layer.canvas)
+    kernel! = ridge_kernel!(backend, layer.params.numthreads)
+    superimpose! = superimpose_kernel!(backend, layer.params.numthreads)
 
     if !isnothing(outline_params.gauss_filter)
         filter!(outline_params.canvas, layer, outline_params.gauss_filter)
     end
     sobel!(outline_params.canvas, layer, outline_params.sobel)
 
-    wait(kernel!(outline_params.canvas, outline_params.intensity_function,
-                 outline_params.threshold, outline_params.color;
-                 ndrange = size(layer.canvas)))
+    kernel!(outline_params.canvas, outline_params.intensity_function,
+            outline_params.threshold, outline_params.color;
+            ndrange = size(layer.canvas))
 
-    wait(superimpose!(layer.canvas, outline_params.canvas;
-                      ndrange = size(layer.canvas)))
+    superimpose!(layer.canvas, outline_params.canvas;
+                 ndrange = size(layer.canvas))
 end
 
 @kernel function ridge_kernel!(canvas, intensity_function, threshold, c)

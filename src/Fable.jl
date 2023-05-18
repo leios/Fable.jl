@@ -2,15 +2,6 @@ module Fable
 
 using KernelAbstractions
 using KernelAbstractions: @atomic
-using CUDA
-if has_cuda_gpu()
-    using CUDAKernels
-end
-
-using AMDGPU
-if has_rocm_gpu()
-    using ROCKernels
-end
 
 using MacroTools
 using Unitful

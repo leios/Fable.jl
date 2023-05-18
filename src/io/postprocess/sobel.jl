@@ -2,10 +2,10 @@ export Sobel
 
 mutable struct Sobel <: AbstractPostProcess
     op::Function
-    filter_x::AT where AT <: Union{Array, CuArray, ROCArray, Nothing}
-    filter_y::AT where AT <: Union{Array, CuArray, ROCArray, Nothing}
-    canvas_x::AT where AT <: Union{Array, CuArray, ROCArray, Nothing}
-    canvas_y::AT where AT <: Union{Array, CuArray, ROCArray, Nothing}
+    filter_x::AT where AT <: AbstractArray
+    filter_y::AT where AT <: AbstractArray
+    canvas_x::AT where AT <: AbstractArray
+    canvas_y::AT where AT <: AbstractArray
     initialized::Bool
 end
 
@@ -48,27 +48,19 @@ end
 
 function sobel!(output, layer::AL,
                 sobel_params::Sobel) where AL <: AbstractLayer
-    if layer.params.ArrayType <: Array
-        kernel! = filter_kernel!(CPU(), layer.params.numcores)
-        add_kernel! = quad_add!(CPU(), layer.params.numcores)
-    elseif has_cuda_gpu() && layer.params.ArrayType <: CuArray
-        kernel! = filter_kernel!(CUDADevice(), layer.params.numthreads)
-        add_kernel! = quad_add!(CUDADevice(), layer.params.numthreads)
-    elseif has_rocm_gpu() && layer.params.ArrayType <: ROCArray
-        kernel! = filter_kernel!(ROCDevice(), layer.params.numthreads)
-        add_kernel! = quad_add!(ROCDevice(), layer.params.numthreads)
+    backend = get_backend(layer.canvas)
+    kernel! = filter_kernel!(backend, layer.params.numthreads)
+    add_kernel! = quad_add!(backend, layer.params.numthreads)
+
+    @sync begin
+        @async kernel!(sobel_params.canvas_x, output,
+                       sobel_params.filter_x, ndrange = size(layer.canvas))
+        @async kernel!(sobel_params.canvas_y, output,
+                       sobel_params.filter_y, ndrange = size(layer.canvas))
     end
 
-    event_x = kernel!(sobel_params.canvas_x, output,
-                      sobel_params.filter_x, ndrange = size(layer.canvas))
-    event_y = kernel!(sobel_params.canvas_y, output,
-                      sobel_params.filter_y, ndrange = size(layer.canvas))
-
-    wait(event_x)
-    wait(event_y)
-
-    wait(add_kernel!(output, sobel_params.canvas_y,
-                     sobel_params.canvas_x; ndrange = size(layer.canvas)))
+    add_kernel!(output, sobel_params.canvas_y,
+                sobel_params.canvas_x; ndrange = size(layer.canvas))
 
     return nothing
 

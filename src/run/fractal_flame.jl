@@ -196,13 +196,8 @@ function iterate!(layer::FractalLayer, H1::Hutchinson, n,
     end
 
     max_range = maximum(values(bounds))*10
-    if layer.params.ArrayType <: Array
-        kernel! = fx(CPU(), layer.params.numcores)
-    elseif has_cuda_gpu() && layer.params.ArrayType <: CuArray
-        kernel! = fx(CUDADevice(), layer.params.numthreads)
-    elseif has_rocm_gpu() && layer.params.ArrayType <: ROCArray
-        kernel! = fx(ROCDevice(), layer.params.numthreads)
-    end
+    backend = get_backend(layer.canvas)
+    kernel! = fx(backend, layer.params.numthreads)
 
     if isnothing(H2)
         kernel!(layer.particles, n, H1.fxs, combine(H1.kwargs, H1.fis),
@@ -389,8 +384,8 @@ function run!(layer::FractalLayer; frame = 0)
 
     bounds = find_bounds(layer)
 
-    wait(iterate!(layer, layer.H1, layer.params.num_iterations,
-                  bounds, bin_widths, layer.H2; frame = frame))
+    iterate!(layer, layer.H1, layer.params.num_iterations,
+             bounds, bin_widths, layer.H2; frame = frame)
 
     return layer
 

@@ -24,18 +24,13 @@ end
 
 function clip!(output, layer::AL, clip_params::Clip) where AL <: AbstractLayer
 
-    if layer.params.ArrayType <: Array
-        kernel! = clip_kernel!(CPU(), layer.params.numcores)
-    elseif has_cuda_gpu() && layer.params.ArrayType <: CuArray
-        kernel! = clip_kernel!(CUDADevice(), layer.params.numthreads)
-    elseif has_rocm_gpu() && layer.params.ArrayType <: ROCArray
-        kernel! = clip_kernel!(ROCDevice(), layer.params.numthreads)
-    end
+    backend = get_backend(layer.canvas)
+    kernel! = clip_kernel!(backend, layer.params.numthreads)
 
-    wait(kernel!(output, layer.canvas, clip_params.clip_op,
-                 clip_params.intensity_function,
-                 clip_params.threshold, clip_params.color;
-                 ndrange = size(layer.canvas)))
+    kernel!(output, layer.canvas, clip_params.clip_op,
+            clip_params.intensity_function,
+            clip_params.threshold, clip_params.color;
+            ndrange = size(layer.canvas))
     
     return nothing
 

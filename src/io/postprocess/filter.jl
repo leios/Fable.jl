@@ -2,8 +2,8 @@ export Filter, Blur, Gaussian, Identity
 
 mutable struct Filter <: AbstractPostProcess
     op::Function
-    filter::AT where AT <: Union{Array, CuArray, ROCArray}
-    canvas::AT where AT <: Union{Array, CuArray, ROCArray, Nothing}
+    filter::AT where AT <: AbstractArray
+    canvas::AT where AT <: AbstractArray
     initialized::Bool
 end
 
@@ -72,16 +72,11 @@ end
 function filter!(output, layer::AL,
                  filter_params::Filter) where AL <: AbstractLayer
 
-    if isa(layer.canvas, Array)
-        kernel! = filter_kernel!(CPU(), layer.params.numcores)
-    elseif has_cuda_gpu() && isa(layer.canvas, CuArray)
-        kernel! = filter_kernel!(CUDADevice(), layer.params.numthreads)
-    elseif has_rocm_gpu() && isa(layer.canvas, ROCArray)
-        kernel! = filter_kernel!(ROCDevice(), layer.params.numthreads)
-    end
+    backend = get_backend(layer.canvas)
+    kernel! = filter_kernel!(backend, layer.params.numthreads)
 
-    wait(kernel!(filter_params.canvas, layer.canvas, filter_params.filter;
-                 ndrange = size(layer.canvas)))
+    kernel!(filter_params.canvas, layer.canvas, filter_params.filter;
+            ndrange = size(layer.canvas))
 
     output .= filter_params.canvas
     

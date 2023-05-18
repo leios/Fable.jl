@@ -11,7 +11,7 @@ function mix_layers!(layer_1::AL1, layer_2::AL2;
     end
 
     overlap = find_overlap(layer_1, layer_2)
-    wait(mix_layers!(layer_1, layer_2, overlap))
+    mix_layers!(layer_1, layer_2, overlap)
 end
 
 function mix_layers!(layer_1::AL1, layer_2::AL2, overlap::Overlap; op = +,
@@ -29,13 +29,8 @@ function mix_layers!(layer_1::AL1, layer_2::AL2, overlap::Overlap; op = +,
         error("Mixing mode ", string(mode), " not found!")
     end
 
-    if layer_1.params.ArrayType <: Array
-        kernel! = f(CPU(), layer_1.params.numcores)
-    elseif has_cuda_gpu() && layer_1.params.ArrayType <: CuArray
-        kernel! = f(CUDADevice(), layer_1.params.numthreads)
-    elseif has_rocm_gpu() && layer_1.params.ArrayType <: ROCArray
-        kernel! = f(ROCDevice(), layer_1.params.numthreads)
-    end
+    backend = get_backend(layer_1.canvas)
+    kernel! = f(backend, layer_1.params.numthreads)
 
     if layer_1.ppu == layer_2.ppu
         kernel!(layer_1.canvas, layer_2.canvas,
@@ -101,9 +96,7 @@ function create_canvas(s; ArrayType = Array)
     return ArrayType(fill(RGBA(0,0,0,0), s))
 end
 
-function zero!(a::Union{Array{T},
-                        CuArray{T},
-                        ROCArray{T}}) where T <: Union{RGB, RGBA}
+function zero!(a::AT) where AT <: AbstractArray{T} where T <: Union{RGB, RGBA}
     a[:] .= RGBA(0.0, 0.0, 0.0, 0.0)
 end
 
@@ -113,15 +106,10 @@ end
 
 function zero!(layer::FractalLayer)
     
-    if layer.params.ArrayType <: Array
-        kernel! = zero_kernel!(CPU(), layer.params.numcores)
-    elseif has_cuda_gpu() && layer.params.ArrayType <: CuArray
-        kernel! = zero_kernel!(CUDADevice(), layer.params.numthreads)
-    elseif has_rocm_gpu() && layer.params.ArrayType <: ROCArray
-        kernel! = zero_kernel!(ROCDevice(), layer.params.numthreads)
-    end
-    wait(kernel!(layer.values, layer.reds, layer.greens, layer.blues,
-                 ndrange = size(layer.values)))
+    backend = get_backend(layer.canvas)
+    kernel! = zero_kernel!(backend, layer.params.numthreads)
+    kernel!(layer.values, layer.reds, layer.greens, layer.blues,
+                 ndrange = size(layer.values))
 end
 
 @kernel function zero_kernel!(layer_values, layer_reds, layer_greens, layer_blues)

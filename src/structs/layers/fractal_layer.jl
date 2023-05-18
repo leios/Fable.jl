@@ -5,13 +5,13 @@ export FractalLayer, default_params, params, CopyToCanvas, to_canvas!
 mutable struct FractalLayer <: AbstractLayer
     H1::Union{Nothing, Hutchinson}
     H2::Union{Nothing, Hutchinson}
-    particles::Union{Array{P}, CuArray{P}, ROCArray{P}} where P <: AbstractPoint
-    values::Union{Array{I}, CuArray{I}, ROCArray{I}} where I <: Integer
-    reds::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
-    greens::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
-    blues::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
-    alphas::Union{Array{T}, CuArray{T}, ROCArray{T}} where T <: AbstractFloat
-    canvas::Union{Array{C}, CuArray{C}, ROCArray{C}} where C <: RGBA
+    particles::APT where APT <: AbstractArray{AP} where AP <: AbstractPoint
+    values::AIT where AIT <: AbstractArray{Int}
+    reds::AFT where AFT <: AbstractArray{FT} where FT <: AbstractFloat
+    greens::AFT where AFT <: AbstractArray{FT} where FT <: AbstractFloat
+    blues::AFT where AFT <: AbstractArray{FT} where FT <: AbstractFloat
+    alphas::AFT where AFT <: AbstractArray{FT} where FT <: AbstractFloat
+    canvas::ACT where ACT <: AbstractArray{CT} where CT <: RGBA
     position::Tuple
     world_size::Tuple
     ppu::Number
@@ -25,13 +25,13 @@ function default_params(a::Type{FractalLayer}; config = :standard,
                         dims = 2)
 
     if config == :standard
-        return (numthreads = 256, numcores = 4, gamma = 2.2, logscale = false,
+        return (numthreads = 256, gamma = 2.2, logscale = false,
                 calc_max_value = false, max_value = 1, ArrayType = ArrayType,
                 FloatType = FloatType, num_ignore = 20, dims = dims,
                 solver_type = :semi_random, num_particles = num_particles,
                 num_iterations = num_iterations)
     elseif config == :fractal_flame
-        return (numthreads = 256, numcores = 4, gamma = 2.2, logscale = true,
+        return (numthreads = 256, gamma = 2.2, logscale = true,
                 calc_max_value = true, max_value = 1, ArrayType = ArrayType,
                 FloatType = FloatType, num_ignore = 20, dims = dims,
                 solver_type = :semi_random, num_particles = num_particles,
@@ -39,13 +39,12 @@ function default_params(a::Type{FractalLayer}; config = :standard,
     end
 end
 
-function params(a::Type{FractalLayer}; numthreads = 256, numcores = 4,
+function params(a::Type{FractalLayer}; numthreads = 256,
                 ArrayType = Array, FloatType = Float32,
                 logscale = false, gamma = 2.2, calc_max_value = false,
                 max_value = 1, num_ignore = 20, num_particles = 1000,
                 num_iterations = 1000, dims = 2, solver_type = :semi_random)
     return (numthreads = numthreads,
-            numcores = numcores,
             ArrayType = ArrayType,
             FloatType = FloatType,
             logscale = logscale,
@@ -80,7 +79,7 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                       world_size = (0.9, 1.6), position = (0.0, 0.0),
                       ppu = 1200, gamma = 2.2, logscale = false,
                       calc_max_value = false, max_value = 1,
-                      numcores = 4, numthreads = 256,
+                      numthreads = 256,
                       num_particles = 1000, num_iterations = 1000, dims = 2,
                       H1 = Hutchinson(), H2 = nothing,
                       solver_type = :semi_random)
@@ -115,7 +114,6 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                                    logscale = logscale,
                                    calc_max_value = calc_max_value,
                                    max_value = max_value,
-                                   numcores = numcores,
                                    numthreads = numthreads,
                                    num_particles = num_particles,
                                    num_iterations = num_iterations,
@@ -166,22 +164,17 @@ function to_canvas!(layer::FractalLayer)
     if layer.params.calc_max_value != 0
         update_params!(layer; max_value = maximum(layer.values))
     end
-    if layer.params.ArrayType <: Array
-        kernel! = f(CPU(), layer.params.numcores)
-    elseif has_cuda_gpu() && layer.params.ArrayType <: CuArray
-        kernel! = f(CUDADevice(), layer.params.numthreads)
-    elseif has_rocm_gpu() && layer.params.ArrayType <: ROCArray
-        kernel! = f(ROCDevice(), layer.params.numthreads)
-    end
+    backend = get_backend(layer.canvas)
+    kernel! = f(backend, layer.params.numthreads)
 
     if layer.params.logscale
-        wait(kernel!(layer.canvas, layer.reds, layer.greens, layer.blues,
-                     layer.alphas, layer.values, layer.params.gamma,
-                     layer.params.max_value, ndrange = length(layer.canvas)))
+        kernel!(layer.canvas, layer.reds, layer.greens, layer.blues,
+                layer.alphas, layer.values, layer.params.gamma,
+                layer.params.max_value, ndrange = length(layer.canvas))
     else
-        wait(kernel!(layer.canvas, layer.reds, layer.greens, layer.blues,
-                     layer.alphas, layer.values,
-                     ndrange = length(layer.canvas)))
+        kernel!(layer.canvas, layer.reds, layer.greens, layer.blues,
+                layer.alphas, layer.values,
+                ndrange = length(layer.canvas))
     end
 
     return nothing

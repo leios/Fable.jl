@@ -1,7 +1,7 @@
 export ImageLayer
 
 mutable struct ImageLayer <: AbstractLayer
-    canvas::Union{Array{C}, CuArray{C}, ROCArray{C}} where C <: RGBA
+    canvas::AT where AT <: AbstractArray
     position::Tuple
     world_size::Tuple
     ppu::Number
@@ -16,7 +16,6 @@ function ImageLayer(img;
                     ppu = 1200,
                     ArrayType = Array,
                     FloatType = Float32,
-                    numcores = 4,
                     numthreads = 256)
 
     world_size = (size(img)[1]/ppu, size(img)[2]/ppu)
@@ -25,7 +24,6 @@ function ImageLayer(img;
                       params(ImageLayer;
                              ArrayType = ArrayType,
                              FloatType = FloatType,
-                             numcores = numcores,
                              numthreads = numthreads),
                       postprocessing_steps)
 
@@ -37,7 +35,6 @@ function ImageLayer(filename::String;
                     ppu = 1,
                     ArrayType = Array,
                     FloatType = Float32,
-                    numcores = 4,
                     numthreads = 256)
 
     img = load(filename)
@@ -46,7 +43,6 @@ function ImageLayer(filename::String;
                       ppu = ppu,
                       ArrayType = ArrayType,
                       FloatType = FloatType,
-                      numcores = numcores,
                       numthreads = numthreads,
                       postprocessing_steps = postprocessing_steps)
 
