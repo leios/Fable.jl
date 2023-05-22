@@ -1,7 +1,7 @@
 name = "Fable"
 uuid = "a3ea4736-0a3b-4c29-ac8a-20364318a635"
 authors = ["James Schloss <jrs.schloss@gmail.com>"]
-version = "0.0.1"
+version = "0.0.2"
 
 [deps]
 ImageIO = "82e4d734-157c-48bb-816b-45c225c6df19"
