@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Post Processing · Fable.jl</title><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img src="../assets/logo.png" alt="Fable.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../">Fable.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">General Information</a></li><li><a class="tocitem" href="../layering/">Layering</a></li><li><a class="tocitem" href="../time_interface/">Time Interface</a></li><li class="is-active"><a class="tocitem" href>Post Processing</a><ul class="internal"><li><a class="tocitem" href="#General-Notes"><span>General Notes</span></a></li><li><a class="tocitem" href="#Clipping"><span>Clipping</span></a></li><li><a class="tocitem" href="#Filtering"><span>Filtering</span></a></li><li><a class="tocitem" href="#Sobel-operator"><span>Sobel operator</span></a></li><li><a class="tocitem" href="#Outlines"><span>Outlines</span></a></li><li><a class="tocitem" href="#Building-your-own"><span>Building your own</span></a></li></ul></li><li><a class="tocitem" href="../research_directions/">Research Directions</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../examples/swirled_square/">Rotating Square</a></li><li><a class="tocitem" href="../examples/smear/">Simple Smears</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Post Processing</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Post Processing</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/leios/Fable.jl/blob/main/docs/src/postprocessing.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Post-processing"><a class="docs-heading-anchor" href="#Post-processing">Post processing</a><a id="Post-processing-1"></a><a class="docs-heading-anchor-permalink" href="#Post-processing" title="Permalink"></a></h1><p>Once you have generated an image via any of the provided Fractal Executables (such as Colors, Shaders, or Hutchinson operators), you may want to do additional operations before writing to file. Right now, we support the following operations:</p><ul><li><strong>Clipping</strong>: This is the process of turning any pixel above a given threshold intensity into another desired color.</li><li><strong>Filtering</strong>: This is essentially a convolution with a provided filter, for effects like a Gaussian blur.</li><li><strong>Sobel</strong>: This is a Sobel filter (without directional information). It is useful for edge detection or simple outlines.</li><li><strong>Outlines</strong>: This takes the Sobel information and turns it into a more distinct outline.</li></ul><p>In this discussion, I will also describe how you may write your own post processing option, if you want. All the examples can be found in <code>examples/postprocessing.md</code>.</p><h2 id="General-Notes"><a class="docs-heading-anchor" href="#General-Notes">General Notes</a><a id="General-Notes-1"></a><a class="docs-heading-anchor-permalink" href="#General-Notes" title="Permalink"></a></h2><p>The <code>postprocess!(...)</code> function is called when using <code>write_image(...)</code> or <code>write_video(...)</code>. This means that the post processing step happens after the all FractalExecutables have been <code>run(...)</code>. Importantly, all post processing steps act exclusively on the <code>canvas</code> for each <code>AbstractLayer</code> type. Each <code>canvas</code> is essentially an <code>Array</code> (<code>CuArray</code> or <code>ROCArray</code>) of <code>RGBA</code> values that are initialized before post processing occurs. Each post processing step is performed in the order they are added to the <code>postprocessing_steps</code> <code>Vector</code> in each <code>AbstractLayer</code>.</p><p>There is no default post process for <code>Shader</code> and <code>Color</code> layers, which essentially means that no post process will be performed unless specified by the user. For <code>FractalLayer</code>s, there is always a <code>CopyToCanvas(...)</code> post process, which essentially takes the <code>RGBA</code> information from the <code>run(...)</code> function and turns it into a <code>canvas</code> for later post processing steps. In practice, this is a small discrepancy that users should not need to worry about.</p><p>For the following examples, we will be performing post processing on a simple circle created via a FractalExecutable:</p><pre><code class="nohighlight hljs">function quick_circle(num_particles, num_iterations; ArrayType = Array,
+                      filename = &quot;out.png&quot;)
+    circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
+
+    fl = FractalLayer(; H1 = circle, ArrayType = ArrayType)
+
+    run!(fl)
+    write_image(fl; filename = filename)
+end</code></pre><p>This will create a pink circle that looks like this:</p><p><img src="../res/postprocessing_base.png" alt="A simple circle"/></p><h2 id="Clipping"><a class="docs-heading-anchor" href="#Clipping">Clipping</a><a id="Clipping-1"></a><a class="docs-heading-anchor-permalink" href="#Clipping" title="Permalink"></a></h2><p>By default, the <code>Clip</code> post process will turn any <code>RGBA</code> value above a pre-defined <code>threshold</code> to another designated color; however, you can change the <code>clip_op</code>(clip operator) to use any function instead of <code>&gt;</code>. You may also change how the intensity is calculated by passing in an <code>intensity_function</code> argument. Fable.jl currently supports the following intensity functions:</p><pre><code class="nohighlight hljs">@inline function simple_intensity(c::CT) where CT &lt;: Union{RGB}
+   return (c.r/3) + (c.g/3) + (c.b/3)
+end</code></pre><p>and</p><pre><code class="nohighlight hljs">@inline function perceptive_intensity(c::CT) where CT &lt;: Union{RGBA}
+    return c.alpha * ((0.21 * c.r) + (0.72 * c.g) + (0.07 * c.b))
+end</code></pre><p>The latter is meant to more realistically portray to how humans perceive light.</p><p>The <code>Clip</code> post process can be created like so:</p><pre><code class="nohighlight hljs">clip = Clip(; threshold = 0.5, color = RGBA(0,0,0,1),
+              intensity_function = simple_intensity, clip_op = &gt;)</code></pre><p>Note that the key word arguments above are also the defaults for the <code>Clip</code> post process. Here is a quick example:</p><pre><code class="nohighlight hljs">function clip_example(num_particles, num_iterations; ArrayType = Array,
+                      filename = &quot;clip_out.png&quot;)
+
+    circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
+
+    clip = Clip(; threshold = 0.5, color = RGBA(1, 1, 0, 1))
+
+    fl = FractalLayer(; H1 = circle, ArrayType = ArrayType,
+                        postprocessing_steps = [clip])
+
+    run!(fl)
+    write_image(fl; filename = filename)
+end</code></pre><p>This will turn our pink ball yellow:</p><p><img src="../res/postprocessing_clip.png" alt="A yellow circle"/></p><h2 id="Filtering"><a class="docs-heading-anchor" href="#Filtering">Filtering</a><a id="Filtering-1"></a><a class="docs-heading-anchor-permalink" href="#Filtering" title="Permalink"></a></h2><p>The <code>Filter</code> post process essentially performs a convolution with a provided filter. Convolutions are somewhat complicated to understand, but if you want to learn more, please check out the chapter(s) available on the <a href="https://www.algorithm-archive.org/contents/convolutions/convolutions.html">Algorithm Archive</a>. All the necessary information for understanding how this post process works can be found there, along with an example using the <code>Sobel</code> operator.</p><p>By default, Fable.jl provides the following filters:</p><p><strong>Identity</strong>: This is a test filter and just returns the exact image back</p><pre><code class="nohighlight hljs">function Identity(; filter_size = 3, ArrayType = Array)
+    if iseven(filter_size)
+        filter_size = filter_size - 1
+        @warn(&quot;filter sizes must be odd! New filter size is &quot; *
+              string(filter_size)*&quot;!&quot;)
+    end
+    filter = zeros(filter_size, filter_size)
+    idx = ceil(Int, filter_size*0.5)
+    filter[idx, idx] = 1
+
+    return Filter(filter!, ArrayType(filter), nothing, false)
+end
+</code></pre><p><strong>Gaussian</strong> / <strong>Blur</strong>: these perform a Gaussian blur of the image.</p><pre><code class="nohighlight hljs">function gaussian(x,y, sigma)
+    return (1/(2*pi*sigma*sigma))*exp(-((x*x + y*y)/(2*sigma*sigma)))
+end
+
+function Blur(; filter_size = 3, ArrayType = Array, sigma = 1.0)
+    return Gaussian(; filter_size = filter_size, ArrayType = ArrayType,
+                      sigma = sigma)
+end
+
+function Gaussian(; filter_size = 3, ArrayType = Array, sigma = 1.0)
+    if iseven(filter_size)
+        filter_size = filter_size - 1
+        @warn(&quot;filter sizes must be odd! New filter size is &quot; *
+              string(filter_size)*&quot;!&quot;)
+    end
+    if filter_size &gt; 1
+        filter = zeros(filter_size, filter_size)
+        for i = 1:filter_size
+            y = -1 + 2*(i-1)/(filter_size-1) 
+            for j = 1:filter_size
+                x = -1 + 2*(j-1)/(filter_size-1) 
+                filter[i,j] = gaussian(x, y, sigma)
+            end
+        end
+    else
+        filter = [1.0]
+    end
+
+    filter ./= sum(filter)
+    return Filter(filter!, ArrayType(filter), nothing, false)
+end</code></pre><p>The <code>Sobel</code> post process also uses a <code>Filter</code>, but it will be discussed separately in the next section.</p><p>The only important note here is that because users are creating kernels themselves, it is possible to accidentally create a kernel of a different <code>ArrayType</code> than the layer&#39;s <code>canvas</code>. In this case, the kernel will change the array type of the filter and provide the following warning:</p><pre><code class="nohighlight hljs">Info: filter array type not the same as canvas!
+Converting filter to canvas type...</code></pre><p>Finally, here is a quick example using the Gaussian <code>Blur</code> post process (note you can also use the same post process by calling <code>Gaussian</code> instead in the same way):</p><pre><code class="nohighlight hljs">function blur_example(num_particles, num_iterations; ArrayType = Array,
+                      filter_size = 3, filename = &quot;blur_out.png&quot;)
+    circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
+
+    blur = Blur(; filter_size = filter_size)
+
+    fl = FractalLayer(; H1 = circle, ArrayType = ArrayType,
+                        postprocessing_steps = [blur])
+
+    run!(fl)
+    write_image(fl; filename = filename)
+end</code></pre><p>This will produce the following image when using a <span>$100\times 100$</span> filter:</p><p><img src="../res/postprocessing_blur.png" alt="A blurred circle"/></p><h2 id="Sobel-operator"><a class="docs-heading-anchor" href="#Sobel-operator">Sobel operator</a><a id="Sobel-operator-1"></a><a class="docs-heading-anchor-permalink" href="#Sobel-operator" title="Permalink"></a></h2><p>The Sobel operator is often called an &quot;image derivative.&quot; More information can be found on the <a href="https://www.algorithm-archive.org/contents/convolutions/2d/2d.html">Algorithm Archive</a>. In general, this operation can be split into 3 steps:</p><ol><li>A gradient in the <span>$x$</span> direction (<span>$G_x$</span>)</li><li>A gradient in the <span>$y$</span> direction (<span>$G_y$</span>)</li><li>A sum of both gradients: <span>$\sqrt{G_x^2 + G_y^2}$</span></li></ol><p>As an important note, many implementations of the Sobel operator also return gradient direction information. This part of the operation is not performed in Fable.jl by default.</p><p>Here is a quick example using the Sobel operator:</p><pre><code class="nohighlight hljs">function sobel_example(num_particles, num_iterations; ArrayType = Array,
+                       filename = &quot;sobel_out.png&quot;)
+    circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
+
+    sobel = Sobel()
+
+    fl = FractalLayer(; H1 = circle, ArrayType = ArrayType,
+                        postprocessing_steps = [sobel])
+
+    run!(fl)
+    write_image(fl; filename = filename)
+end</code></pre><p>This will produce the following image:</p><p><img src="../res/postprocessing_sobel.png" alt="A sobel circle"/></p><h2 id="Outlines"><a class="docs-heading-anchor" href="#Outlines">Outlines</a><a id="Outlines-1"></a><a class="docs-heading-anchor-permalink" href="#Outlines" title="Permalink"></a></h2><p>Outlines are surprisingly tricky to get right. I will not argue that the <code>Outline</code> implementation in Fable.jl is perfect, but it works well enough for now.</p><p>The current implementation was inspired by Canny edge detection and does the following:</p><ol><li>Blurs the given image by some factor related to the user-provided <code>linewidth</code> variable.</li><li>Performs a Sobel operation on the image to get the image derivative.</li><li>Performs naive ridge detection, which sets any value in the Sobel-operated canvas above a certain threshold to be the provided outline <code>color</code>. This is essentially a <code>Clip</code> post process from above.</li></ol><p>There are a bunch of key word arguments you can use for <code>Outline</code>:</p><pre><code class="nohighlight hljs">outline = Outline(; linewidth = 1,
+                   color = RGBA(1.0, 1.0, 1.0, 1.0),
+                   intensity_function = simple_intensity,
+                   object_outline = false,
+                   threshold = 1/(linewidth*linewidth+1),
+                   sigma = 1)
+</code></pre><p>Here, <code>linewidth</code> is the desired line width of the outline, <code>color</code> is the desired color, <code>intensity_function</code> is the intensity function as described in the <code>Clip</code> subsection above, <code>threshold</code> is used for ridge detection, and <code>sigma</code> defines the width of the Gaussian for the blur kernel. The only tricky argument is <code>object_outline</code>, which is specifically for FractalLayers. It indicates that the user wants to outline the fractal object, itself, not any inner components from potentially using a <code>FractalUserMethod</code> for coloring the fractal object.</p><p>Here is a quick example using the Outline post process:</p><pre><code class="nohighlight hljs">function outline_example(num_particles, num_iterations; ArrayType = Array,
+                         filename = &quot;outline_out.png&quot;, linewidth = 1,
+                         object_outline = false)
+    circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
+
+    outline = Outline(; linewidth = linewidth, object_outline = object_outline)
+
+    fl = FractalLayer(; H1 = circle, ArrayType = ArrayType,
+                        postprocessing_steps = [outline])
+
+    run!(fl)
+    write_image(fl; filename = filename)
+end</code></pre><p>This will produce the following image:</p><p><img src="../res/postprocessing_outline.png" alt="An outlined circle"/></p><h2 id="Building-your-own"><a class="docs-heading-anchor" href="#Building-your-own">Building your own</a><a id="Building-your-own-1"></a><a class="docs-heading-anchor-permalink" href="#Building-your-own" title="Permalink"></a></h2><p>Finally, we will touch on what is necessary to build a post process from scratch. Right now, this can be done by creating a new <code>AbstractPostProcess</code> struct, similar to those used in the above examples. Here is the <code>Clip</code> post processing struct for reference:</p><pre><code class="nohighlight hljs">struct Clip &lt;: AbstractPostProcess
+    op::Function
+    clip_op::Function
+    intensity_function::Function
+    threshold::Number
+    color::CT where CT &lt;: Union{RGB, RGBA}
+    initialized::Bool
+end</code></pre><p>To be honest, this part of the code is a little sticky right now, so feel free to try to clean it up in a PR, but the minimal <code>AbstractPostProcess</code> struct would look like this:</p><pre><code class="nohighlight hljs">struct Minimal &lt;: AbstractPostProcess
+    op::Function
+    initialized::Bool
+end</code></pre><p>Here, <code>op</code> is the provided function the <code>AbstractPostProcess</code> should use, while <code>initialized</code> is a boolean value indicating whether the post process needs initialization. This is useful for post processes that require additional <code>canvas</code> parameters, like the <code>Filter</code> post process:</p><pre><code class="nohighlight hljs">mutable struct Filter &lt;: AbstractPostProcess
+    op::Function
+    filter::AT where AT &lt;: Union{Array, CuArray, ROCArray}
+    canvas::AT where AT &lt;: Union{Array, CuArray, ROCArray, Nothing}
+    initialized::Bool
+end</code></pre><p>If <code>initialized</code> is set to <code>false</code>, the <code>initialize!(...)</code> function will be called when using the post process for the first time. Here is the <code>initialize!(...)</code> function for <code>Filter</code>:</p><pre><code class="nohighlight hljs">function initialize!(filter::Filter, layer::AL) where AL &lt;: AbstractLayer
+    ArrayType = layer.params.ArrayType
+    if !(typeof(filter.filter) &lt;: layer.params.ArrayType)
+        @info(&quot;filter array type not the same as canvas!\nConverting filter to canvas type...&quot;)
+        filter.filter = ArrayType(filter.filter)
+    end
+    filter.canvas = ArrayType(zeros(eltype(layer.canvas), size(layer.canvas)))
+end</code></pre><p>Note that all <code>initialize!</code> functions should have the args <code>(filter::Filter, layer::AL)</code>. In practice, these functions are usually used to make sure that the post process canvas has the same <code>ArrayType</code> and size as the layer.</p><p>As a final note: when designing an <code>op</code> function to be used for each post process, remember that the <code>ArrayType</code> could be a <code>CuArray</code> or <code>ROCArray</code>, so try to make the functions GPU friendly. This is why many of the post processes are written in KernelAbstractions.</p><p>Again, this part of the code is sticky, so if you need to add another post process, feel free to create an issue and we can talk about whether it makes sense to add directly to Fable.jl!</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../time_interface/">« Time Interface</a><a class="docs-footer-nextpage" href="../research_directions/">Research Directions »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Tuesday 23 May 2023 14:53">Tuesday 23 May 2023</span>. Using Julia version 1.9.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
