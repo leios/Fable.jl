@@ -2,7 +2,7 @@
 
 [![Developer Documentation][docs-latest-img]][docs-url]
 
-[docs-url]: https://www.leioslabs.com/Fae.jl/dev/
+[docs-url]: https://www.leioslabs.com/Fable.jl/dev/
 [docs-latest-img]: https://img.shields.io/badge/docs-dev-blue.svg
 
 The Fractal Animation Engine, Fae.jl, is an open research project with the goal of creating a new, general purpose rendering engine based on [Iterated Function Systems](https://www.algorithm-archive.org/contents/IFS/IFS.html) (IFS).
