@@ -1,6 +1,6 @@
 export in_ellipse, in_rectangle
 
-@inline function in_ellipse(x, y, position, rotation, r1, r2)
+@inline function in_ellipse(y, x, position, rotation, r1, r2)
     r = sqrt(x*x + y*y)
     theta = atan(y,x)
     x2 = r*cos(theta-rotation)
@@ -12,7 +12,7 @@ export in_ellipse, in_rectangle
     return false
 end
 
-@inline function in_rectangle(x, y, position, rotation, scale_x, scale_y)
+@inline function in_rectangle(y, x, position, rotation, scale_x, scale_y)
     r = sqrt(x*x + y*y)
     theta = atan(y,x)
     x2 = r*cos(theta-rotation)
