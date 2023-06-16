@@ -1,3 +1,5 @@
+export quick_seed, simple_rand
+
 # Numbers come from...
 #@article{l1999tables,
 #  title={Tables of linear congruential generators of different sizes and good lattice structure},
