@@ -1,6 +1,15 @@
 using Fable
 using Images
 
+blob = @fum shader function blob(y, x; position = (0,0), radius = 1,
+                                 rotation = 0.0, frequencies = (),
+                                 amplitudes = ())
+    if in_blob(y, x, position, rotation, radius, frequencies, amplitudes)
+        return RGBA(1,1,1,1)
+    end
+    return color
+end
+
 radial = @fum shader function radial(y, x; origin = (0,0))
     r = sqrt((x-origin[2])*(x-origin[2]) + (y-origin[1])*(y-origin[1]))
 
