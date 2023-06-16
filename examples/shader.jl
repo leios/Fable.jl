@@ -13,16 +13,16 @@ radial = @fum shader function radial(y, x; origin = (0,0))
 end
 
 rectangle = @fum shader function rectangle(; position = (0,0), rotation = 0,
-                                      scale_x = 1, scale_y = 1)
-    if in_rectangle(x, y, position, rotation, scale_x, scale_y)
+                                           scale_x = 1, scale_y = 1)
+    if in_rectangle(y, x, position, rotation, scale_x, scale_y)
         return RGBA(1,1,1,1)
     end
     return color
 end
 
 ellipse = @fum shader function ellipse(; position = (0,0), rotation = 0,
-                                  r1 = 1, r2 = 1)
-    if in_ellipse(x, y, position, rotation, r1, r2)
+                                       r1 = 1, r2 = 1)
+    if in_ellipse(y, x, position, rotation, r1, r2)
         return RGBA{Float32}(1,1,1,1)
     else
         return RGBA{Float32}(0,0,0,0)
