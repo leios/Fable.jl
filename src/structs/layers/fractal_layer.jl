@@ -82,11 +82,13 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                       numthreads = 256,
                       num_particles = 1000, num_iterations = 1000, dims = 2,
                       H1 = Hutchinson(), H2 = nothing,
-                      solver_type = :semi_random)
+                      solver_type = :semi_random,
+                      num_objects = 1)
     postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
 
     res = (ceil(Int, world_size[1]*ppu), ceil(Int, world_size[2]*ppu))
-    p = generate_points(num_particles; dims = dims, ArrayType = ArrayType)
+    p = generate_points(num_particles; dims = dims, ArrayType = ArrayType,
+                        num_objects = num_objects)
     v = ArrayType(zeros(Int,res))
     r = ArrayType(zeros(FloatType,res))
     g = ArrayType(zeros(FloatType,res))
