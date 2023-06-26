@@ -127,21 +127,25 @@ end
 @generated function semi_random_loop!(layer_values, layer_reds, layer_greens,
                                       layer_blues, layer_alphas, fxs, clr_fxs, 
                                       pt, clr, frame, fnums, kwargs, clr_kwargs,
-                                      bounds, dims, bin_widths,
+                                      probs, bounds, dims, bin_widths,
                                       iteration, num_ignore)
     exs = Expr[]
+    push!(exs, :(temp_prob = 0.0))
     for i = 1:length(fxs.parameters)
         ex = quote
             pt = fxs[$i](pt.y, pt.x, frame; kwargs[$i]...)
             clr = clr_fxs[$i](pt.y, pt.x, clr, frame; clr_kwargs[$i]...)
+            temp_prob += probs[$i]
+            if isaprox(1.0) || temp_prob >= 1.0
+                histogram_output!(layer_values, layer_reds, layer_greens,
+                                  layer_blues, layer_alphas, pt, clr, bounds,
+                                  dims, bin_widths, iteration, num_ignore)
+                temp_prob = 0.0
+            end
         end
         push!(exs, ex)
     end
-    output_ex = quote
-        histogram_output!(layer_values, layer_reds, layer_greens,
-                          layer_blues, layer_alphas, pt, clr,
-                          bounds, dims, bin_widths, iteration, num_ignore)
-    end
+
     push!(exs, output_ex)
 
     # to return 3 separate colors to mix separately
@@ -308,7 +312,7 @@ end
                                   H_post_fxs[j], H_post_clrs[j],
                                   pt, clr, frame, H_post_fnums[j],
                                   H_post_kwargs[j], H_post_clr_kwargs[j],
-                                  bounds, dims, bin_widths,
+                                  H_post_probs[j], bounds, dims, bin_widths,
                                   i, num_ignore)
 
             end
