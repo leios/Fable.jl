@@ -16,9 +16,9 @@ Hutchinson(H::Hutchinson; depth = 0) = H
 
 function Hutchinson(fum::FractalUserMethod, color_fum::FractalUserMethod,
                     prob::Number)
-    return Hutchinson((fum.fx,), (fum.kwargs,), (fum.fis,),
-                      (color_fum.fx,), (color_fum.kwargs,), (color_fum.fis,),
-                      (prob,), (1,))
+    return Hutchinson(((fum.fx,),), ((fum.kwargs,),), ((fum.fis,),),
+                      ((color_fum.fx,),), ((color_fum.kwargs,),),
+                      ((color_fum.fis,),), ((prob,),), ((1,),))
 end
 
 function color_splat(fo_color::FractalUserMethod)
@@ -40,9 +40,9 @@ function Hutchinson(fo::FractalOperator; depth = 0)
     else
         prob = fo.prob
     end
-    return Hutchinson((fo.op.fx,), (fo.op.kwargs,), (fo.op.fis,),
-                      color_splat(fo.color)...,
-                      (prob,), (1,))
+    return Hutchinson(((fo.op.fx,),), ((fo.op.kwargs,),), ((fo.op.fis,),),
+                      (color_splat(fo.color)...,),
+                      ((prob,),), ((1,),))
 end
 
 function Hutchinson(H::Hutchinson, H_post::Hutchinson)

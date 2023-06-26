@@ -182,7 +182,7 @@ end
     return flag
 end
 
-function iterate!(layer::FractalLayer, H1::Hutchinson, n,
+function iterate!(layer::FractalLayer, H::Hutchinson, n,
                   bounds, bin_widths, H_post::Union{Nothing, Hutchinson};
                   frame = 0)
     if isnothing(H_post) 
@@ -202,17 +202,17 @@ function iterate!(layer::FractalLayer, H1::Hutchinson, n,
     kernel! = fx(backend, layer.params.numthreads)
 
     if isnothing(H_post)
-        kernel!(layer.particles, n, H1.fxs, combine(H1.kwargs, H1.fis),
-                H1.color_fxs, combine(H1.color_kwargs, H1.color_fis),
-                H1.prob_set, H1.fnums, layer.values,
+        kernel!(layer.particles, n, H.fxs, combine(H.kwargs, H.fis),
+                H.color_fxs, combine(H.color_kwargs, H.color_fis),
+                H.prob_set, H.fnums, layer.values,
                 layer.reds, layer.greens, layer.blues, layer.alphas,
                 frame, bounds, Tuple(bin_widths),
                 layer.params.num_ignore, max_range,
                 ndrange=size(layer.particles)[1])
     else
-        kernel!(layer.particles, n, H1.fxs, combine(H1.kwargs, H1.fis),
-                H1.color_fxs, combine(H1.color_kwargs, H1.color_fis),
-                H1.prob_set, H1.fnums,
+        kernel!(layer.particles, n, H.fxs, combine(H.kwargs, H.fis),
+                H.color_fxs, combine(H.color_kwargs, H.color_fis),
+                H.prob_set, H.fnums,
                 H_post.fxs, combine(H_post.kwargs, H_post.fis),
                 H_post.color_fxs, combine(H_post.color_kwargs,
                                           H_post.color_fis),
@@ -238,26 +238,28 @@ end
     clr = RGBA{Float32}(0,0,0,0)
 
     seed = quick_seed(tid)
-    fid = create_fid(H_probs, H_fnums, seed)
 
     for i = 1:n
-        # quick way to tell if in range to be calculated or not
-        sketchy_sum = absum(pt)
+        for j = 1:size(points, 2)
+            # quick way to tell if in range to be calculated or not
+            sketchy_sum = absum(pt)
         
-        if sketchy_sum < max_range
-            if length(H_fnums) > 1 || H_fnums[1] > 1
-                seed = simple_rand(seed)
-                fid = create_fid(H_probs, H_fnums, seed)
-            else
-                fid = UInt(1)
+            if sketchy_sum < max_range
+                if length(H_fnums[j]) > 1 || H_fnums[j][1] > 1
+                    seed = simple_rand(seed)
+                    fid = create_fid(H_probs[j], H_fnums[j], seed)
+                else
+                    fid = UInt(1)
+                end
+    
+                pt = pt_loop(H_fxs[j], fid, pt, frame, H_fnums[j], H_kwargs[j])
+                clr = clr_loop(H_clrs[j], fid, pt, clr, frame,
+                               H_fnums[j], H_clr_kwargs[j])
+    
+                histogram_output!(layer_values, layer_reds, layer_greens,
+                                  layer_blues, layer_alphas, pt, clr,
+                                  bounds, dims, bin_widths, i, num_ignore)
             end
-
-            pt = pt_loop(H_fxs, fid, pt, frame, H_fnums, H_kwargs)
-            clr = clr_loop(H_clrs, fid, pt, clr, frame, H_fnums, H_clr_kwargs)
-
-            histogram_output!(layer_values, layer_reds, layer_greens,
-                              layer_blues, layer_alphas, pt, clr,
-                              bounds, dims, bin_widths, i, num_ignore)
         end
     end
 
@@ -265,9 +267,9 @@ end
 
 end
 
-@kernel function semi_random_chaos_kernel!(points, n, H1_fxs, H1_kwargs,
-                                           H1_clrs, H1_clr_kwargs,
-                                           H1_probs, H1_fnums,
+@kernel function semi_random_chaos_kernel!(points, n, H_fxs, H_kwargs,
+                                           H_clrs, H_clr_kwargs,
+                                           H_probs, H_fnums,
                                            H_post_fxs, H_post_kwargs,
                                            H_post_clrs, H_post_clr_kwargs,
                                            H_post_probs, H_post_fnums,
@@ -283,40 +285,42 @@ end
     dims = Fable.dims(pt)
 
     seed = quick_seed(tid)
-    fid = create_fid(H1_probs, H1_fnums, seed)
 
     for i = 1:n
-        # quick way to tell if in range to be calculated or not
-        sketchy_sum = absum(pt)
+        for j = 1:size(points, 2)
+            # quick way to tell if in range to be calculated or not
+            sketchy_sum = absum(pt)
 
-        if sketchy_sum < max_range
-            if length(H1_fnums) > 1 || H1_fnums[1] > 1
-                seed = simple_rand(seed)
-                fid = create_fid(H1_probs, H1_fnums, seed)
-            else
-                fid = UInt(1)
+            if sketchy_sum < max_range
+                if length(H_fnums[j]) > 1 || H_fnums[j][1] > 1
+                    seed = simple_rand(seed)
+                    fid = create_fid(H_probs[j], H_fnums[j], seed)
+                else
+                    fid = UInt(1)
+                end
+
+                pt = pt_loop(H_fxs[j], fid, pt, frame, H_fnums[j], H_kwargs[j])
+                clr = clr_loop(H_clrs[j], fid, pt, clr,
+                               frame, H_fnums[j], H_clr_kwargs[j])
+
+                semi_random_loop!(layer_values, layer_reds, layer_greens,
+                                  layer_blues, layer_alphas,
+                                  H_post_fxs[j], H_post_clrs[j],
+                                  pt, clr, frame, H_post_fnums[j],
+                                  H_post_kwargs[j], H_post_clr_kwargs[j],
+                                  bounds, dims, bin_widths,
+                                  i, num_ignore)
+
             end
-
-            pt = pt_loop(H1_fxs, fid, pt, frame, H1_fnums, H1_kwargs)
-            clr = clr_loop(H1_clrs, fid, pt, clr,
-                           frame, H1_fnums, H1_clr_kwargs)
-
-            semi_random_loop!(layer_values, layer_reds, layer_greens,
-                              layer_blues, layer_alphas,
-                              H_post_fxs, H_post_clrs,
-                              pt, clr, frame, H_post_fnums, H_post_kwargs,
-                              H_post_clr_kwargs, bounds, dims, bin_widths, i,
-                              num_ignore)
-
         end
     end
 
     @inbounds points[tid] = pt
 end
 
-@kernel function naive_chaos_kernel!(points, n, H1_fxs, H1_kwargs,
-                                     H1_clrs, H1_clr_kwargs,
-                                     H1_probs, H1_fnums,
+@kernel function naive_chaos_kernel!(points, n, H_fxs, H_kwargs,
+                                     H_clrs, H_clr_kwargs,
+                                     H_probs, H_fnums,
                                      H_post_fxs, H_post_kwargs,
                                      H_post_clrs, H_post_clr_kwargs,
                                      H_post_probs, H_post_fnums,
@@ -334,41 +338,43 @@ end
     output_clr = RGBA{Float32}(0,0,0,0)
 
     seed = quick_seed(tid)
-    fid = create_fid(H1_probs, H1_fnums, seed)
-    fid_2 = create_fid(H_post_probs, H_post_fnums, seed)
 
     for i = 1:n
-        # quick way to tell if in range to be calculated or not
-        sketchy_sum = absum(pt)
+        for j = 1:size(points, 2)
+            # quick way to tell if in range to be calculated or not
+            sketchy_sum = absum(pt)
 
-        if sketchy_sum < max_range
-            if length(H1_fnums) > 1 || H1_fnums[1] > 1
-                seed = simple_rand(seed)
-                fid = create_fid(H1_probs, H1_fnums, seed)
-            else
-                fid = UInt(1)
+            if sketchy_sum < max_range
+                if length(H_fnums[j]) > 1 || H_fnums[j][1] > 1
+                    seed = simple_rand(seed)
+                    fid = create_fid(H_probs[j], H_fnums[j], seed)
+                else
+                    fid = UInt(1)
+                end
+
+                if length(H_post_fnums[j]) > 1 || H_post_fnums[j][1] > 1
+                    seed = simple_rand(seed)
+                    fid_2 = create_fid(H_post_probs[j], H_post_fnums[j], seed)
+                else
+                    fid_2 = UInt(1)
+                end
+
+                pt = pt_loop(H_fxs[j], fid, pt, frame, H_fnums[j], H_kwargs[j])
+                clr = clr_loop(H_clrs[j], fid, pt, clr,
+                               frame, H_fnums[j], H_clr_kwargs[j])
+
+                output_pt = pt_loop(H_post_fxs[j], fid, pt, frame,
+                                    H_post_fnums[j], H_post_kwargs[j])
+                output_clr = clr_loop(H_post_clrs[j], fid_2, pt, clr,
+                                      frame, H_post_fnums[j],
+                                      H_post_clr_kwargs[j])
+
+                histogram_output!(layer_values, layer_reds, layer_greens,
+                                  layer_blues, layer_alphas, output_pt,
+                                  output_clr, bounds, dims, bin_widths,
+                                  i, num_ignore)
+
             end
-
-            if length(H_post_fnums) > 1 || H_post_fnums[1] > 1
-                seed = simple_rand(seed)
-                fid_2 = create_fid(H_post_probs, H_post_fnums, seed)
-            else
-                fid_2 = UInt(1)
-            end
-
-            pt = pt_loop(H1_fxs, fid, pt, frame, H1_fnums, H1_kwargs)
-            clr = clr_loop(H1_clrs, fid, pt, clr,
-                           frame, H1_fnums, H1_clr_kwargs)
-
-            output_pt = pt_loop(H_post_fxs, fid, pt, frame,
-                                H_post_fnums, H_post_kwargs)
-            output_clr = clr_loop(H_post_clrs, fid_2, pt, clr,
-                                  frame, H_post_fnums, H_post_clr_kwargs)
-
-            histogram_output!(layer_values, layer_reds, layer_greens,
-                              layer_blues, layer_alphas, output_pt, output_clr,
-                              bounds, dims, bin_widths, i, num_ignore)
-
         end
     end
 
@@ -389,7 +395,7 @@ function run!(layer::FractalLayer; frame = 0)
 
     bounds = find_bounds(layer)
 
-    iterate!(layer, layer.H1, layer.params.num_iterations,
+    iterate!(layer, layer.H, layer.params.num_iterations,
              bounds, bin_widths, layer.H_post; frame = frame)
 
     return layer
