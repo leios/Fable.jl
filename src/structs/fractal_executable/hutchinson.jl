@@ -45,15 +45,15 @@ function Hutchinson(fo::FractalOperator; depth = 0)
                       (prob,), (1,))
 end
 
-function Hutchinson(H1::Hutchinson, H2::Hutchinson)
-    return Hutchinson((H1.fxs..., H2.fxs...),
-                      (H1.kwargs..., H2.kwargs...),
-                      (H1.fis..., H2.fis...),
-                      (H1.color_fxs..., H2.color_fxs...),
-                      (H1.color_kwargs..., H2.color_kwargs...),
-                      (H1.color_fis..., H2.color_fis...),
-                      (H1.prob_set..., H2.prob_set...),
-                      (H1.fnums..., H2.fnums...))
+function Hutchinson(H::Hutchinson, H_post::Hutchinson)
+    return Hutchinson((H.fxs..., H_post.fxs...),
+                      (H.kwargs..., H_post.kwargs...),
+                      (H.fis..., H_post.fis...),
+                      (H.color_fxs..., H_post.color_fxs...),
+                      (H.color_kwargs..., H_post.color_kwargs...),
+                      (H.color_fis..., H_post.color_fis...),
+                      (H.prob_set..., H_post.prob_set...),
+                      (H.fnums..., H_post.fnums...))
 end
 
 function Hutchinson(fos::Union{Tuple, Vector}; depth = 0)

@@ -3,8 +3,8 @@ export FractalLayer, default_params, params, CopyToCanvas, to_canvas!
 # Note: the rgb components needed to be spread into separate arrays for indexing
 #       reasons in the KA kernels
 mutable struct FractalLayer <: AbstractLayer
-    H1::Union{Nothing, Hutchinson}
-    H2::Union{Nothing, Hutchinson}
+    H::Union{Nothing, Hutchinson}
+    H_post::Union{Nothing, Hutchinson}
     particles::APT where APT <: AbstractArray{AP} where AP <: AbstractPoint
     values::AIT where AIT <: AbstractArray{Int}
     reds::AFT where AFT <: AbstractArray{FT} where FT <: AbstractFloat
@@ -63,9 +63,9 @@ end
 function FractalLayer(p, v, r, g, b, a, c, position, world_size, ppu;
                       postprocessing_steps = AbstractPostProcess[],
                       config = standard,
-                      H1 = Hutchinson(), H2 = nothing)
+                      H = Hutchinson(), H_post = nothing)
     postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
-    return FractalLayer(H1, H2, p, v, r, g, b, a, c, position, world_size, ppu,
+    return FractalLayer(H, H_post, p, v, r, g, b, a, c, position, world_size, ppu,
                         default_params(FractalLayer,
                                        config = config,
                                        ArrayType = typeof(v),
@@ -81,7 +81,7 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                       calc_max_value = false, max_value = 1,
                       numthreads = 256,
                       num_particles = 1000, num_iterations = 1000, dims = 2,
-                      H1 = Hutchinson(), H2 = nothing,
+                      H = Hutchinson(), H_post = nothing,
                       solver_type = :semi_random,
                       num_objects = 1)
     postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
@@ -96,7 +96,7 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
     a = ArrayType(zeros(FloatType,res))
     c = ArrayType(fill(RGBA(FloatType(0),0,0,0), res))
     if config == :standard || config == :fractal_flame
-        return FractalLayer(H1, H2, p, v, r, g, b, a, c,
+        return FractalLayer(H, H_post, p, v, r, g, b, a, c,
                             position, world_size, ppu,
                             default_params(FractalLayer;
                                            ArrayType = ArrayType,
@@ -107,7 +107,7 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                                            dims = dims),
                             postprocessing_steps)
     else
-        return FractalLayer(H1, H2, p, v, r, g, b, a, c,
+        return FractalLayer(H, H_post, p, v, r, g, b, a, c,
                             position, world_size, ppu,
                             params(FractalLayer;
                                    ArrayType=ArrayType,

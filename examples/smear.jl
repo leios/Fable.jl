@@ -35,8 +35,8 @@ function smear_example(num_particles, num_iterations, total_frames;
     # now turning it into a fractal operator
     smear_transform = fee(Hutchinson, fo(smear))
 
-    layer.H1 = ball
-    layer.H2 = smear_transform
+    layer.H = ball
+    layer.H_post = smear_transform
 
     for i = 1:total_frames
 

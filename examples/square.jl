@@ -25,16 +25,16 @@ function square_example(num_particles, num_iterations;
 
     H = define_square(; position = [0.0, 0.0], rotation = pi/4,  color = colors)
     swirl_operator = fo(Flames.swirl)
-    H2 = nothing
+    H_post = nothing
     if transform_type == :outer_swirl
-        H2 = Hutchinson(swirl_operator)
+        H_post = Hutchinson(swirl_operator)
     elseif transform_type == :inner_swirl
         H = fee(Hutchinson, [H, Hutchinson(swirl_operator)])
     end
 
     layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
                          world_size = world_size, ppu = ppu,
-                         H1 = H, H2 = H2,
+                         H = H, H_post = H_post,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
 

@@ -89,7 +89,8 @@ end
     return fx(pt.y, pt.x, clr, frame; kwargs...)
 end
 
-@generated function call_clr_fx(fx::Tuple, pt::Point2D, clr, frame, kwargs::Tuple)
+@generated function call_clr_fx(fx::Tuple, pt::Point2D, clr,
+                                frame, kwargs::Tuple)
     exs = Expr[]
     for i = 1:length(fx.parameters)
         ex = :(clr = fx[$i](pt.y, pt.x, clr, frame; kwargs[$i]...))
@@ -123,7 +124,6 @@ end
     return Expr(:block, exs...)
 end
 
-
 @generated function semi_random_loop!(layer_values, layer_reds, layer_greens,
                                       layer_blues, layer_alphas, fxs, clr_fxs, 
                                       pt, clr, frame, fnums, kwargs, clr_kwargs,
@@ -134,13 +134,15 @@ end
         ex = quote
             pt = fxs[$i](pt.y, pt.x, frame; kwargs[$i]...)
             clr = clr_fxs[$i](pt.y, pt.x, clr, frame; clr_kwargs[$i]...)
-            histogram_output!(layer_values, layer_reds, layer_greens,
-                              layer_blues, layer_alphas, pt, clr,
-                              bounds, dims, bin_widths,
-                              iteration, num_ignore)
         end
         push!(exs, ex)
     end
+    output_ex = quote
+        histogram_output!(layer_values, layer_reds, layer_greens,
+                          layer_blues, layer_alphas, pt, clr,
+                          bounds, dims, bin_widths, iteration, num_ignore)
+    end
+    push!(exs, output_ex)
 
     # to return 3 separate colors to mix separately
     # return :(Expr(:tuple, $exs...))
@@ -181,9 +183,9 @@ end
 end
 
 function iterate!(layer::FractalLayer, H1::Hutchinson, n,
-                  bounds, bin_widths, H2::Union{Nothing, Hutchinson};
+                  bounds, bin_widths, H_post::Union{Nothing, Hutchinson};
                   frame = 0)
-    if isnothing(H2) 
+    if isnothing(H_post) 
         fx = naive_chaos_kernel!
     elseif layer.params.solver_type == :semi_random
         fx = semi_random_chaos_kernel!
@@ -199,7 +201,7 @@ function iterate!(layer::FractalLayer, H1::Hutchinson, n,
     backend = get_backend(layer.canvas)
     kernel! = fx(backend, layer.params.numthreads)
 
-    if isnothing(H2)
+    if isnothing(H_post)
         kernel!(layer.particles, n, H1.fxs, combine(H1.kwargs, H1.fis),
                 H1.color_fxs, combine(H1.color_kwargs, H1.color_fis),
                 H1.prob_set, H1.fnums, layer.values,
@@ -211,9 +213,10 @@ function iterate!(layer::FractalLayer, H1::Hutchinson, n,
         kernel!(layer.particles, n, H1.fxs, combine(H1.kwargs, H1.fis),
                 H1.color_fxs, combine(H1.color_kwargs, H1.color_fis),
                 H1.prob_set, H1.fnums,
-                H2.fxs, combine(H2.kwargs, H2.fis),
-                H2.color_fxs, combine(H2.color_kwargs, H2.color_fis),
-                H2.prob_set, H2.fnums, layer.values,
+                H_post.fxs, combine(H_post.kwargs, H_post.fis),
+                H_post.color_fxs, combine(H_post.color_kwargs,
+                                          H_post.color_fis),
+                H_post.prob_set, H_post.fnums, layer.values,
                 layer.reds, layer.greens, layer.blues, layer.alphas,
                 frame, bounds, Tuple(bin_widths),
                 layer.params.num_ignore, max_range,
@@ -265,9 +268,9 @@ end
 @kernel function semi_random_chaos_kernel!(points, n, H1_fxs, H1_kwargs,
                                            H1_clrs, H1_clr_kwargs,
                                            H1_probs, H1_fnums,
-                                           H2_fxs, H2_kwargs,
-                                           H2_clrs, H2_clr_kwargs,
-                                           H2_probs, H2_fnums,
+                                           H_post_fxs, H_post_kwargs,
+                                           H_post_clrs, H_post_clr_kwargs,
+                                           H_post_probs, H_post_fnums,
                                            layer_values, layer_reds,
                                            layer_greens, layer_blues,
                                            layer_alphas, frame, bounds,
@@ -299,10 +302,11 @@ end
                            frame, H1_fnums, H1_clr_kwargs)
 
             semi_random_loop!(layer_values, layer_reds, layer_greens,
-                              layer_blues, layer_alphas, H2_fxs, H2_clrs,
-                              pt, clr, frame, H2_fnums, H2_kwargs,
-                              H2_clr_kwargs, bounds, dims, bin_widths, i,
-                              num_ignore )
+                              layer_blues, layer_alphas,
+                              H_post_fxs, H_post_clrs,
+                              pt, clr, frame, H_post_fnums, H_post_kwargs,
+                              H_post_clr_kwargs, bounds, dims, bin_widths, i,
+                              num_ignore)
 
         end
     end
@@ -313,9 +317,9 @@ end
 @kernel function naive_chaos_kernel!(points, n, H1_fxs, H1_kwargs,
                                      H1_clrs, H1_clr_kwargs,
                                      H1_probs, H1_fnums,
-                                     H2_fxs, H2_kwargs,
-                                     H2_clrs, H2_clr_kwargs,
-                                     H2_probs, H2_fnums,
+                                     H_post_fxs, H_post_kwargs,
+                                     H_post_clrs, H_post_clr_kwargs,
+                                     H_post_probs, H_post_fnums,
                                      layer_values, layer_reds, layer_greens,
                                      layer_blues, layer_alphas, frame, bounds,
                                      bin_widths, num_ignore, max_range)
@@ -331,7 +335,7 @@ end
 
     seed = quick_seed(tid)
     fid = create_fid(H1_probs, H1_fnums, seed)
-    fid_2 = create_fid(H2_probs, H2_fnums, seed)
+    fid_2 = create_fid(H_post_probs, H_post_fnums, seed)
 
     for i = 1:n
         # quick way to tell if in range to be calculated or not
@@ -345,9 +349,9 @@ end
                 fid = UInt(1)
             end
 
-            if length(H2_fnums) > 1 || H2_fnums[1] > 1
+            if length(H_post_fnums) > 1 || H_post_fnums[1] > 1
                 seed = simple_rand(seed)
-                fid_2 = create_fid(H2_probs, H2_fnums, seed)
+                fid_2 = create_fid(H_post_probs, H_post_fnums, seed)
             else
                 fid_2 = UInt(1)
             end
@@ -356,9 +360,10 @@ end
             clr = clr_loop(H1_clrs, fid, pt, clr,
                            frame, H1_fnums, H1_clr_kwargs)
 
-            output_pt = pt_loop(H2_fxs, fid, pt, frame, H2_fnums, H2_kwargs)
-            output_clr = clr_loop(H2_clrs, fid_2, pt, clr,
-                                  frame, H2_fnums, H2_clr_kwargs)
+            output_pt = pt_loop(H_post_fxs, fid, pt, frame,
+                                H_post_fnums, H_post_kwargs)
+            output_clr = clr_loop(H_post_clrs, fid_2, pt, clr,
+                                  frame, H_post_fnums, H_post_clr_kwargs)
 
             histogram_output!(layer_values, layer_reds, layer_greens,
                               layer_blues, layer_alphas, output_pt, output_clr,
@@ -385,7 +390,7 @@ function run!(layer::FractalLayer; frame = 0)
     bounds = find_bounds(layer)
 
     iterate!(layer, layer.H1, layer.params.num_iterations,
-             bounds, bin_widths, layer.H2; frame = frame)
+             bounds, bin_widths, layer.H_post; frame = frame)
 
     return layer
 
