@@ -50,3 +50,24 @@ function FractalOperator(fos::T) where T <: Union{Vector{FractalOperator},
 
     return FractalOperator(fxs, clrs, probs)
 end
+
+function extract_info(fo::FractalOperator)
+    info = extract_info(fo.ops)
+    color_info = extract_info(fo.colors)
+    return (info, color_info, fo.probs)
+end
+
+function extract_info(ops::Tuple)
+    info = extract_info(ops[1])
+    for i = 2:length(ops)
+        new_info = extract_info(ops[i])
+        info = ((info[1], new_info[1]),
+                (info[2], new_info[2]),
+                (info[3], new_info[3]))
+    end
+    return info
+end
+
+function extract_info(op::FractalUserMethod)
+    return (op.kwargs, op.fis, op.fx)
+end
