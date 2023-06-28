@@ -1,20 +1,33 @@
 export FractalOperator, fo
 
+function prob_check(probs::T) where T <: Tuple
+    if eltype(probs) <: Number
+        if !isapprox(sum(probs), 1)
+            error("Fractal Operator probability != 1")
+        end
+    else
+        for i = 1:length(probs)
+            prob_check(probs[i])
+        end
+    end
+end
+
 struct FractalOperator
     ops::Tuple
     colors::Tuple
     probs::Tuple
+    fnums::Union{Int, Tuple}
 end
 
 fo(args...; kwargs...) = FractalOperator(args...; kwargs...)
 
 function FractalOperator(f::FractalUserMethod, c::FractalUserMethod)
-    return FractalOperator((f,), (c,), (1.0,))
+    return FractalOperator((f,), (c,), (1.0,), 1)
 end
 
 FractalOperator(f::FractalUserMethod) = FractalOperator((f,),
                                                         (Shaders.previous,),
-                                                        (1.0,))
+                                                        (1.0,), 1)
 function FractalOperator(fums, colors, probs)
     if !isapprox(sum(probs), 1)
         error("Fractal Operator probability != 1")
@@ -25,36 +38,39 @@ function FractalOperator(fums, colors, probs)
               " for each function!")
     end
 
-    return FractalOperator(Tuple(fums), Tuple(colors), Tuple(probs))
+    return FractalOperator(Tuple(fums), Tuple(colors),
+                           Tuple(probs), length(fums))
 end
 
 function FractalOperator(fos::T) where T <: Union{Vector{FractalOperator},
                                                   Tuple}
-    fxs = fos[1].ops
-    clrs = fos[1].colors
+    fxs = (fos[1].ops,)
+    clrs = (fos[1].colors,)
+    fnums = (fos[1].fnums,)
 
-    if !isapprox(sum(fos[1].probs), 1)
-        error("Fractal Operator probability != 1")
-    end
-    probs = fos[1].probs
+    prob_check(fos[1].probs)
+    probs = (fos[1].probs,)
 
     for i = 2:length(fos)
-        fxs = (fxs, fos[i].ops)
-        clrs = (clrs, fos[i].colors)
+        fxs = (fxs..., fos[i].ops)
+        clrs = (clrs..., fos[i].colors)
+        fnums = (fnums..., fos[i].fnums)
 
-        if !isapprox(sum(fos[i].probs), 1)
-            error("Fractal Operator probability != 1")
-        end
-        probs = (probs, fos[i].probs)
+        prob_check(fos[i].probs)
+        probs = (probs..., fos[i].probs)
     end
 
-    return FractalOperator(fxs, clrs, probs)
+    return FractalOperator(fxs, clrs, probs, fnums)
+end
+
+function extract_info(fos::T) where T <: Union{Vector{FractalOperator}}
+    return extract_info(fo(fos))
 end
 
 function extract_info(fo::FractalOperator)
     info = extract_info(fo.ops)
     color_info = extract_info(fo.colors)
-    return (info, color_info, fo.probs)
+    return (info, color_info, fo.probs, fo.fnums)
 end
 
 function extract_info(ops::Tuple)
