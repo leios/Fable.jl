@@ -3,8 +3,7 @@ function define_barnsley(; color = Shaders.grey, tilt = 0)
     fums = define_barnsley_operators(tilt = tilt)
     color_set = define_color_operators(color; fnum = 4)
     prob_set = (0.01, 0.85, 0.07, 0.07)
-    fos = Tuple(FractalOperator(fums[i], color_set[i], prob_set[i]) for i = 1:4)
-    return Hutchinson((fos,))
+    return fo(fums, color_set, prob_set)
 end
 
 # This specifically returns the fums for a barnsley fern

@@ -56,8 +56,7 @@ function define_circle(; position::Union{Tuple, Vector, FractalInput} = (0, 0),
 
     fums = define_circle_operators(position, radius; chosen_fx = chosen_fx)
     color_set = define_color_operators(color; fnum = 2)
-    fos = Tuple((FractalOperator(fums[i], color_set[i], 0.5) for i = 1:2))
-    return Hutchinson((fos,))
+    return fo(fums, color_set, (0.5, 0.5))
 end
 
 # This specifically returns the fums for a circle

@@ -25,9 +25,8 @@ function define_triangle(; A::Union{Vector,Tuple,FractalInput}=(sqrt(3)/4,-0.5),
     end
 
     color_set = define_color_operators(color; fnum = fnum)
-    fos = Tuple(FractalOperator(fums[i], color_set[i], 1/fnum) for i = 1:fnum)
 
-    return Hutchinson((fos,))
+    return fo(fums, color_set, Tuple([1/fnum for i = 1:fnum]))
 end
 
 # This specifically returns the fums for a triangle triangle
