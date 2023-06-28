@@ -77,16 +77,19 @@ function extract_info(fo::FractalOperator)
 end
 
 function extract_ops_info(ops::Tuple)
-    info = extract_ops_info(ops[1])
+    kwargs, fis, fxs = extract_ops_info(ops[1])
+    kwargs = (kwargs,)
+    fis = (fis,)
+    fxs = (fxs,)
     for i = 2:length(ops)
-        new_info = extract_ops_info(ops[i])
-        info = ((info[1], new_info[1]),
-                (info[2], new_info[2]),
-                (info[3], new_info[3]))
+        new_kwargs, new_fis, new_fxs = extract_ops_info(ops[i])
+        kwargs = (kwargs..., new_kwargs)
+        fis = (fis..., new_fis)
+        fxs = (fxs..., new_fxs)
     end
-    return info
+    return (kwargs, fis, fxs)
 end
 
 function extract_ops_info(op::FractalUserMethod)
-    return (op.kwargs, op.fis, op.fx)
+    return ((op.kwargs,), (op.fis,), (op.fx,))
 end

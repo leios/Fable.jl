@@ -64,8 +64,22 @@ function FractalLayer(p, v, r, g, b, a, c, position, world_size, ppu;
                       postprocessing_steps = AbstractPostProcess[],
                       config = standard,
                       H = Hutchinson(), H_post = nothing)
+    if isa(H, FractalOperator)
+        H = Hutchinson(H)
+    end
+
+    if isa(H_post, FractalOperator)
+        H_post = Hutchinson(H_post)
+    end
+
+    if length(H) != size(p,2)
+        error("Particles must be generated with `num_objects = "*
+              string(length(H))*"`!")
+    end
+
     postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
-    return FractalLayer(H, H_post, p, v, r, g, b, a, c, position, world_size, ppu,
+    return FractalLayer(H, H_post, p, v, r, g, b, a, c,
+                        position, world_size, ppu,
                         default_params(FractalLayer,
                                        config = config,
                                        ArrayType = typeof(v),
@@ -82,9 +96,17 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                       numthreads = 256,
                       num_particles = 1000, num_iterations = 1000, dims = 2,
                       H = Hutchinson(), H_post = nothing,
-                      solver_type = :semi_random,
-                      num_objects = 1)
+                      solver_type = :semi_random)
+    if isa(H, FractalOperator)
+        H = Hutchinson(H)
+    end
+
+    if isa(H_post, FractalOperator)
+        H_post = Hutchinson(H_post)
+    end
+
     postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
+    num_objects = length(H)
 
     res = (ceil(Int, world_size[1]*ppu), ceil(Int, world_size[2]*ppu))
     p = generate_points(num_particles; dims = dims, ArrayType = ArrayType,
