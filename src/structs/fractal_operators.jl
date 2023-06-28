@@ -42,6 +42,8 @@ function FractalOperator(fums, colors, probs)
                            Tuple(probs), length(fums))
 end
 
+FractalOperator(fo::FractalOperator) = fo
+
 function FractalOperator(fos::T) where T <: Union{Vector{FractalOperator},
                                                   Tuple}
     fxs = (fos[1].ops,)
@@ -52,31 +54,32 @@ function FractalOperator(fos::T) where T <: Union{Vector{FractalOperator},
     probs = (fos[1].probs,)
 
     for i = 2:length(fos)
-        fxs = (fxs..., fos[i].ops)
-        clrs = (clrs..., fos[i].colors)
-        fnums = (fnums..., fos[i].fnums)
+        curr_fo = fo(fos[i])
+        fxs = (fxs..., curr_fo.ops)
+        clrs = (clrs..., curr_fo.colors)
+        fnums = (fnums..., curr_fo.fnums)
 
-        prob_check(fos[i].probs)
-        probs = (probs..., fos[i].probs)
+        prob_check(curr_fo.probs)
+        probs = (probs..., curr_fo.probs)
     end
 
     return FractalOperator(fxs, clrs, probs, fnums)
 end
 
-function extract_info(fos::T) where T <: Union{Vector{FractalOperator}}
+function extract_info(fos::T) where T <: Union{Tuple, Vector{FractalOperator}}
     return extract_info(fo(fos))
 end
 
 function extract_info(fo::FractalOperator)
-    info = extract_info(fo.ops)
-    color_info = extract_info(fo.colors)
+    info = extract_ops_info(fo.ops)
+    color_info = extract_ops_info(fo.colors)
     return (info, color_info, fo.probs, fo.fnums)
 end
 
-function extract_info(ops::Tuple)
-    info = extract_info(ops[1])
+function extract_ops_info(ops::Tuple)
+    info = extract_ops_info(ops[1])
     for i = 2:length(ops)
-        new_info = extract_info(ops[i])
+        new_info = extract_ops_info(ops[i])
         info = ((info[1], new_info[1]),
                 (info[2], new_info[2]),
                 (info[3], new_info[3]))
@@ -84,6 +87,6 @@ function extract_info(ops::Tuple)
     return info
 end
 
-function extract_info(op::FractalUserMethod)
+function extract_ops_info(op::FractalUserMethod)
     return (op.kwargs, op.fis, op.fx)
 end
