@@ -91,5 +91,5 @@ function extract_ops_info(ops::Tuple)
 end
 
 function extract_ops_info(op::FractalUserMethod)
-    return ((op.kwargs,), (op.fis,), (op.fx,))
+    return (op.kwargs, op.fis, op.fx)
 end
