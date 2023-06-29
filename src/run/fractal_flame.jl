@@ -256,6 +256,11 @@ end
                     fid = UInt(1)
                 end
     
+                println(H_fxs[j], '\n',
+                        fid, '\n',
+                        frame, '\n',
+                        H_fnums[j], '\n',
+                        H_kwargs[j][1], '\n')
                 pt = pt_loop(H_fxs[j], fid, pt, frame, H_fnums[j], H_kwargs[j])
                 clr = clr_loop(H_clrs[j], fid, pt, clr, frame,
                                H_fnums[j], H_clr_kwargs[j])

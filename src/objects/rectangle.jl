@@ -1,7 +1,7 @@
 export define_rectangle, define_square
 # Returns back H, colors, and probs for a square
 
-rectangle_object = @fum function rectangle_onject(y,x;
+rectangle_object = @fum function rectangle_object(y,x;
                                                   vertex = 1,
                                                   rotation = 0,
                                                   position = (0,0),

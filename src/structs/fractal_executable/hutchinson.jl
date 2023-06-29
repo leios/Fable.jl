@@ -13,10 +13,16 @@ end
 
 Hutchinson() = Hutchinson((),(),(),(),(),(),(),())
 
-length(H) = length(H.fxs)
+Base.length(H) = length(H.fxs)
 
-function Hutchinson(fos::T) where T <: Union{Tuple, Vector{FractalOperator},
-                                             FractalOperator}
+function Hutchinson(fo::FractalOperator)
+    info, color_info, prob_set, fnums = extract_info(fo)
+    return Hutchinson((info[3],), (info[1],), (info[2],),
+                      (color_info[3],), (color_info[1],), (color_info[2],),
+                      (prob_set,), (fnums,))
+end
+
+function Hutchinson(fos::T) where T <: Union{Tuple, Vector{FractalOperator}}
     info, color_info, prob_set, fnums = extract_info(fos)
     return Hutchinson(info[3], info[1], info[2],
                       color_info[3], color_info[1], color_info[2],
