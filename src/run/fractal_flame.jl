@@ -136,7 +136,7 @@ end
             pt = fxs[$i](pt.y, pt.x, frame; kwargs[$i]...)
             clr = clr_fxs[$i](pt.y, pt.x, clr, frame; clr_kwargs[$i]...)
             temp_prob += probs[$i]
-            if isaprox(1.0) || temp_prob >= 1.0
+            if isapprox(temp_prob, 1.0) || temp_prob >= 1.0
                 histogram_output!(layer_values, layer_reds, layer_greens,
                                   layer_blues, layer_alphas, pt, clr, bounds,
                                   dims, bin_widths, iteration, num_ignore)
@@ -146,7 +146,7 @@ end
         push!(exs, ex)
     end
 
-    push!(exs, output_ex)
+    push!(exs)
 
     # to return 3 separate colors to mix separately
     # return :(Expr(:tuple, $exs...))

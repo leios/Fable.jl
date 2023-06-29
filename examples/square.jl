@@ -29,7 +29,7 @@ function square_example(num_particles, num_iterations;
     if transform_type == :outer_swirl
         H_post = Hutchinson(swirl_operator)
     elseif transform_type == :inner_swirl
-        H = fee(Hutchinson, [H, Hutchinson(swirl_operator)])
+        H = fee(Hutchinson, [H, fo(swirl_operator)])
     end
 
     layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
