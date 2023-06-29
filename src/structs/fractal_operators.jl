@@ -73,7 +73,17 @@ end
 function extract_info(fo::FractalOperator)
     info = extract_ops_info(fo.ops)
     color_info = extract_ops_info(fo.colors)
-    return (info, color_info, fo.probs, fo.fnums)
+    return (info, color_info, flatten(fo.probs), flatten(fo.fnums))
+end
+
+flatten(t) = t
+
+function flatten(t::Tuple)
+    new_tuple = flatten(t[1])
+    for i = 2:length(t)
+        new_tuple = (new_tuple..., flatten(t[i])...)
+    end
+    return new_tuple
 end
 
 function extract_ops_info(ops::Tuple)
