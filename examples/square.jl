@@ -39,6 +39,7 @@ function square_example(num_particles, num_iterations;
                          H = H, H_post = H_post,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
+
     run!(layer)
 
     write_image(layer; filename = filename)
