@@ -70,12 +70,12 @@ function extract_info(fos::T) where T <: Union{Tuple, Vector{FractalOperator}}
     kwargs, fis, fxs, color_kwargs, color_fis, color_fxs,
         probs, fnums = extract_info(fos[1])
 
-    kwargs = (kwargs,)
-    fis = (fis,)
-    fxs = (fxs,)
-    color_kwargs = (color_kwargs,)
-    color_fis = (color_fis,)
-    color_fxs = (color_fxs,)
+    kwargs = (flatten(kwargs),)
+    fis = (flatten(fis),)
+    fxs = (flatten(fxs),)
+    color_kwargs = (flatten(color_kwargs),)
+    color_fis = (flatten(color_fis),)
+    color_fxs = (flatten(color_fxs),)
     probs = (flatten(probs),)
     fnums = (flatten(fnums),)
 
@@ -84,12 +84,12 @@ function extract_info(fos::T) where T <: Union{Tuple, Vector{FractalOperator}}
             new_color_fis, new_color_fxs, new_probs,
             new_fnums = extract_info(fos[i])
 
-        kwargs = (kwargs..., new_kwargs)
-        fis = (fis..., new_fis)
-        fxs = (fxs..., new_fxs)
-        color_kwargs = (color_kwargs..., new_color_kwargs)
-        color_fis = (color_fis..., new_color_fis)
-        color_fxs = (color_fxs..., new_color_fxs)
+        kwargs = (kwargs..., flatten(new_kwargs))
+        fis = (fis..., flatten(new_fis))
+        fxs = (fxs..., flatten(new_fxs))
+        color_kwargs = (color_kwargs..., flatten(new_color_kwargs))
+        color_fis = (color_fis..., flatten(new_color_fis))
+        color_fxs = (color_fxs..., flatten(new_color_fxs))
         probs = (probs..., flatten(new_probs))
         fnums = (fnums..., flatten(new_fnums))
     end
@@ -100,8 +100,8 @@ end
 function extract_info(fo::FractalOperator)
     kwargs, fis, fxs = extract_ops_info(fo.ops)
     color_kwargs, color_fis, color_fxs = extract_ops_info(fo.colors)
-    return (kwargs, fis, fxs, color_kwargs, color_fis, color_fxs,
-            flatten(fo.probs), flatten(fo.fnums))
+    return flatten.((kwargs, fis, fxs, color_kwargs, color_fis, color_fxs,
+            fo.probs, fo.fnums))
 end
 
 flatten(t) = (t,)
