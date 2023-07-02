@@ -77,6 +77,11 @@ function FractalLayer(p, v, r, g, b, a, c, position, world_size, ppu;
               string(length(H))*"`!")
     end
 
+    if length(H) != length(H_post)
+        error("If post transformations are specified (H_post), each operator "*
+              "must have a corresponding post transformation!")
+    end
+
     postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
     return FractalLayer(H, H_post, p, v, r, g, b, a, c,
                         position, world_size, ppu,
@@ -103,6 +108,11 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
 
     if isa(H_post, FractalOperator)
         H_post = Hutchinson(H_post)
+    end
+
+    if length(H) != length(H_post)
+        error("If post transformations are specified (H_post), each operator "*
+              "must have a corresponding post transformation!")
     end
 
     postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
