@@ -28,7 +28,10 @@ end
 FractalOperator(f::FractalUserMethod) = FractalOperator((f,),
                                                         (Shaders.previous,),
                                                         (1.0,), (1,))
-function FractalOperator(fums, colors, probs)
+
+function FractalOperator(fums::Union{Tuple, Vector{FractalUserMethod}},
+                         colors::Union{Tuple, Vector{FractalUserMethod}},
+                         probs::Union{Tuple, Vector{number})
     if !isapprox(sum(probs), 1)
         error("Fractal Operator probability != 1")
     end
@@ -40,6 +43,10 @@ function FractalOperator(fums, colors, probs)
 
     return FractalOperator(Tuple(fums), Tuple(colors),
                            Tuple(probs), (length(fums),))
+end
+
+function FractalOperator(fum::FractalUserMethod, color::FractalUserMethod)
+    FractalOperator((fum,), (color,), (1.0,), (1,))
 end
 
 FractalOperator(fo::FractalOperator) = fo
