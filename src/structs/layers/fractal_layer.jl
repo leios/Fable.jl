@@ -77,7 +77,7 @@ function FractalLayer(p, v, r, g, b, a, c, position, world_size, ppu;
               string(length(H))*"`!")
     end
 
-    if length(H) != length(H_post)
+    if !isnothing(H_post) && length(H) != length(H_post)
         error("If post transformations are specified (H_post), each operator "*
               "must have a corresponding post transformation!")
     end
@@ -110,7 +110,7 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
         H_post = Hutchinson(H_post)
     end
 
-    if length(H) != length(H_post)
+    if !isnothing(H_post) && length(H) != length(H_post)
         error("If post transformations are specified (H_post), each operator "*
               "must have a corresponding post transformation!")
     end
