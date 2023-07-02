@@ -237,14 +237,14 @@ end
 
     tid = @index(Global,Linear)
 
-    pt = points[tid]
-    dims = Fable.dims(pt)
-    clr = RGBA{Float32}(0,0,0,0)
+    dims = Fable.dims(points[tid])
 
     seed = quick_seed(tid)
 
-    for i = 1:n
-        for j = 1:size(points, 2)
+    for j = 1:size(points, 2)
+        pt = points[tid,j]
+        clr = RGBA{Float32}(0,0,0,0)
+        for i = 1:n
             # quick way to tell if in range to be calculated or not
             sketchy_sum = absum(pt)
         
@@ -265,9 +265,9 @@ end
                                   bounds, dims, bin_widths, i, num_ignore)
             end
         end
+        @inbounds points[tid, j] = pt
     end
 
-    @inbounds points[tid] = pt
 
 end
 
@@ -284,14 +284,14 @@ end
 
     tid = @index(Global,Linear)
 
-    pt = points[tid]
-    clr = RGBA{Float32}(0,0,0,0)
-    dims = Fable.dims(pt)
+    dims = Fable.dims(points[tid])
 
     seed = quick_seed(tid)
 
-    for i = 1:n
-        for j = 1:size(points, 2)
+    for j = 1:size(points, 2)
+        pt = points[tid, j]
+        clr = RGBA{Float32}(0,0,0,0)
+        for i = 1:n
             # quick way to tell if in range to be calculated or not
             sketchy_sum = absum(pt)
 
@@ -317,9 +317,9 @@ end
 
             end
         end
+        @inbounds points[tid, j] = pt
     end
 
-    @inbounds points[tid] = pt
 end
 
 @kernel function naive_chaos_kernel!(points, n, H_fxs, H_kwargs,
@@ -334,17 +334,17 @@ end
 
     tid = @index(Global,Linear)
 
-    pt = points[tid]
     output_pt = points[tid]
-    dims = Fable.dims(pt)
+    dims = Fable.dims(points[tid])
 
-    clr = RGBA{Float32}(0,0,0,0)
     output_clr = RGBA{Float32}(0,0,0,0)
 
     seed = quick_seed(tid)
 
-    for i = 1:n
-        for j = 1:size(points, 2)
+    for j = 1:size(points, 2)
+        pt = points[tid, j]
+        clr = RGBA{Float32}(0,0,0,0)
+        for i = 1:n
             # quick way to tell if in range to be calculated or not
             sketchy_sum = absum(pt)
 
@@ -380,9 +380,9 @@ end
 
             end
         end
+        @inbounds points[tid, j] = pt
     end
 
-    @inbounds points[tid] = pt
 
 end
 
