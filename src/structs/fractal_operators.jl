@@ -21,6 +21,15 @@ end
 
 fo(args...; kwargs...) = FractalOperator(args...; kwargs...)
 
+function FractalOperator(fum::FractalUserMethod, color::FractalUserMethod,
+                         prob::Number)
+    if !isapprox(prob, 1.0)
+        @warn("Probabilities for FractalOperators should be 1!\n"*
+              "Setting probability to 1!")
+    end
+    return FractalOperator((fum,), (color,), (1.0,), (1,))
+end
+
 function FractalOperator(f::FractalUserMethod, c::FractalUserMethod)
     return FractalOperator((f,), (c,), (1.0,), (1,))
 end
@@ -29,24 +38,18 @@ FractalOperator(f::FractalUserMethod) = FractalOperator((f,),
                                                         (Shaders.previous,),
                                                         (1.0,), (1,))
 
-function FractalOperator(fums::Union{Tuple, Vector{FractalUserMethod}},
-                         colors::Union{Tuple, Vector{FractalUserMethod}},
-                         probs::Union{Tuple, Vector{number})
+function FractalOperator(fums, colors, probs)
     if !isapprox(sum(probs), 1)
         error("Fractal Operator probability != 1")
     end
 
     if length(fums) != length(colors) || length(fums) != length(probs)
-        error("Fractal Operators must have a color and probability"*
+        error("Fractal Operators must have a color and probability\n"*
               " for each function!")
     end
 
     return FractalOperator(Tuple(fums), Tuple(colors),
                            Tuple(probs), (length(fums),))
-end
-
-function FractalOperator(fum::FractalUserMethod, color::FractalUserMethod)
-    FractalOperator((fum,), (color,), (1.0,), (1,))
 end
 
 FractalOperator(fo::FractalOperator) = fo
