@@ -18,6 +18,7 @@ function multi_example(num_particles, num_iterations;
                          H = final_H, num_particles = num_particles,
                          num_iterations = num_iterations)
 
+
     run!(layer)
 
     write_image(layer; filename = filename)

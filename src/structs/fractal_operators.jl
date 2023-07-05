@@ -97,32 +97,34 @@ function extract_info(fos::T) where T <: Union{Tuple, Vector{FractalOperator}}
         probs, fnums = flatten(kwargs, fis, fxs,
                                color_kwargs, color_fis, color_fxs,
                                probs, fnums)
-    fis = (fis,)
-    fxs = (fxs,)
-    color_kwargs = (color_kwargs,)
-    color_fis = (color_fis,)
-    color_fxs = (color_fxs,)
-    probs = (probs,)
-    fnums = (fnums,)
+    #fis = (fis,)
+    #fxs = (fxs,)
+    #color_kwargs = (color_kwargs,)
+    #color_fis = (color_fis,)
+    #color_fxs = (color_fxs,)
+    #probs = (probs,)
+    #fnums = (fnums,)
 
     for i = 2:length(fos)
         new_kwargs, new_fis, new_fxs, new_color_kwargs,
             new_color_fis, new_color_fxs, new_probs,
             new_fnums = extract_info(fos[i])
-        kwargs, fis, fxs,
-            color_kwargs, color_fis, color_fxs,
-            probs, fnums = flatten(kwargs, fis, fxs,
-                                   color_kwargs, color_fis, color_fxs,
-                                   probs, fnums)
+        new_kwargs, new_fis, new_fxs,
+            new_color_kwargs, new_color_fis, new_color_fxs,
+            new_probs, new_fnums = flatten(new_kwargs, new_fis, new_fxs,
+                                           new_color_kwargs,
+                                           new_color_fis,
+                                           new_color_fxs,
+                                           new_probs, new_fnums)
 
-        kwargs = (kwargs..., new_kwargs)
-        fis = (fis..., new_fis)
-        fxs = (fxs..., new_fxs)
-        color_kwargs = (color_kwargs..., new_color_kwargs)
-        color_fis = (color_fis..., new_color_fis)
-        color_fxs = (color_fxs..., new_color_fxs)
-        probs = (probs..., new_probs)
-        fnums = (fnums..., new_fnums)
+        kwargs = (kwargs, new_kwargs)
+        fis = (fis, new_fis)
+        fxs = (fxs, new_fxs)
+        color_kwargs = (color_kwargs, new_color_kwargs)
+        color_fis = (color_fis, new_color_fis)
+        color_fxs = (color_fxs, new_color_fxs)
+        probs = (probs, new_probs)
+        fnums = (fnums, new_fnums)
     end
 
     return kwargs, fis, fxs, color_kwargs, color_fis, color_fxs, probs, fnums
