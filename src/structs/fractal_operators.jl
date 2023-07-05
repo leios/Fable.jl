@@ -21,6 +21,8 @@ end
 
 fo(args...; kwargs...) = FractalOperator(args...; kwargs...)
 
+FractalOperator(n::Nothing) = nothing
+
 function FractalOperator(fum::FractalUserMethod, color::FractalUserMethod,
                          prob::Number)
     if !isapprox(prob, 1.0)
@@ -56,15 +58,25 @@ FractalOperator(fo::FractalOperator) = fo
 
 function FractalOperator(fos::T) where T <: Union{Vector{FractalOperator},
                                                   Tuple}
-    fxs = (fos[1].ops,)
-    clrs = (fos[1].colors,)
-    fnums = (fos[1].fnums,)
+    if isnothing(fos[1])
+        curr_fo = fo(Smears.null, Shaders.null)
+    else
+        curr_fo = fos[1]
+    end
 
-    prob_check(fos[1].probs)
-    probs = (fos[1].probs,)
+    fxs = (curr_fo.ops,)
+    clrs = (curr_fo.colors,)
+    fnums = (curr_fo.fnums,)
+
+    prob_check(curr_fo.probs)
+    probs = (curr_fo.probs,)
 
     for i = 2:length(fos)
         curr_fo = fo(fos[i])
+        if isnothing(curr_fo)
+            curr_fo = fo(Smears.null, Shaders.null)
+        end
+
         fxs = (fxs..., curr_fo.ops)
         clrs = (clrs..., curr_fo.colors)
         fnums = (fnums..., curr_fo.fnums)
@@ -83,9 +95,9 @@ function extract_info(fos::T) where T <: Union{Tuple, Vector{FractalOperator}}
     kwargs = (flatten(kwargs),)
     fis = (flatten(fis),)
     fxs = (flatten(fxs),)
-    color_kwargs = (flatten(color_kwargs),)
-    color_fis = (flatten(color_fis),)
-    color_fxs = (flatten(color_fxs),)
+    color_kwargs = (color_flatten(color_kwargs),)
+    color_fis = (color_flatten(color_fis),)
+    color_fxs = (color_flatten(color_fxs),)
     probs = (flatten(probs),)
     fnums = (flatten(fnums),)
 
@@ -97,9 +109,9 @@ function extract_info(fos::T) where T <: Union{Tuple, Vector{FractalOperator}}
         kwargs = (kwargs..., flatten(new_kwargs))
         fis = (fis..., flatten(new_fis))
         fxs = (fxs..., flatten(new_fxs))
-        color_kwargs = (color_kwargs..., flatten(new_color_kwargs))
-        color_fis = (color_fis..., flatten(new_color_fis))
-        color_fxs = (color_fxs..., flatten(new_color_fxs))
+        color_kwargs = (color_kwargs..., color_flatten(new_color_kwargs))
+        color_fis = (color_fis..., color_flatten(new_color_fis))
+        color_fxs = (color_fxs..., color_flatten(new_color_fxs))
         probs = (probs..., flatten(new_probs))
         fnums = (fnums..., flatten(new_fnums))
     end
@@ -115,6 +127,7 @@ function extract_info(fo::FractalOperator)
 end
 
 flatten(t) = (t,)
+color_flatten(t) = (t,)
 
 function flatten(t::Tuple)
     new_tuple = flatten(t[1])
@@ -122,6 +135,26 @@ function flatten(t::Tuple)
         new_tuple = (new_tuple..., flatten(t[i])...)
     end
     return new_tuple
+end
+
+function color_flatten(t::Tuple)
+    new_tuple = color_flatten(t[1])
+    for i = 2:length(t)
+        new_tuple = (new_tuple..., color_flatten(t[i])...)
+    end
+
+    # check to see if we have any sub layers
+    is_tuple = false
+    for i = 1:length(new_tuple)
+        if isa(new_tuple[i], Tuple)
+            is_tuple = true
+        end
+    end
+    if is_tuple
+        return new_tuple
+    else
+        return (new_tuple,)
+    end
 end
 
 function extract_ops_info(ops::Tuple)
