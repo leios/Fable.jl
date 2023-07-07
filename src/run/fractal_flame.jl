@@ -42,10 +42,11 @@ end
 
 # These functions essentially unroll the loops in the kernel because of a
 # known julia bug preventing us from using for i = 1:10...
-@generated function pt_loop(fxs, fid, pt, frame, fnums, kwargs)
+@generated function pt_loop(fxs, fid, pt, frame, fnums, kwargs;
+                             bit_offset = 0, fx_offset = 0)
     exs = Expr[]
-    push!(exs, :(bit_offset = 0))
-    push!(exs, :(fx_offset = 0))
+    push!(exs, :(bit_offset = bit_offset))
+    push!(exs, :(fx_offset = fx_offset))
     for i = 1:length(fnums.parameters)
         ex = quote
             idx = decode_fid(fid, bit_offset, fnums[$i]) + fx_offset
@@ -102,10 +103,11 @@ end
     return Expr(:block, exs...)
 end
 
-@generated function clr_loop(fxs, fid, pt, clr, frame, fnums, kwargs)
+@generated function clr_loop(fxs, fid, pt, clr, frame, fnums, kwargs;
+                             bit_offset = 0, fx_offset = 0)
     exs = Expr[]
-    push!(exs, :(bit_offset = 0))
-    push!(exs, :(fx_offset = 0))
+    push!(exs, :(bit_offset = bit_offset))
+    push!(exs, :(fx_offset = fx_offset))
     for i = 1:length(fnums.parameters)
         ex = quote
             idx = decode_fid(fid, bit_offset, fnums[$i]) + fx_offset
@@ -208,7 +210,7 @@ function iterate!(layer::FractalLayer, H::Hutchinson, n,
     if isnothing(H_post)
         kernel!(layer.particles, n, H.fxs, combine(H.kwargs, H.fis),
                 H.color_fxs, combine(H.color_kwargs, H.color_fis),
-                H.prob_set, H.fnums, layer.values,
+                H.prob_set, H.fnums, H.object_fnums, layer.values,
                 layer.reds, layer.greens, layer.blues, layer.alphas,
                 frame, bounds, Tuple(bin_widths),
                 layer.params.num_ignore, max_range,
@@ -216,13 +218,13 @@ function iterate!(layer::FractalLayer, H::Hutchinson, n,
     else
         kernel!(layer.particles, n, H.fxs, combine(H.kwargs, H.fis),
                 H.color_fxs, combine(H.color_kwargs, H.color_fis),
-                H.prob_set, H.fnums,
+                H.prob_set, H.fnums, H.object_fnums,
                 H_post.fxs, combine(H_post.kwargs, H_post.fis),
                 H_post.color_fxs, combine(H_post.color_kwargs,
                                           H_post.color_fis),
-                H_post.prob_set, H_post.fnums, layer.values,
-                layer.reds, layer.greens, layer.blues, layer.alphas,
-                frame, bounds, Tuple(bin_widths),
+                H_post.prob_set, H_post.fnums, H_post.object_fnums,
+                layer.values, layer.reds, layer.greens, layer.blues,
+                layer.alphas, frame, bounds, Tuple(bin_widths),
                 layer.params.num_ignore, max_range,
                 ndrange=size(layer.particles)[1])
     end
@@ -230,7 +232,7 @@ end
 
 @kernel function naive_chaos_kernel!(points, n, H_fxs, H_kwargs,
                                      H_clrs, H_clr_kwargs,
-                                     H_probs, H_fnums,
+                                     H_probs, H_fnums, H_object_fnums,
                                      layer_values, layer_reds, layer_greens,
                                      layer_blues, layer_alphas, frame, bounds,
                                      bin_widths, num_ignore, max_range)
@@ -241,42 +243,49 @@ end
 
     seed = quick_seed(tid)
 
-    for j = 1:size(points, 2)
-        pt = points[tid,j]
-        clr = RGBA{Float32}(0,0,0,0)
+    clr = RGBA{Float32}(0,0,0,0)
+    bit_offset = UInt(0)
+    fx_offset = 0
+    for j = 1:size(points,2)
+        pt = points[tid, j]
         for i = 1:n
             # quick way to tell if in range to be calculated or not
             sketchy_sum = absum(pt)
-        
+    
             if sketchy_sum < max_range
                 if length(H_fnums[j]) > 1 || H_fnums[j][1] > 1
                     seed = simple_rand(seed)
-                    fid = create_fid(H_probs[j], H_fnums[j], seed)
+                    fid = create_fid(H_probs, H_fnums[j], seed)
                 else
                     fid = UInt(1)
                 end
-    
-                pt = pt_loop(H_fxs[j], fid, pt, frame, H_fnums[j], H_kwargs[j])
-                clr = clr_loop(H_clrs[j], fid, pt, clr, frame,
-                               H_fnums[j], H_clr_kwargs[j])
-    
+
+                pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j],
+                             H_kwargs; bit_offset, fx_offset)
+                clr = clr_loop(H_clrs, fid, pt, clr, frame,
+                               H_fnums[j], H_clr_kwargs;
+                               bit_offset, fx_offset)
+
                 histogram_output!(layer_values, layer_reds, layer_greens,
                                   layer_blues, layer_alphas, pt, clr,
                                   bounds, dims, bin_widths, i, num_ignore)
             end
         end
+        total_fxs = sum(H_fnums[j])
+        bit_offset += ceil(UInt,log2(total_fxs))
+        fx_offset += total_fxs
         @inbounds points[tid, j] = pt
     end
-
 
 end
 
 @kernel function semi_random_chaos_kernel!(points, n, H_fxs, H_kwargs,
                                            H_clrs, H_clr_kwargs,
-                                           H_probs, H_fnums,
+                                           H_probs, H_fnums, H_object_fnums,
                                            H_post_fxs, H_post_kwargs,
                                            H_post_clrs, H_post_clr_kwargs,
                                            H_post_probs, H_post_fnums,
+                                           H_post_object_fnums,
                                            layer_values, layer_reds,
                                            layer_greens, layer_blues,
                                            layer_alphas, frame, bounds,
@@ -324,10 +333,11 @@ end
 
 @kernel function naive_chaos_kernel!(points, n, H_fxs, H_kwargs,
                                      H_clrs, H_clr_kwargs,
-                                     H_probs, H_fnums,
+                                     H_probs, H_fnums, H_object_fnums,
                                      H_post_fxs, H_post_kwargs,
                                      H_post_clrs, H_post_clr_kwargs,
                                      H_post_probs, H_post_fnums,
+                                     H_post_object_fnums,
                                      layer_values, layer_reds, layer_greens,
                                      layer_blues, layer_alphas, frame, bounds,
                                      bin_widths, num_ignore, max_range)

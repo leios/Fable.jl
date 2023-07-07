@@ -8,10 +8,6 @@ function smear_example(num_particles, num_iterations, total_frames;
     world_size = (9, 16)
     ppu = 1920 / 16
     res = (1080, 1920)
-    layer = FractalLayer(; ArrayType = ArrayType, FloatType = FloatType,
-                         world_size = world_size, ppu = ppu,
-                         num_particles = num_particles,
-                         num_iterations = num_iterations)
 
     # defining video parameters
     if output_type == :video
@@ -35,8 +31,11 @@ function smear_example(num_particles, num_iterations, total_frames;
     # now turning it into a fractal operator
     smear_transform = fee(Hutchinson, fo(smear))
 
-    layer.H = ball
-    layer.H_post = smear_transform
+    layer = FractalLayer(; ArrayType = ArrayType, FloatType = FloatType,
+                         world_size = world_size, ppu = ppu,
+                         num_particles = num_particles,
+                         num_iterations = num_iterations,
+                         H = ball, H_post = smear_transform)
 
     for i = 1:total_frames
 
