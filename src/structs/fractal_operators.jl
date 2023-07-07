@@ -66,7 +66,7 @@ function FractalOperator(fos::T) where T <: Union{Vector{FractalOperator},
 
     fxs = (curr_fo.ops,)
     clrs = (curr_fo.colors,)
-    fnums = (curr_fo.fnums,)
+    fnums = curr_fo.fnums
 
     prob_check(curr_fo.probs)
     probs = (curr_fo.probs,)
@@ -79,7 +79,7 @@ function FractalOperator(fos::T) where T <: Union{Vector{FractalOperator},
 
         fxs = (fxs..., curr_fo.ops)
         clrs = (clrs..., curr_fo.colors)
-        fnums = (fnums..., curr_fo.fnums)
+        fnums = (fnums..., curr_fo.fnums...)
 
         prob_check(curr_fo.probs)
         probs = (probs..., curr_fo.probs)
