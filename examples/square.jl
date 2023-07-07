@@ -10,7 +10,8 @@ function square_example(num_particles, num_iterations;
                         ArrayType = Array,
                         dark = true,
                         transform_type = :standard,
-                        filename = "out.png")
+                        filename = "out.png",
+                        solver_type = :semi_random)
     # Physical space location. 
     world_size = (9*0.15, 16*0.15)
 
@@ -38,7 +39,8 @@ function square_example(num_particles, num_iterations;
                          world_size = world_size, ppu = ppu,
                          H = square, H_post = H_post,
                          num_particles = num_particles,
-                         num_iterations = num_iterations)
+                         num_iterations = num_iterations,
+                         solver_type = solver_type)
 
     run!(layer)
 
@@ -48,5 +50,7 @@ end
 @info("Created Function: square_example(num_particles, num_iterations;
                                        ArrayType = Array,
                                        transform_type = :standard,
+                                       solver_type = :semi_random,
                                        filename = 'out.png')\n"*
-      "transform_type can be {:standard, :inner_swirl, :outer_swirl}")
+      "transform_type can be {:standard, :inner_swirl, :outer_swirl}\n"*
+      "solver_type can be {:random, semi_random}")

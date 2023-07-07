@@ -296,6 +296,8 @@ end
 
     seed = quick_seed(tid)
 
+    bit_offset = UInt(0)
+    fx_offset = 0
     for j = 1:size(points, 2)
         pt = points[tid, j]
         clr = RGBA{Float32}(0,0,0,0)
@@ -306,25 +308,30 @@ end
             if sketchy_sum < max_range
                 if length(H_fnums[j]) > 1 || H_fnums[j][1] > 1
                     seed = simple_rand(seed)
-                    fid = create_fid(H_probs[j], H_fnums[j], seed)
+                    fid = create_fid(H_probs, H_fnums[j], seed)
                 else
                     fid = UInt(1)
                 end
 
-                pt = pt_loop(H_fxs[j], fid, pt, frame, H_fnums[j], H_kwargs[j])
-                clr = clr_loop(H_clrs[j], fid, pt, clr,
-                               frame, H_fnums[j], H_clr_kwargs[j])
+                pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j], H_kwargs;
+                             bit_offset, fx_offset)
+                clr = clr_loop(H_clrs, fid, pt, clr,
+                               frame, H_fnums[j], H_clr_kwargs;
+                               bit_offset, fx_offset)
 
                 semi_random_loop!(layer_values, layer_reds, layer_greens,
                                   layer_blues, layer_alphas,
-                                  H_post_fxs[j], H_post_clrs[j],
+                                  H_post_fxs, H_post_clrs,
                                   pt, clr, frame, H_post_fnums[j],
-                                  H_post_kwargs[j], H_post_clr_kwargs[j],
-                                  H_post_probs[j], bounds, dims, bin_widths,
+                                  H_post_kwargs, H_post_clr_kwargs,
+                                  H_post_probs, bounds, dims, bin_widths,
                                   i, num_ignore)
 
             end
         end
+        total_fxs = sum(H_fnums[j])
+        bit_offset += ceil(UInt,log2(total_fxs))
+        fx_offset += total_fxs
         @inbounds points[tid, j] = pt
     end
 
@@ -349,6 +356,11 @@ end
 
     seed = quick_seed(tid)
 
+    bit_offset = UInt(0)
+    fx_offset = 0
+
+    post_bit_offset = UInt(0)
+    post_fx_offset = 0
     for j = 1:size(points, 2)
         pt = points[tid, j]
         clr = RGBA{Float32}(0,0,0,0)
@@ -359,27 +371,33 @@ end
             if sketchy_sum < max_range
                 if length(H_fnums[j]) > 1 || H_fnums[j][1] > 1
                     seed = simple_rand(seed)
-                    fid = create_fid(H_probs[j], H_fnums[j], seed)
+                    fid = create_fid(H_probs, H_fnums[j], seed)
                 else
                     fid = UInt(1)
                 end
 
                 if length(H_post_fnums[j]) > 1 || H_post_fnums[j][1] > 1
                     seed = simple_rand(seed)
-                    fid_2 = create_fid(H_post_probs[j], H_post_fnums[j], seed)
+                    fid_2 = create_fid(H_post_probs, H_post_fnums[j], seed)
                 else
                     fid_2 = UInt(1)
                 end
 
-                pt = pt_loop(H_fxs[j], fid, pt, frame, H_fnums[j], H_kwargs[j])
-                clr = clr_loop(H_clrs[j], fid, pt, clr,
-                               frame, H_fnums[j], H_clr_kwargs[j])
+                pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j], H_kwargs;
+                             fx_offset, bit_offset)
+                clr = clr_loop(H_clrs, fid, pt, clr,
+                               frame, H_fnums[j], H_clr_kwargs;
+                               fx_offset, bit_offset)
 
-                output_pt = pt_loop(H_post_fxs[j], fid, pt, frame,
-                                    H_post_fnums[j], H_post_kwargs[j])
-                output_clr = clr_loop(H_post_clrs[j], fid_2, pt, clr,
+                output_pt = pt_loop(H_post_fxs, fid, pt, frame,
+                                    H_post_fnums[j], H_post_kwargs;
+                                    bit_offset = post_bit_offset,
+                                    fx_offset = post_fx_offset)
+                output_clr = clr_loop(H_post_clrs, fid_2, pt, clr,
                                       frame, H_post_fnums[j],
-                                      H_post_clr_kwargs[j])
+                                      H_post_clr_kwargs;
+                                      bit_offset = post_bit_offset,
+                                      fx_offset = post_fx_offset)
 
                 histogram_output!(layer_values, layer_reds, layer_greens,
                                   layer_blues, layer_alphas, output_pt,
@@ -388,6 +406,13 @@ end
 
             end
         end
+        total_fxs = sum(H_fnums[j])
+        bit_offset += ceil(UInt,log2(total_fxs))
+        fx_offset += total_fxs
+
+        post_total_fxs = sum(H_post_fnums[j])
+        post_bit_offset += ceil(UInt,log2(post_total_fxs))
+        post_fx_offset += post_total_fxs
         @inbounds points[tid, j] = pt
     end
 
