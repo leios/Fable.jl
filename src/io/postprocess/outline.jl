@@ -7,7 +7,7 @@ mutable struct Outline <: AbstractPostProcess
     intensity_function::Function
     threshold::Number
     color::CT where CT <: Union{RGB, RGBA}
-    canvas::AT where AT <: AbstractArray
+    canvas::AT where AT <: Union{AbstractArray, Nothing}
     object_outline::Bool
     initialized::Bool
 end

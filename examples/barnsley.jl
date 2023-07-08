@@ -30,7 +30,7 @@ function barnsley_example(num_particles, num_iterations;
     fo_2 = fo(scale_and_translate(translation = (0.5, 0.5), scale = 0.5),
               Shaders.magenta, 1)
 
-    H_post = fee(Hutchinson, (fo_1, fo_2))
+    H_post = fee(Hutchinson, fo([fo_1, fo_2]))
 
     layer = FractalLayer(; ArrayType = ArrayType,
                          world_size = (10, 16), position = (5, 0),
