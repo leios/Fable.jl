@@ -133,7 +133,7 @@ end
                                       iteration, num_ignore)
     exs = Expr[]
     push!(exs, :(temp_prob = 0.0))
-    for i = 1:length(fxs.parameters)
+    for i = 1:length(fnums.parameters)
         ex = quote
             pt = fxs[$i](pt.y, pt.x, frame; kwargs[$i]...)
             clr = clr_fxs[$i](pt.y, pt.x, clr, frame; clr_kwargs[$i]...)
