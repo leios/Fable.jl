@@ -130,19 +130,23 @@ end
                                       layer_blues, layer_alphas, fxs, clr_fxs, 
                                       pt, clr, frame, fnums, kwargs, clr_kwargs,
                                       probs, bounds, dims, bin_widths,
-                                      iteration, num_ignore)
+                                      iteration, num_ignore; fx_offset = 0)
     exs = Expr[]
     push!(exs, :(temp_prob = 0.0))
-    for i = 1:length(fnums.parameters)
+    push!(exs, :(fx_max_range = fx_offset + sum(fnums)))
+    for i = 1:length(fxs.parameters)
         ex = quote
-            pt = fxs[$i](pt.y, pt.x, frame; kwargs[$i]...)
-            clr = clr_fxs[$i](pt.y, pt.x, clr, frame; clr_kwargs[$i]...)
-            temp_prob += probs[$i]
-            if isapprox(temp_prob, 1.0) || temp_prob >= 1.0
-                histogram_output!(layer_values, layer_reds, layer_greens,
-                                  layer_blues, layer_alphas, pt, clr, bounds,
-                                  dims, bin_widths, iteration, num_ignore)
-                temp_prob = 0.0
+            if fx_offset + 1 <= $i <= fx_max_range
+                pt = fxs[$i](pt.y, pt.x, frame; kwargs[$i]...)
+                clr = clr_fxs[$i](pt.y, pt.x, clr, frame; clr_kwargs[$i]...)
+                temp_prob += probs[$i]
+                if isapprox(temp_prob, 1.0) || temp_prob >= 1.0
+                    histogram_output!(layer_values, layer_reds, layer_greens,
+                                      layer_blues, layer_alphas,
+                                      pt, clr, bounds,
+                                      dims, bin_widths, iteration, num_ignore)
+                    temp_prob = 0.0
+                end
             end
         end
         push!(exs, ex)
@@ -298,6 +302,7 @@ end
 
     bit_offset = UInt(0)
     fx_offset = 0
+    post_fx_offset = 0
     for j = 1:size(points, 2)
         pt = points[tid, j]
         clr = RGBA{Float32}(0,0,0,0)
@@ -325,13 +330,14 @@ end
                                   pt, clr, frame, H_post_fnums[j],
                                   H_post_kwargs, H_post_clr_kwargs,
                                   H_post_probs, bounds, dims, bin_widths,
-                                  i, num_ignore)
+                                  i, num_ignore; fx_offset = post_fx_offset)
 
             end
         end
         total_fxs = sum(H_fnums[j])
         bit_offset += ceil(UInt,log2(total_fxs))
         fx_offset += total_fxs
+        post_fx_offset += sum(H_post_fnums[j])
         @inbounds points[tid, j] = pt
     end
 
