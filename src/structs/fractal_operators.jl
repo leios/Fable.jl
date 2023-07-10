@@ -21,7 +21,7 @@ end
 
 fo(args...; kwargs...) = FractalOperator(args...; kwargs...)
 
-FractalOperator(n::Nothing) = nothing
+FractalOperator(n::Nothing) = fo(Smears.null)
 
 function FractalOperator(fum::FractalUserMethod, color::FractalUserMethod,
                          prob::Number)
