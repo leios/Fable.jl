@@ -52,6 +52,7 @@ function generate_point(; dims=2, bounds = find_bounds((0,0), (2,2)))
 end
 
 function generate_points(N::Int; ArrayType=Array, dims=2,
-                         bounds=find_bounds((0,0), (2,2)))
-    return ArrayType([generate_point(dims = dims, bounds = bounds) for i = 1:N])
+                         bounds=find_bounds((0,0), (2,2)), num_objects = 1)
+    return ArrayType([generate_point(dims = dims, bounds = bounds) for i = 1:N,
+                      j = 1:num_objects])
 end

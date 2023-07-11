@@ -2,8 +2,8 @@ export Filter, Blur, Gaussian, Identity
 
 mutable struct Filter <: AbstractPostProcess
     op::Function
-    filter::AT where AT <: AbstractArray
-    canvas::AT where AT <: AbstractArray
+    filter::AT where AT <: Union{AbstractArray, Nothing}
+    canvas::AT where AT <: Union{AbstractArray, Nothing}
     initialized::Bool
 end
 

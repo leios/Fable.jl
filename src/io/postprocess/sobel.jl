@@ -2,10 +2,10 @@ export Sobel
 
 mutable struct Sobel <: AbstractPostProcess
     op::Function
-    filter_x::AT where AT <: AbstractArray
-    filter_y::AT where AT <: AbstractArray
-    canvas_x::AT where AT <: AbstractArray
-    canvas_y::AT where AT <: AbstractArray
+    filter_x::AT where AT <: Union{AbstractArray, Nothing}
+    filter_y::AT where AT <: Union{AbstractArray, Nothing}
+    canvas_x::AT where AT <: Union{AbstractArray, Nothing}
+    canvas_y::AT where AT <: Union{AbstractArray, Nothing}
     initialized::Bool
 end
 

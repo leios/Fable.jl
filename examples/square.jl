@@ -10,7 +10,8 @@ function square_example(num_particles, num_iterations;
                         ArrayType = Array,
                         dark = true,
                         transform_type = :standard,
-                        filename = "out.png")
+                        filename = "out.png",
+                        solver_type = :semi_random)
     # Physical space location. 
     world_size = (9*0.15, 16*0.15)
 
@@ -23,20 +24,23 @@ function square_example(num_particles, num_iterations;
               [0.25, 0.25, 1.0, 1],
               [1.0, 0.25, 1.0, 1]]
 
-    H = define_square(; position = [0.0, 0.0], rotation = pi/4,  color = colors)
+    rot_fi = fi("rotation", pi/4)
+    square = define_square(; position = [0.0, 0.0], rotation = rot_fi,
+                           color = colors)
     swirl_operator = fo(Flames.swirl)
-    H2 = nothing
+    H_post = nothing
     if transform_type == :outer_swirl
-        H2 = Hutchinson(swirl_operator)
+        H_post = Hutchinson(swirl_operator)
     elseif transform_type == :inner_swirl
-        H = fee(Hutchinson, [H, Hutchinson(swirl_operator)])
+        square = fee(Hutchinson, fo([square, swirl_operator]))
     end
 
     layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
                          world_size = world_size, ppu = ppu,
-                         H1 = H, H2 = H2,
+                         H = square, H_post = H_post,
                          num_particles = num_particles,
-                         num_iterations = num_iterations)
+                         num_iterations = num_iterations,
+                         solver_type = solver_type)
 
     run!(layer)
 
@@ -46,5 +50,7 @@ end
 @info("Created Function: square_example(num_particles, num_iterations;
                                        ArrayType = Array,
                                        transform_type = :standard,
+                                       solver_type = :semi_random,
                                        filename = 'out.png')\n"*
-      "transform_type can be {:standard, :inner_swirl, :outer_swirl}")
+      "transform_type can be {:standard, :inner_swirl, :outer_swirl}\n"*
+      "solver_type can be {:random, semi_random}")

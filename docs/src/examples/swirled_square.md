@@ -49,7 +49,7 @@ Finally, we need to attach this function to the layer and run everything with th
 
 ```
     layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
-                         world_size = world_size, ppu = ppu, H1 = H,
+                         world_size = world_size, ppu = ppu, H = H,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
 
@@ -59,7 +59,7 @@ Finally, we need to attach this function to the layer and run everything with th
 
 ```
 
-Note that the `H1 = H` keyword argument is the one actually defining `H` as the first Hutchinson operator for the `FractalLayer`.
+Note that the `H = H` keyword argument is the one actually defining `H` as the first Hutchinson operator for the `FractalLayer`.
 After running this, we will get the following image:
 
 ![a simple square](res/swirled_square_1.png)
@@ -86,14 +86,14 @@ end
 Here, we are using the `@fum` syntax to show how users might define their own operators.
 The same can be done for colors.
 
-The code here does not change significantly, except that we create a `H2` and add it to the `fractal_flame(...)` function:
+The code here does not change significantly, except that we create a `H_post` and add it to the `fractal_flame(...)` function:
 
 ```
 ...
-    H2 = Hutchinson(swirl_operator)
+    H_post = Hutchinson(swirl_operator)
 
     layer = FractalLayer(res; ArrayType = ArrayType, logscale = false,
-                         FloatType = FloatType, H1 = H, H2 = H2,
+                         FloatType = FloatType, H = H, H_post = H_post,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
 
@@ -103,9 +103,9 @@ The code here does not change significantly, except that we create a `H2` and ad
 
 There are a few nuances to point out:
 
-1. We are using `Shaders.previous`, which simply means that the swirl will use whatever colors were specified in `H1`.
+1. We are using `Shaders.previous`, which simply means that the swirl will use whatever colors were specified in `H`.
 2. Fractal operators can be called with `fee` or `Hutchinson` and require `Array` or `Tuple` inputs.
-3. `final = true`, means that this is a post processing operation. In other words, `H1` creates the object primitive (square), and `H2` always operates on that square.
+3. `final = true`, means that this is a post processing operation. In other words, `H` creates the object primitive (square), and `H_post` always operates on that square.
 4. We are specifying the Floating Type, `FloatType`, as `Float32`, but that is not necessary.
 
 Once this is run, it should provide the following image:
@@ -115,19 +115,19 @@ Once this is run, it should provide the following image:
 ## Step 3: a different kind of swirl
 
 Now some people might be scratching their heads at the previous result.
-If we are solving with both `H1` and `H2`, why does it look like two separate actions instead of one combined one?
+If we are solving with both `H` and `H_post`, why does it look like two separate actions instead of one combined one?
 In other words, why is the swirl so clearly different than the square operation?
 
 This is because we operate on two separate sets of points.
-`H1` creates object primitives. Every step of the simulation, we will read from the points after `H1` operates on them.
-`H2` works on a completely different location in memory specifically for image output.
-If we want, we can make `H2` operate on the object, itself, by creating a new fractal executable:
+`H` creates object primitives. Every step of the simulation, we will read from the points after `H` operates on them.
+`H_post` works on a completely different location in memory specifically for image output.
+If we want, we can make `H_post` operate on the object, itself, by creating a new fractal executable:
 
 ```
-    final_H = fee(Hutchinson, [H, H2])
+    final_H = fee(Hutchinson, [H, H_post])
 
     layer = FractalLayer(res; ArrayType = ArrayType, logscale = false,
-                         FloatType = FloatType, H1 = final_H
+                         FloatType = FloatType, H = final_H
                          num_particles = num_particles,
                          num_iterations = num_iterations)
 
@@ -161,16 +161,16 @@ function square_example(num_particles, num_iterations;
 
     H = define_square(; position = [0.0, 0.0], rotation = pi/4,  color = colors)
     swirl_operator = fo(Flames.swirl)
-    H2 = nothing
+    H_post = nothing
     if transform_type == :outer_swirl
-        H2 = Hutchinson(swirl_operator)
+        H_post = Hutchinson(swirl_operator)
     elseif transform_type == :inner_swirl
         H = fee(Hutchinson, [H, Hutchinson(swirl_operator)])
     end
 
     layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
                          world_size = world_size, ppu = ppu,
-                         H1 = H, H2 = H2,
+                         H = H, H_post = H_post,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
 

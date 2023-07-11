@@ -1,7 +1,7 @@
 export define_rectangle, define_square
 # Returns back H, colors, and probs for a square
 
-rectangle_object = @fum function rectangle_onject(y,x;
+rectangle_object = @fum function rectangle_object(y,x;
                                                   vertex = 1,
                                                   rotation = 0,
                                                   position = (0,0),
@@ -40,8 +40,7 @@ function define_rectangle(; position::Union{Vector, Tuple, FractalInput}=(0,0),
     fums = define_rectangle_operators(position, rotation, scale_x, scale_y)
     color_set = define_color_operators(color; fnum = 4)
 
-    fos = Tuple(FractalOperator(fums[i], color_set[i], 0.25) for i = 1:4)
-    return Hutchinson((fos,))
+    return fo(fums, color_set, (0.25 for i = 1:4))
 end
 
 # Returns back H, colors, and probs for a square

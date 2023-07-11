@@ -34,7 +34,7 @@ function sierpinski_example(num_particles, num_iterations, num_frames;
     layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
                          world_size = (2.25, 4), ppu = 1920/4,
                          num_iterations = num_iterations,
-                         num_particles = num_particles, H1 = final_H)
+                         num_particles = num_particles, H = final_H)
 
     for i = 1:num_frames
         theta = 2*pi*(i-1)/num_frames

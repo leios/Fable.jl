@@ -42,10 +42,11 @@ end
 
 # These functions essentially unroll the loops in the kernel because of a
 # known julia bug preventing us from using for i = 1:10...
-@generated function pt_loop(fxs, fid, pt, frame, fnums, kwargs)
+@generated function pt_loop(fxs, fid, pt, frame, fnums, kwargs;
+                             bit_offset = 0, fx_offset = 0)
     exs = Expr[]
-    push!(exs, :(bit_offset = 0))
-    push!(exs, :(fx_offset = 0))
+    push!(exs, :(bit_offset = bit_offset))
+    push!(exs, :(fx_offset = fx_offset))
     for i = 1:length(fnums.parameters)
         ex = quote
             idx = decode_fid(fid, bit_offset, fnums[$i]) + fx_offset
@@ -89,7 +90,8 @@ end
     return fx(pt.y, pt.x, clr, frame; kwargs...)
 end
 
-@generated function call_clr_fx(fx::Tuple, pt::Point2D, clr, frame, kwargs::Tuple)
+@generated function call_clr_fx(fx::Tuple, pt::Point2D, clr,
+                                frame, kwargs::Tuple)
     exs = Expr[]
     for i = 1:length(fx.parameters)
         ex = :(clr = fx[$i](pt.y, pt.x, clr, frame; kwargs[$i]...))
@@ -101,10 +103,11 @@ end
     return Expr(:block, exs...)
 end
 
-@generated function clr_loop(fxs, fid, pt, clr, frame, fnums, kwargs)
+@generated function clr_loop(fxs, fid, pt, clr, frame, fnums, kwargs;
+                             bit_offset = 0, fx_offset = 0)
     exs = Expr[]
-    push!(exs, :(bit_offset = 0))
-    push!(exs, :(fx_offset = 0))
+    push!(exs, :(bit_offset = bit_offset))
+    push!(exs, :(fx_offset = fx_offset))
     for i = 1:length(fnums.parameters)
         ex = quote
             idx = decode_fid(fid, bit_offset, fnums[$i]) + fx_offset
@@ -123,24 +126,33 @@ end
     return Expr(:block, exs...)
 end
 
-
 @generated function semi_random_loop!(layer_values, layer_reds, layer_greens,
                                       layer_blues, layer_alphas, fxs, clr_fxs, 
                                       pt, clr, frame, fnums, kwargs, clr_kwargs,
-                                      bounds, dims, bin_widths,
-                                      iteration, num_ignore)
+                                      probs, bounds, dims, bin_widths,
+                                      iteration, num_ignore; fx_offset = 0)
     exs = Expr[]
+    push!(exs, :(temp_prob = 0.0))
+    push!(exs, :(fx_max_range = fx_offset + sum(fnums)))
     for i = 1:length(fxs.parameters)
         ex = quote
-            pt = fxs[$i](pt.y, pt.x, frame; kwargs[$i]...)
-            clr = clr_fxs[$i](pt.y, pt.x, clr, frame; clr_kwargs[$i]...)
-            histogram_output!(layer_values, layer_reds, layer_greens,
-                              layer_blues, layer_alphas, pt, clr,
-                              bounds, dims, bin_widths,
-                              iteration, num_ignore)
+            if fx_offset + 1 <= $i <= fx_max_range
+                pt = fxs[$i](pt.y, pt.x, frame; kwargs[$i]...)
+                clr = clr_fxs[$i](pt.y, pt.x, clr, frame; clr_kwargs[$i]...)
+                temp_prob += probs[$i]
+                if isapprox(temp_prob, 1.0) || temp_prob >= 1.0
+                    histogram_output!(layer_values, layer_reds, layer_greens,
+                                      layer_blues, layer_alphas,
+                                      pt, clr, bounds,
+                                      dims, bin_widths, iteration, num_ignore)
+                    temp_prob = 0.0
+                end
+            end
         end
         push!(exs, ex)
     end
+
+    push!(exs)
 
     # to return 3 separate colors to mix separately
     # return :(Expr(:tuple, $exs...))
@@ -180,10 +192,10 @@ end
     return flag
 end
 
-function iterate!(layer::FractalLayer, H1::Hutchinson, n,
-                  bounds, bin_widths, H2::Union{Nothing, Hutchinson};
+function iterate!(layer::FractalLayer, H::Hutchinson, n,
+                  bounds, bin_widths, H_post::Union{Nothing, Hutchinson};
                   frame = 0)
-    if isnothing(H2) 
+    if isnothing(H_post) 
         fx = naive_chaos_kernel!
     elseif layer.params.solver_type == :semi_random
         fx = semi_random_chaos_kernel!
@@ -199,23 +211,24 @@ function iterate!(layer::FractalLayer, H1::Hutchinson, n,
     backend = get_backend(layer.canvas)
     kernel! = fx(backend, layer.params.numthreads)
 
-    if isnothing(H2)
-        kernel!(layer.particles, n, H1.fxs, combine(H1.kwargs, H1.fis),
-                H1.color_fxs, combine(H1.color_kwargs, H1.color_fis),
-                H1.prob_set, H1.fnums, layer.values,
+    if isnothing(H_post)
+        kernel!(layer.particles, n, H.fxs, combine(H.kwargs, H.fis),
+                H.color_fxs, combine(H.color_kwargs, H.color_fis),
+                H.prob_set, H.fnums, layer.values,
                 layer.reds, layer.greens, layer.blues, layer.alphas,
                 frame, bounds, Tuple(bin_widths),
                 layer.params.num_ignore, max_range,
                 ndrange=size(layer.particles)[1])
     else
-        kernel!(layer.particles, n, H1.fxs, combine(H1.kwargs, H1.fis),
-                H1.color_fxs, combine(H1.color_kwargs, H1.color_fis),
-                H1.prob_set, H1.fnums,
-                H2.fxs, combine(H2.kwargs, H2.fis),
-                H2.color_fxs, combine(H2.color_kwargs, H2.color_fis),
-                H2.prob_set, H2.fnums, layer.values,
-                layer.reds, layer.greens, layer.blues, layer.alphas,
-                frame, bounds, Tuple(bin_widths),
+        kernel!(layer.particles, n, H.fxs, combine(H.kwargs, H.fis),
+                H.color_fxs, combine(H.color_kwargs, H.color_fis),
+                H.prob_set, H.fnums,
+                H_post.fxs, combine(H_post.kwargs, H_post.fis),
+                H_post.color_fxs, combine(H_post.color_kwargs,
+                                          H_post.color_fis),
+                H_post.prob_set, H_post.fnums,
+                layer.values, layer.reds, layer.greens, layer.blues,
+                layer.alphas, frame, bounds, Tuple(bin_widths),
                 layer.params.num_ignore, max_range,
                 ndrange=size(layer.particles)[1])
     end
@@ -230,44 +243,52 @@ end
 
     tid = @index(Global,Linear)
 
-    pt = points[tid]
-    dims = Fable.dims(pt)
-    clr = RGBA{Float32}(0,0,0,0)
+    dims = Fable.dims(points[tid])
 
     seed = quick_seed(tid)
-    fid = create_fid(H_probs, H_fnums, seed)
 
-    for i = 1:n
-        # quick way to tell if in range to be calculated or not
-        sketchy_sum = absum(pt)
-        
-        if sketchy_sum < max_range
-            if length(H_fnums) > 1 || H_fnums[1] > 1
-                seed = simple_rand(seed)
-                fid = create_fid(H_probs, H_fnums, seed)
-            else
-                fid = UInt(1)
+    clr = RGBA{Float32}(0,0,0,0)
+    bit_offset = UInt(0)
+    fx_offset = 0
+    for j = 1:size(points,2)
+        pt = points[tid, j]
+        for i = 1:n
+            # quick way to tell if in range to be calculated or not
+            sketchy_sum = absum(pt)
+    
+            if sketchy_sum < max_range
+                if length(H_fnums[j]) > 1 || H_fnums[j][1] > 1
+                    seed = simple_rand(seed)
+                    fid = create_fid(H_probs, H_fnums[j], seed)
+                else
+                    fid = UInt(1)
+                end
+
+                pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j],
+                             H_kwargs; bit_offset, fx_offset)
+                clr = clr_loop(H_clrs, fid, pt, clr, frame,
+                               H_fnums[j], H_clr_kwargs;
+                               bit_offset, fx_offset)
+
+                histogram_output!(layer_values, layer_reds, layer_greens,
+                                  layer_blues, layer_alphas, pt, clr,
+                                  bounds, dims, bin_widths, i, num_ignore)
             end
-
-            pt = pt_loop(H_fxs, fid, pt, frame, H_fnums, H_kwargs)
-            clr = clr_loop(H_clrs, fid, pt, clr, frame, H_fnums, H_clr_kwargs)
-
-            histogram_output!(layer_values, layer_reds, layer_greens,
-                              layer_blues, layer_alphas, pt, clr,
-                              bounds, dims, bin_widths, i, num_ignore)
         end
+        total_fxs = sum(H_fnums[j])
+        bit_offset += ceil(UInt,log2(total_fxs))
+        fx_offset += total_fxs
+        @inbounds points[tid, j] = pt
     end
-
-    @inbounds points[tid] = pt
 
 end
 
-@kernel function semi_random_chaos_kernel!(points, n, H1_fxs, H1_kwargs,
-                                           H1_clrs, H1_clr_kwargs,
-                                           H1_probs, H1_fnums,
-                                           H2_fxs, H2_kwargs,
-                                           H2_clrs, H2_clr_kwargs,
-                                           H2_probs, H2_fnums,
+@kernel function semi_random_chaos_kernel!(points, n, H_fxs, H_kwargs,
+                                           H_clrs, H_clr_kwargs,
+                                           H_probs, H_fnums,
+                                           H_post_fxs, H_post_kwargs,
+                                           H_post_clrs, H_post_clr_kwargs,
+                                           H_post_probs, H_post_fnums,
                                            layer_values, layer_reds,
                                            layer_greens, layer_blues,
                                            layer_alphas, frame, bounds,
@@ -275,99 +296,132 @@ end
 
     tid = @index(Global,Linear)
 
-    pt = points[tid]
-    clr = RGBA{Float32}(0,0,0,0)
-    dims = Fable.dims(pt)
+    dims = Fable.dims(points[tid])
 
     seed = quick_seed(tid)
-    fid = create_fid(H1_probs, H1_fnums, seed)
 
-    for i = 1:n
-        # quick way to tell if in range to be calculated or not
-        sketchy_sum = absum(pt)
+    bit_offset = UInt(0)
+    fx_offset = 0
+    post_fx_offset = 0
+    for j = 1:size(points, 2)
+        pt = points[tid, j]
+        clr = RGBA{Float32}(0,0,0,0)
+        for i = 1:n
+            # quick way to tell if in range to be calculated or not
+            sketchy_sum = absum(pt)
 
-        if sketchy_sum < max_range
-            if length(H1_fnums) > 1 || H1_fnums[1] > 1
-                seed = simple_rand(seed)
-                fid = create_fid(H1_probs, H1_fnums, seed)
-            else
-                fid = UInt(1)
+            if sketchy_sum < max_range
+                if length(H_fnums[j]) > 1 || H_fnums[j][1] > 1
+                    seed = simple_rand(seed)
+                    fid = create_fid(H_probs, H_fnums[j], seed)
+                else
+                    fid = UInt(1)
+                end
+
+                pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j], H_kwargs;
+                             bit_offset, fx_offset)
+                clr = clr_loop(H_clrs, fid, pt, clr,
+                               frame, H_fnums[j], H_clr_kwargs;
+                               bit_offset, fx_offset)
+
+                semi_random_loop!(layer_values, layer_reds, layer_greens,
+                                  layer_blues, layer_alphas,
+                                  H_post_fxs, H_post_clrs,
+                                  pt, clr, frame, H_post_fnums[j],
+                                  H_post_kwargs, H_post_clr_kwargs,
+                                  H_post_probs, bounds, dims, bin_widths,
+                                  i, num_ignore; fx_offset = post_fx_offset)
+
             end
-
-            pt = pt_loop(H1_fxs, fid, pt, frame, H1_fnums, H1_kwargs)
-            clr = clr_loop(H1_clrs, fid, pt, clr,
-                           frame, H1_fnums, H1_clr_kwargs)
-
-            semi_random_loop!(layer_values, layer_reds, layer_greens,
-                              layer_blues, layer_alphas, H2_fxs, H2_clrs,
-                              pt, clr, frame, H2_fnums, H2_kwargs,
-                              H2_clr_kwargs, bounds, dims, bin_widths, i,
-                              num_ignore )
-
         end
+        total_fxs = sum(H_fnums[j])
+        bit_offset += ceil(UInt,log2(total_fxs))
+        fx_offset += total_fxs
+        post_fx_offset += sum(H_post_fnums[j])
+        @inbounds points[tid, j] = pt
     end
 
-    @inbounds points[tid] = pt
 end
 
-@kernel function naive_chaos_kernel!(points, n, H1_fxs, H1_kwargs,
-                                     H1_clrs, H1_clr_kwargs,
-                                     H1_probs, H1_fnums,
-                                     H2_fxs, H2_kwargs,
-                                     H2_clrs, H2_clr_kwargs,
-                                     H2_probs, H2_fnums,
+@kernel function naive_chaos_kernel!(points, n, H_fxs, H_kwargs,
+                                     H_clrs, H_clr_kwargs,
+                                     H_probs, H_fnums,
+                                     H_post_fxs, H_post_kwargs,
+                                     H_post_clrs, H_post_clr_kwargs,
+                                     H_post_probs, H_post_fnums,
                                      layer_values, layer_reds, layer_greens,
                                      layer_blues, layer_alphas, frame, bounds,
                                      bin_widths, num_ignore, max_range)
 
     tid = @index(Global,Linear)
 
-    pt = points[tid]
     output_pt = points[tid]
-    dims = Fable.dims(pt)
+    dims = Fable.dims(points[tid])
 
-    clr = RGBA{Float32}(0,0,0,0)
     output_clr = RGBA{Float32}(0,0,0,0)
 
     seed = quick_seed(tid)
-    fid = create_fid(H1_probs, H1_fnums, seed)
-    fid_2 = create_fid(H2_probs, H2_fnums, seed)
 
-    for i = 1:n
-        # quick way to tell if in range to be calculated or not
-        sketchy_sum = absum(pt)
+    bit_offset = UInt(0)
+    fx_offset = 0
 
-        if sketchy_sum < max_range
-            if length(H1_fnums) > 1 || H1_fnums[1] > 1
-                seed = simple_rand(seed)
-                fid = create_fid(H1_probs, H1_fnums, seed)
-            else
-                fid = UInt(1)
+    post_bit_offset = UInt(0)
+    post_fx_offset = 0
+    for j = 1:size(points, 2)
+        pt = points[tid, j]
+        clr = RGBA{Float32}(0,0,0,0)
+        for i = 1:n
+            # quick way to tell if in range to be calculated or not
+            sketchy_sum = absum(pt)
+
+            if sketchy_sum < max_range
+                if length(H_fnums[j]) > 1 || H_fnums[j][1] > 1
+                    seed = simple_rand(seed)
+                    fid = create_fid(H_probs, H_fnums[j], seed)
+                else
+                    fid = UInt(1)
+                end
+
+                if length(H_post_fnums[j]) > 1 || H_post_fnums[j][1] > 1
+                    seed = simple_rand(seed)
+                    fid_2 = create_fid(H_post_probs, H_post_fnums[j], seed)
+                else
+                    fid_2 = UInt(1)
+                end
+
+                pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j], H_kwargs;
+                             fx_offset, bit_offset)
+                clr = clr_loop(H_clrs, fid, pt, clr,
+                               frame, H_fnums[j], H_clr_kwargs;
+                               fx_offset, bit_offset)
+
+                output_pt = pt_loop(H_post_fxs, fid, pt, frame,
+                                    H_post_fnums[j], H_post_kwargs;
+                                    bit_offset = post_bit_offset,
+                                    fx_offset = post_fx_offset)
+                output_clr = clr_loop(H_post_clrs, fid_2, pt, clr,
+                                      frame, H_post_fnums[j],
+                                      H_post_clr_kwargs;
+                                      bit_offset = post_bit_offset,
+                                      fx_offset = post_fx_offset)
+
+                histogram_output!(layer_values, layer_reds, layer_greens,
+                                  layer_blues, layer_alphas, output_pt,
+                                  output_clr, bounds, dims, bin_widths,
+                                  i, num_ignore)
+
             end
-
-            if length(H2_fnums) > 1 || H2_fnums[1] > 1
-                seed = simple_rand(seed)
-                fid_2 = create_fid(H2_probs, H2_fnums, seed)
-            else
-                fid_2 = UInt(1)
-            end
-
-            pt = pt_loop(H1_fxs, fid, pt, frame, H1_fnums, H1_kwargs)
-            clr = clr_loop(H1_clrs, fid, pt, clr,
-                           frame, H1_fnums, H1_clr_kwargs)
-
-            output_pt = pt_loop(H2_fxs, fid, pt, frame, H2_fnums, H2_kwargs)
-            output_clr = clr_loop(H2_clrs, fid_2, pt, clr,
-                                  frame, H2_fnums, H2_clr_kwargs)
-
-            histogram_output!(layer_values, layer_reds, layer_greens,
-                              layer_blues, layer_alphas, output_pt, output_clr,
-                              bounds, dims, bin_widths, i, num_ignore)
-
         end
+        total_fxs = sum(H_fnums[j])
+        bit_offset += ceil(UInt,log2(total_fxs))
+        fx_offset += total_fxs
+
+        post_total_fxs = sum(H_post_fnums[j])
+        post_bit_offset += ceil(UInt,log2(post_total_fxs))
+        post_fx_offset += post_total_fxs
+        @inbounds points[tid, j] = pt
     end
 
-    @inbounds points[tid] = pt
 
 end
 
@@ -384,8 +438,8 @@ function run!(layer::FractalLayer; frame = 0)
 
     bounds = find_bounds(layer)
 
-    iterate!(layer, layer.H1, layer.params.num_iterations,
-             bounds, bin_widths, layer.H2; frame = frame)
+    iterate!(layer, layer.H, layer.params.num_iterations,
+             bounds, bin_widths, layer.H_post; frame = frame)
 
     return layer
 
