@@ -10,14 +10,14 @@
               [0.25, 0.25, 1.0, 1],
               [1.0, 0.25, 1.0, 1]]
 </code></pre><p>In this case, each row of the array will define the color of a different quadrant of the square. Now we can define our fractal executable...</p><pre><code class="nohighlight hljs">H = define_square(; position = [0.0, 0.0], rotation = pi/4, color = colors)</code></pre><p>Here, <code>ArrayType</code> can be either an <code>Array</code> or <code>CuArray</code> depending whether you would like to run the code on the CPU or (CUDA / AMD) GPU. <code>num_particles</code> and <code>num_iterations</code> are the number of points we are solving with for the chaos game and the number of iterations for each point. The higher these numbers are, the better resolved our final image will be. Notationally, we are using the variable <code>H</code> to designate a Hutchinson operator, which is the mathematical name for a function set.</p><p>Finally, we need to attach this function to the layer and run everything with the <code>run!(...)</code> function and write it to an image:</p><pre><code class="nohighlight hljs">    layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
-                         world_size = world_size, ppu = ppu, H1 = H,
+                         world_size = world_size, ppu = ppu, H = H,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
 
     run!(layer)
 
     write_image(layer; filename = &quot;out.png&quot;)
-</code></pre><p>Note that the <code>H1 = H</code> keyword argument is the one actually defining <code>H</code> as the first Hutchinson operator for the <code>FractalLayer</code>. After running this, we will get the following image:</p><p><img src="../res/swirled_square_1.png" alt="a simple square"/></p><p>The full code can be found at the bottom of this page</p><h2 id="Step-2:-swirl-the-square"><a class="docs-heading-anchor" href="#Step-2:-swirl-the-square">Step 2: swirl the square</a><a id="Step-2:-swirl-the-square-1"></a><a class="docs-heading-anchor-permalink" href="#Step-2:-swirl-the-square" title="Permalink"></a></h2><p>Next, we will try to &quot;swirl the square&quot; by also adding another fractal executable to the mix, the swirl operator (defined already in Fable.jl):</p><pre><code class="nohighlight hljs">swirl = @fum function swirl(x, y)
+</code></pre><p>Note that the <code>H = H</code> keyword argument is the one actually defining <code>H</code> as the first Hutchinson operator for the <code>FractalLayer</code>. After running this, we will get the following image:</p><p><img src="../res/swirled_square_1.png" alt="a simple square"/></p><p>The full code can be found at the bottom of this page</p><h2 id="Step-2:-swirl-the-square"><a class="docs-heading-anchor" href="#Step-2:-swirl-the-square">Step 2: swirl the square</a><a id="Step-2:-swirl-the-square-1"></a><a class="docs-heading-anchor-permalink" href="#Step-2:-swirl-the-square" title="Permalink"></a></h2><p>Next, we will try to &quot;swirl the square&quot; by also adding another fractal executable to the mix, the swirl operator (defined already in Fable.jl):</p><pre><code class="nohighlight hljs">swirl = @fum function swirl(x, y)
     r = sqrt(y*y + x*x)
 
     v1 = x*cos(r*r) + y*sin(r*r)
@@ -26,19 +26,19 @@
     y = v1
     x = v2
     return point(y,x)
-end</code></pre><p>Here, we are using the <code>@fum</code> syntax to show how users might define their own operators. The same can be done for colors.</p><p>The code here does not change significantly, except that we create a <code>H2</code> and add it to the <code>fractal_flame(...)</code> function:</p><pre><code class="nohighlight hljs">...
-    H2 = Hutchinson(swirl_operator)
+end</code></pre><p>Here, we are using the <code>@fum</code> syntax to show how users might define their own operators. The same can be done for colors.</p><p>The code here does not change significantly, except that we create a <code>H_post</code> and add it to the <code>fractal_flame(...)</code> function:</p><pre><code class="nohighlight hljs">...
+    H_post = Hutchinson(swirl_operator)
 
     layer = FractalLayer(res; ArrayType = ArrayType, logscale = false,
-                         FloatType = FloatType, H1 = H, H2 = H2,
+                         FloatType = FloatType, H = H, H_post = H_post,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
 
     run!(layer)
-...</code></pre><p>There are a few nuances to point out:</p><ol><li>We are using <code>Shaders.previous</code>, which simply means that the swirl will use whatever colors were specified in <code>H1</code>.</li><li>Fractal operators can be called with <code>fee</code> or <code>Hutchinson</code> and require <code>Array</code> or <code>Tuple</code> inputs.</li><li><code>final = true</code>, means that this is a post processing operation. In other words, <code>H1</code> creates the object primitive (square), and <code>H2</code> always operates on that square.</li><li>We are specifying the Floating Type, <code>FloatType</code>, as <code>Float32</code>, but that is not necessary.</li></ol><p>Once this is run, it should provide the following image:</p><p><img src="../res/swirled_square_2.png" alt="a swirled square"/></p><h2 id="Step-3:-a-different-kind-of-swirl"><a class="docs-heading-anchor" href="#Step-3:-a-different-kind-of-swirl">Step 3: a different kind of swirl</a><a id="Step-3:-a-different-kind-of-swirl-1"></a><a class="docs-heading-anchor-permalink" href="#Step-3:-a-different-kind-of-swirl" title="Permalink"></a></h2><p>Now some people might be scratching their heads at the previous result. If we are solving with both <code>H1</code> and <code>H2</code>, why does it look like two separate actions instead of one combined one? In other words, why is the swirl so clearly different than the square operation?</p><p>This is because we operate on two separate sets of points. <code>H1</code> creates object primitives. Every step of the simulation, we will read from the points after <code>H1</code> operates on them. <code>H2</code> works on a completely different location in memory specifically for image output. If we want, we can make <code>H2</code> operate on the object, itself, by creating a new fractal executable:</p><pre><code class="nohighlight hljs">    final_H = fee(Hutchinson, [H, H2])
+...</code></pre><p>There are a few nuances to point out:</p><ol><li>We are using <code>Shaders.previous</code>, which simply means that the swirl will use whatever colors were specified in <code>H</code>.</li><li>Fractal operators can be called with <code>fee</code> or <code>Hutchinson</code> and require <code>Array</code> or <code>Tuple</code> inputs.</li><li><code>final = true</code>, means that this is a post processing operation. In other words, <code>H</code> creates the object primitive (square), and <code>H_post</code> always operates on that square.</li><li>We are specifying the Floating Type, <code>FloatType</code>, as <code>Float32</code>, but that is not necessary.</li></ol><p>Once this is run, it should provide the following image:</p><p><img src="../res/swirled_square_2.png" alt="a swirled square"/></p><h2 id="Step-3:-a-different-kind-of-swirl"><a class="docs-heading-anchor" href="#Step-3:-a-different-kind-of-swirl">Step 3: a different kind of swirl</a><a id="Step-3:-a-different-kind-of-swirl-1"></a><a class="docs-heading-anchor-permalink" href="#Step-3:-a-different-kind-of-swirl" title="Permalink"></a></h2><p>Now some people might be scratching their heads at the previous result. If we are solving with both <code>H</code> and <code>H_post</code>, why does it look like two separate actions instead of one combined one? In other words, why is the swirl so clearly different than the square operation?</p><p>This is because we operate on two separate sets of points. <code>H</code> creates object primitives. Every step of the simulation, we will read from the points after <code>H</code> operates on them. <code>H_post</code> works on a completely different location in memory specifically for image output. If we want, we can make <code>H_post</code> operate on the object, itself, by creating a new fractal executable:</p><pre><code class="nohighlight hljs">    final_H = fee(Hutchinson, [H, H_post])
 
     layer = FractalLayer(res; ArrayType = ArrayType, logscale = false,
-                         FloatType = FloatType, H1 = final_H
+                         FloatType = FloatType, H = final_H
                          num_particles = num_particles,
                          num_iterations = num_iterations)
 
@@ -62,16 +62,16 @@ end</code></pre><p>Here, we are using the <code>@fum</code> syntax to show how u
 
     H = define_square(; position = [0.0, 0.0], rotation = pi/4,  color = colors)
     swirl_operator = fo(Flames.swirl)
-    H2 = nothing
+    H_post = nothing
     if transform_type == :outer_swirl
-        H2 = Hutchinson(swirl_operator)
+        H_post = Hutchinson(swirl_operator)
     elseif transform_type == :inner_swirl
         H = fee(Hutchinson, [H, Hutchinson(swirl_operator)])
     end
 
     layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
                          world_size = world_size, ppu = ppu,
-                         H1 = H, H2 = H2,
+                         H = H, H_post = H_post,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
 
@@ -79,4 +79,4 @@ end</code></pre><p>Here, we are using the <code>@fum</code> syntax to show how u
 
     write_image(layer; filename = filename)
 end
-</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../research_directions/">« Research Directions</a><a class="docs-footer-nextpage" href="../smear/">Simple Smears »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Friday 16 June 2023 15:14">Friday 16 June 2023</span>. Using Julia version 1.9.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../research_directions/">« Research Directions</a><a class="docs-footer-nextpage" href="../smear/">Simple Smears »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Tuesday 11 July 2023 11:13">Tuesday 11 July 2023</span>. Using Julia version 1.9.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
