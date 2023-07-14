@@ -252,6 +252,7 @@ end
     fx_offset = 0
     for j = 1:size(points,2)
         pt = points[tid, j]
+        total_fxs = sum(H_fnums[j])
         for i = 1:n
             # quick way to tell if in range to be calculated or not
             sketchy_sum = absum(pt)
@@ -259,11 +260,12 @@ end
             if sketchy_sum < max_range
                 if length(H_fnums[j]) > 1 || H_fnums[j][1] > 1
                     seed = simple_rand(seed)
-                    fid = create_fid(H_probs, H_fnums[j], seed)
+                    fid = create_fid(H_probs, H_fnums[j], seed, fx_offset + 1)
                 else
                     fid = UInt(1)
                 end
 
+                #println(fx_offset, '\t', H_fnums[j], '\t', fid)
                 pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j],
                              H_kwargs; bit_offset, fx_offset)
                 clr = clr_loop(H_clrs, fid, pt, clr, frame,
@@ -275,8 +277,7 @@ end
                                   bounds, dims, bin_widths, i, num_ignore)
             end
         end
-        total_fxs = sum(H_fnums[j])
-        bit_offset += ceil(UInt,log2(total_fxs))
+        #bit_offset += ceil(UInt,log2(total_fxs))
         fx_offset += total_fxs
         @inbounds points[tid, j] = pt
     end
@@ -313,7 +314,7 @@ end
             if sketchy_sum < max_range
                 if length(H_fnums[j]) > 1 || H_fnums[j][1] > 1
                     seed = simple_rand(seed)
-                    fid = create_fid(H_probs, H_fnums[j], seed)
+                    fid = create_fid(H_probs, H_fnums[j], seed, fx_offset + 1)
                 else
                     fid = UInt(1)
                 end
@@ -377,14 +378,15 @@ end
             if sketchy_sum < max_range
                 if length(H_fnums[j]) > 1 || H_fnums[j][1] > 1
                     seed = simple_rand(seed)
-                    fid = create_fid(H_probs, H_fnums[j], seed)
+                    fid = create_fid(H_probs, H_fnums[j], seed, fx_offset + 1)
                 else
                     fid = UInt(1)
                 end
 
                 if length(H_post_fnums[j]) > 1 || H_post_fnums[j][1] > 1
                     seed = simple_rand(seed)
-                    fid_2 = create_fid(H_post_probs, H_post_fnums[j], seed)
+                    fid_2 = create_fid(H_post_probs, H_post_fnums[j], seed,
+                                       post_fx_offset + 1)
                 else
                     fid_2 = UInt(1)
                 end
