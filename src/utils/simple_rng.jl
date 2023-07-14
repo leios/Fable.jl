@@ -85,6 +85,21 @@ end
     return val
 end
 
+@inline function create_fid(probs, fnums, seed, fx_offset)
+    fid = UInt(0)
+    bit_offset = 0
+    for i = 1:length(fnums)
+        if probs[fx_offset] < 1
+            seed = simple_rand(UInt(seed))
+            choice = find_choice(probs, fx_offset, fnums[i], seed)
+            fid += ((choice-1) << bit_offset)
+            bit_offset += ceil(UInt, log2(fnums[i]))
+        end
+        fx_offset += fnums[i]
+    end
+    return fid
+end
+
 @inline function create_fid(probs, fnums, seed)
     fid = UInt(0)
     bit_offset = 0

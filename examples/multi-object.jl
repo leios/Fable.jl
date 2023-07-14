@@ -6,12 +6,14 @@ function multi_example(num_particles, num_iterations;
 
     ppu = 1920/world_size[2]
 
-    square = define_square(; position = [-0.25, 0.0], scale = 0.25,
+    square = define_square(; position = [-0.25, -0.25], scale = 0.25,
                              color = Shaders.blue)
+    square_2 = define_square(; position = [-0.25, 0.25], scale = 0.25,
+                               color = Shaders.magenta)
     circle = define_circle(; position = [0.25, 0.0], radius = 0.25,
                              color = Shaders.red)
 
-    final_H = Hutchinson([square, circle])
+    final_H = Hutchinson([square_2, circle, square])
 
     layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
                          world_size = world_size, ppu = ppu,
