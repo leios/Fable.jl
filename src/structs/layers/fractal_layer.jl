@@ -29,13 +29,13 @@ function default_params(a::Type{FractalLayer}; config = :standard,
                 calc_max_value = false, max_value = 1, ArrayType = ArrayType,
                 FloatType = FloatType, num_ignore = 20, dims = dims,
                 solver_type = :semi_random, num_particles = num_particles,
-                num_iterations = num_iterations)
+                num_iterations = num_iterations, output_type = :overlay)
     elseif config == :fractal_flame
         return (numthreads = 256, gamma = 2.2, logscale = true,
                 calc_max_value = true, max_value = 1, ArrayType = ArrayType,
                 FloatType = FloatType, num_ignore = 20, dims = dims,
                 solver_type = :semi_random, num_particles = num_particles,
-                num_iterations = num_iterations)
+                num_iterations = num_iterations, output_type = :overlay)
     end
 end
 
@@ -43,7 +43,8 @@ function params(a::Type{FractalLayer}; numthreads = 256,
                 ArrayType = Array, FloatType = Float32,
                 logscale = false, gamma = 2.2, calc_max_value = false,
                 max_value = 1, num_ignore = 20, num_particles = 1000,
-                num_iterations = 1000, dims = 2, solver_type = :semi_random)
+                num_iterations = 1000, dims = 2, solver_type = :semi_random,
+                output_type = overlay)
     return (numthreads = numthreads,
             ArrayType = ArrayType,
             FloatType = FloatType,
@@ -55,7 +56,8 @@ function params(a::Type{FractalLayer}; numthreads = 256,
             num_particles = num_particles,
             num_iterations = num_iterations,
             dims = dims,
-            solver_type = solver_type)
+            solver_type = solver_type,
+            output_type = output_type)
 end
 
 
@@ -101,7 +103,7 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                       numthreads = 256,
                       num_particles = 1000, num_iterations = 1000, dims = 2,
                       H = Hutchinson(), H_post = nothing,
-                      solver_type = :semi_random)
+                      solver_type = :semi_random, output_type = :overlay)
     if isa(H, FractalOperator)
         H = Hutchinson(H)
     end
@@ -152,7 +154,8 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                                    num_particles = num_particles,
                                    num_iterations = num_iterations,
                                    dims = dims,
-                                   solver_type = solver_type),
+                                   solver_type = solver_type,
+                                   output_type = output_type),
                             postprocessing_steps)
     end
 end
