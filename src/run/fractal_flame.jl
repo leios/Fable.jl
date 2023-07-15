@@ -130,7 +130,8 @@ end
                                       layer_blues, layer_alphas, fxs, clr_fxs, 
                                       pt, clr, frame, fnums, kwargs, clr_kwargs,
                                       probs, bounds, dims, bin_widths,
-                                      iteration, num_ignore; fx_offset = 0)
+                                      iteration, num_ignore, output_fx;
+                                      fx_offset = 0)
     exs = Expr[]
     push!(exs, :(temp_prob = 0.0))
     push!(exs, :(fx_max_range = fx_offset + sum(fnums)))
@@ -141,10 +142,10 @@ end
                 clr = clr_fxs[$i](pt.y, pt.x, clr, frame; clr_kwargs[$i]...)
                 temp_prob += probs[$i]
                 if isapprox(temp_prob, 1.0) || temp_prob >= 1.0
-                    histogram_output!(layer_values, layer_reds, layer_greens,
-                                      layer_blues, layer_alphas,
-                                      pt, clr, bounds,
-                                      dims, bin_widths, iteration, num_ignore)
+                    output_fx(layer_values, layer_reds, layer_greens,
+                              layer_blues, layer_alphas,
+                              pt, clr, bounds,
+                              dims, bin_widths, iteration, num_ignore)
                     temp_prob = 0.0
                 end
             end
@@ -163,6 +164,23 @@ end
 @inline function histogram_output!(layer_values, layer_reds, layer_greens,
                                    layer_blues, layer_alphas, pt, clr,
                                    bounds, dims, bin_widths, i, num_ignore)
+    on_img_flag = on_image(pt.y,pt.x, bounds, dims)
+    if i > num_ignore && on_img_flag
+        @inbounds bin = find_bin(layer_values, pt.y, pt.x, bounds, bin_widths)
+        if bin > 0 && bin <= length(layer_values)
+            @inbounds layer_values[bin] = 1
+            @inbounds layer_reds[bin] = clr.r
+            @inbounds layer_greens[bin] = clr.g
+            @inbounds layer_blues[bin] = clr.b
+            @inbounds layer_alphas[bin] = clr.alpha
+        end
+    end
+end
+
+@inline function atomic_histogram_output!(layer_values, layer_reds,
+                                          layer_greens, layer_blues,
+                                          layer_alphas, pt, clr, bounds, dims,
+                                          bin_widths, i, num_ignore)
     on_img_flag = on_image(pt.y,pt.x, bounds, dims)
     if i > num_ignore && on_img_flag
         @inbounds bin = find_bin(layer_values, pt.y, pt.x, bounds, bin_widths)
@@ -207,6 +225,16 @@ function iterate!(layer::FractalLayer, H::Hutchinson, n,
         fx = naive_chaos_kernel!
     end
 
+    if layer.params.output_type == :average
+        output_fx = atomic_histogram_output!
+    elseif layer.params.output_type == :overlay
+        output_fx = histogram_output!
+    else
+        @warn(string(layer.params.output_type)*" is not a valid output type!\n"*
+              "Defaulting to overlay...")
+        fx = histogram_output!
+    end
+
     max_range = maximum(values(bounds))*10
     backend = get_backend(layer.canvas)
     kernel! = fx(backend, layer.params.numthreads)
@@ -217,7 +245,7 @@ function iterate!(layer::FractalLayer, H::Hutchinson, n,
                 H.prob_set, H.fnums, layer.values,
                 layer.reds, layer.greens, layer.blues, layer.alphas,
                 frame, bounds, Tuple(bin_widths),
-                layer.params.num_ignore, max_range,
+                layer.params.num_ignore, max_range, output_fx,
                 ndrange=size(layer.particles)[1])
     else
         kernel!(layer.particles, n, H.fxs, combine(H.kwargs, H.fis),
@@ -229,7 +257,7 @@ function iterate!(layer::FractalLayer, H::Hutchinson, n,
                 H_post.prob_set, H_post.fnums,
                 layer.values, layer.reds, layer.greens, layer.blues,
                 layer.alphas, frame, bounds, Tuple(bin_widths),
-                layer.params.num_ignore, max_range,
+                layer.params.num_ignore, max_range, output_fx,
                 ndrange=size(layer.particles)[1])
     end
 end
@@ -239,7 +267,8 @@ end
                                      H_probs, H_fnums,
                                      layer_values, layer_reds, layer_greens,
                                      layer_blues, layer_alphas, frame, bounds,
-                                     bin_widths, num_ignore, max_range)
+                                     bin_widths, num_ignore, max_range,
+                                     output_fx)
 
     tid = @index(Global,Linear)
 
@@ -265,19 +294,17 @@ end
                     fid = UInt(1)
                 end
 
-                #println(fx_offset, '\t', H_fnums[j], '\t', fid)
                 pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j],
                              H_kwargs; bit_offset, fx_offset)
                 clr = clr_loop(H_clrs, fid, pt, clr, frame,
                                H_fnums[j], H_clr_kwargs;
                                bit_offset, fx_offset)
 
-                histogram_output!(layer_values, layer_reds, layer_greens,
-                                  layer_blues, layer_alphas, pt, clr,
-                                  bounds, dims, bin_widths, i, num_ignore)
+                output_fx(layer_values, layer_reds, layer_greens,
+                          layer_blues, layer_alphas, pt, clr,
+                          bounds, dims, bin_widths, i, num_ignore)
             end
         end
-        #bit_offset += ceil(UInt,log2(total_fxs))
         fx_offset += total_fxs
         @inbounds points[tid, j] = pt
     end
@@ -293,7 +320,8 @@ end
                                            layer_values, layer_reds,
                                            layer_greens, layer_blues,
                                            layer_alphas, frame, bounds,
-                                           bin_widths, num_ignore, max_range)
+                                           bin_widths, num_ignore, max_range,
+                                           output_fx)
 
     tid = @index(Global,Linear)
 
@@ -331,12 +359,12 @@ end
                                   pt, clr, frame, H_post_fnums[j],
                                   H_post_kwargs, H_post_clr_kwargs,
                                   H_post_probs, bounds, dims, bin_widths,
-                                  i, num_ignore; fx_offset = post_fx_offset)
+                                  i, num_ignore, output_fx;
+                                  fx_offset = post_fx_offset)
 
             end
         end
         total_fxs = sum(H_fnums[j])
-        bit_offset += ceil(UInt,log2(total_fxs))
         fx_offset += total_fxs
         post_fx_offset += sum(H_post_fnums[j])
         @inbounds points[tid, j] = pt
@@ -352,7 +380,8 @@ end
                                      H_post_probs, H_post_fnums,
                                      layer_values, layer_reds, layer_greens,
                                      layer_blues, layer_alphas, frame, bounds,
-                                     bin_widths, num_ignore, max_range)
+                                     bin_widths, num_ignore, max_range,
+                                     output_fx)
 
     tid = @index(Global,Linear)
 
@@ -407,19 +436,17 @@ end
                                       bit_offset = post_bit_offset,
                                       fx_offset = post_fx_offset)
 
-                histogram_output!(layer_values, layer_reds, layer_greens,
-                                  layer_blues, layer_alphas, output_pt,
-                                  output_clr, bounds, dims, bin_widths,
-                                  i, num_ignore)
+                output_fx(layer_values, layer_reds, layer_greens,
+                          layer_blues, layer_alphas, output_pt,
+                          output_clr, bounds, dims, bin_widths,
+                          i, num_ignore)
 
             end
         end
         total_fxs = sum(H_fnums[j])
-        bit_offset += ceil(UInt,log2(total_fxs))
         fx_offset += total_fxs
 
         post_total_fxs = sum(H_post_fnums[j])
-        post_bit_offset += ceil(UInt,log2(post_total_fxs))
         post_fx_offset += post_total_fxs
         @inbounds points[tid, j] = pt
     end
