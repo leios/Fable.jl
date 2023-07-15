@@ -135,17 +135,22 @@ end
     exs = Expr[]
     push!(exs, :(temp_prob = 0.0))
     push!(exs, :(fx_max_range = fx_offset + sum(fnums)))
+    push!(exs, :(curr_pt = pt))
+    push!(exs, :(curr_clr = clr))
     for i = 1:length(fxs.parameters)
         ex = quote
             if fx_offset + 1 <= $i <= fx_max_range
-                pt = fxs[$i](pt.y, pt.x, frame; kwargs[$i]...)
-                clr = clr_fxs[$i](pt.y, pt.x, clr, frame; clr_kwargs[$i]...)
+                curr_pt = fxs[$i](curr_pt.y, curr_pt.x, frame; kwargs[$i]...)
+                curr_clr = clr_fxs[$i](curr_pt.y, curr_pt.x, curr_clr, frame;
+                                       clr_kwargs[$i]...)
                 temp_prob += probs[$i]
                 if isapprox(temp_prob, 1.0) || temp_prob >= 1.0
                     output_fx(layer_values, layer_reds, layer_greens,
                               layer_blues, layer_alphas,
-                              pt, clr, bounds,
+                              curr_pt, curr_clr, bounds,
                               dims, bin_widths, iteration, num_ignore)
+                    curr_pt = pt
+                    curr_clr = clr
                     temp_prob = 0.0
                 end
             end
