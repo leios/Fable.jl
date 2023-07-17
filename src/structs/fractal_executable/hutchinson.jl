@@ -13,7 +13,7 @@ end
 
 Hutchinson() = Hutchinson((),(),(),(),(),(),(),())
 
-Base.length(H) = length(H.fnums)
+Base.length(H::Hutchinson) = length(H.fnums)
 
 function Hutchinson(fo::FractalOperator)
     kwargs, fis, fxs, color_kwargs, color_fis, color_fxs,
