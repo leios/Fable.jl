@@ -1,4 +1,4 @@
-export point, generate_points, generate_points, absum, dims
+export point, generate_points, generate_points, absum, dims, recenter
 
 # Might need the following interface for GPU compatability:
 # Can otherwise use NamedTuples:
@@ -45,6 +45,40 @@ dims(pt::Point1D) = 1
 dims(pt::Point2D) = 2
 dims(pt::Point3D) = 3
 dims(pt::Point4D) = 4
+
+function recenter(pt::Point1D, bounds, bin_widths)
+    return point((floor((pt.y - bounds[1])/bin_widths[1])+0.5)*bin_widths[1]+
+                 +bounds[1])
+end
+
+function recenter(pt::Point2D, bounds, bin_widths)
+    return point((floor((pt.y - bounds[1])/bin_widths[1])+0.5)*bin_widths[1]+
+                 +bounds[1],
+                 (floor((pt.x - bounds[3])/bin_widths[2])+0.5)*bin_widths[2]+
+                 +bounds[3])
+end
+
+function recenter(pt::Point3D, bounds, bin_widths)
+    return point((floor((pt.y - bounds[1])/bin_widths[1])+0.5)*bin_widths[1]+
+                 +bounds[1],
+                 (floor((pt.x - bounds[3])/bin_widths[2])+0.5)*bin_widths[2]+
+                 +bounds[3],
+                 (floor((pt.z - bounds[5])/bin_widths[3])+0.5)*bin_widths[3]+
+                 +bounds[5])
+end
+
+function recenter(pt::Point4D, bounds, bin_widths)
+    return point((floor((pt.y - bounds[1])/bin_widths[1])+0.5)*bin_widths[1]+
+                 bounds[1],
+                 (floor((pt.x - bounds[3])/bin_widths[2])+0.5)*bin_widths[2]+
+                 +bounds[3],
+                 (floor((pt.z - bounds[5])/bin_widths[3])+0.5)*bin_widths[3]+
+                 +bounds[5],
+                 (floor((pt.w - bounds[7])/bin_widths[4])+0.5)*bin_widths[4]+
+                 +bounds[7])
+end
+
+
 
 function generate_point(; dims=2, bounds = find_bounds((0,0), (2,2)))
     return point([rand() * (bounds[i*2] - bounds[i*2-1]) +

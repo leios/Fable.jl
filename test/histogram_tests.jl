@@ -62,6 +62,27 @@ function find_bin_tests()
 
 end
 
+function recenter_tests()
+    bounds = [0.5, 4.5, 0.5, 4.5, 0.5, 4.5, 0.5, 4.5]
+    bin_widths = [0.5, 0.5, 0.5, 0.5]
+
+    for i = 1:4
+        input = [1.75 for j = 1:i]
+        pt = point(input...)
+        new_pt = recenter(pt, bounds, bin_widths)
+
+        @test pt == new_pt
+
+        input = [2.0 for j = 1:i]
+        output = [2.25 for j = 1:i]
+        pt = point(input...)
+        new_pt = recenter(pt, bounds, bin_widths)
+        out_pt = point(output...)
+
+        @test new_pt == out_pt
+    end
+end
+
 function histogram_kernel_tests(ArrayType::Type{AT}) where AT <: AbstractArray
 
     rand_input = rand(Float32, 128)*128
@@ -134,6 +155,9 @@ function histogram_testsuite(ArrayType::Type{AT}) where AT <: AbstractArray
     if ArrayType <: Array
         @testset "find bin tests" begin
             find_bin_tests()
+        end
+        @testset "recenter tests" begin
+            recenter_tests()
         end
     end
 
