@@ -301,6 +301,7 @@ end
 
                 pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j],
                              H_kwargs; bit_offset, fx_offset)
+                pt = recenter(pt, bounds, bin_widths)
                 clr = clr_loop(H_clrs, fid, pt, clr, frame,
                                H_fnums[j], H_clr_kwargs;
                                bit_offset, fx_offset)
@@ -354,6 +355,7 @@ end
 
                 pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j], H_kwargs;
                              bit_offset, fx_offset)
+                pt = recenter(pt, bounds, bin_widths)
                 clr = clr_loop(H_clrs, fid, pt, clr,
                                frame, H_fnums[j], H_clr_kwargs;
                                bit_offset, fx_offset)
@@ -427,6 +429,7 @@ end
 
                 pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j], H_kwargs;
                              fx_offset, bit_offset)
+                pt = recenter(pt, bounds, bin_widths)
                 clr = clr_loop(H_clrs, fid, pt, clr,
                                frame, H_fnums[j], H_clr_kwargs;
                                fx_offset, bit_offset)
@@ -435,6 +438,7 @@ end
                                     H_post_fnums[j], H_post_kwargs;
                                     bit_offset = post_bit_offset,
                                     fx_offset = post_fx_offset)
+                output_pt = recenter(output_pt, bounds, bin_widths)
                 output_clr = clr_loop(H_post_clrs, fid_2, pt, clr,
                                       frame, H_post_fnums[j],
                                       H_post_clr_kwargs;
