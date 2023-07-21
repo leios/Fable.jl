@@ -43,13 +43,14 @@ end
 # These functions essentially unroll the loops in the kernel because of a
 # known julia bug preventing us from using for i = 1:10...
 @generated function pt_loop(fxs, fid, pt, frame, fnums, kwargs;
-                             bit_offset = 0, fx_offset = 0)
+                             bit_offset = UInt(0), fx_offset = 0)
     exs = Expr[]
     push!(exs, :(bit_offset = bit_offset))
     push!(exs, :(fx_offset = fx_offset))
     for i = 1:length(fnums.parameters)
         ex = quote
             idx = decode_fid(fid, bit_offset, fnums[$i]) + fx_offset
+            #println(idx)
             pt = call_pt_fx(fxs, pt, frame, kwargs, idx)
             bit_offset += ceil(UInt,log2(fnums[$i]))
             fx_offset += fnums[$i]
@@ -104,7 +105,7 @@ end
 end
 
 @generated function clr_loop(fxs, fid, pt, clr, frame, fnums, kwargs;
-                             bit_offset = 0, fx_offset = 0)
+                             bit_offset = UInt(0), fx_offset = 0)
     exs = Expr[]
     push!(exs, :(bit_offset = bit_offset))
     push!(exs, :(fx_offset = fx_offset))
@@ -184,36 +185,41 @@ end
     end
 end
 
-@inline function histogram_output!(layer_values, layer_reds, layer_greens,
-                                   layer_blues, layer_alphas, priorities, fid,
-                                   pt, clr, bounds, dims,
-                                   bin_widths, i, num_ignore)
+@inbounds @inline function histogram_output!(layer_values,
+                                             layer_reds, layer_greens,
+                                             layer_blues, layer_alphas,
+                                             priorities, fid,
+                                             pt, clr, bounds, dims,
+                                             bin_widths, i, num_ignore)
     on_img_flag = on_image(pt.y,pt.x, bounds, dims)
     if i > num_ignore && on_img_flag
         @inbounds bin = find_bin(layer_values, pt.y, pt.x, bounds, bin_widths)
         if bin > 0 && bin <= length(layer_values) && priorities[bin] < fid
-            @inbounds layer_values[bin] = 1
-            @inbounds layer_reds[bin] = clr.r
-            @inbounds layer_greens[bin] = clr.g
-            @inbounds layer_blues[bin] = clr.b
-            @inbounds layer_alphas[bin] = clr.alpha
+        #if bin > 0 && bin <= length(layer_values)
+            layer_values[bin] = 1
+            layer_reds[bin] = clr.r
+            layer_greens[bin] = clr.g
+            layer_blues[bin] = clr.b
+            layer_alphas[bin] = clr.alpha
+            priorities[bin] = fid
         end
     end
 end
 
-@inline function atomic_histogram_output!(layer_values, layer_reds,
-                                          layer_greens, layer_blues,
-                                          layer_alphas, pt, clr, bounds, dims,
-                                          bin_widths, i, num_ignore)
+@inbounds @inline function atomic_histogram_output!(layer_values, layer_reds,
+                                                    layer_greens, layer_blues,
+                                                    layer_alphas, pt,
+                                                    clr, bounds, dims,
+                                                    bin_widths, i, num_ignore)
     on_img_flag = on_image(pt.y,pt.x, bounds, dims)
     if i > num_ignore && on_img_flag
         @inbounds bin = find_bin(layer_values, pt.y, pt.x, bounds, bin_widths)
         if bin > 0 && bin <= length(layer_values)
-            @inbounds @atomic layer_values[bin] += 1
-            @inbounds @atomic layer_reds[bin] += clr.r
-            @inbounds @atomic layer_greens[bin] += clr.g
-            @inbounds @atomic layer_blues[bin] += clr.b
-            @inbounds @atomic layer_alphas[bin] += clr.alpha
+            @atomic layer_values[bin] += 1
+            @atomic layer_reds[bin] += clr.r
+            @atomic layer_greens[bin] += clr.g
+            @atomic layer_blues[bin] += clr.b
+            @atomic layer_alphas[bin] += clr.alpha
         end
     end
 end
@@ -315,7 +321,7 @@ end
                 clr = clr_loop(H_clrs, fid, pt, clr, frame,
                                H_fnums[j], H_clr_kwargs; fx_offset)
 
-                fid <<= bit_offset
+                fid = (fid+1) << bit_offset+1
 
                 output!(layer_values, layer_reds, layer_greens,
                         layer_blues, layer_alphas, priorities, fid,
@@ -323,8 +329,9 @@ end
                         bounds, dims, bin_widths, i, num_ignore)
             end
         end
+        #println()
         fx_offset += total_fxs
-        bit_offset += ceil(UInt,log2(total_fxs))
+        bit_offset += ceil(UInt,log2(total_fxs))+1
         @inbounds points[tid, j] = pt
     end
 
@@ -372,7 +379,7 @@ end
                 clr = clr_loop(H_clrs, fid, pt, clr,
                                frame, H_fnums[j], H_clr_kwargs; fx_offset)
 
-                fid <<= bit_offset
+                fid = (fid+1) << bit_offset
 
                 semi_random_loop!(layer_values, layer_reds, layer_greens,
                                   layer_blues, layer_alphas, priorities, fid, 
@@ -387,7 +394,8 @@ end
         end
         total_fxs = sum(H_fnums[j])
         fx_offset += total_fxs
-        bit_offset += ceil(UInt,log2(total_fxs))
+        bit_offset += ceil(UInt, log2(total_fxs)) +
+                      ceil(UInt, log2(sum(H_post_fnums[j])))
         post_fx_offset += sum(H_post_fnums[j])
         @inbounds points[tid, j] = pt
     end
@@ -458,22 +466,22 @@ end
                                       fx_offset = post_fx_offset)
 
                 # a bit sketchy
-                fid = (fid << bit_offset) + (fid_2 << post_bit_offset)
+                fid = (fid+1) << bit_offset
 
                 output!(layer_values, layer_reds, layer_greens,
                         layer_blues, layer_alphas, priorities, fid, output_pt,
-                        output_clr, bounds, dims, bin_widths,
+                        output_clr, overlay, bounds, dims, bin_widths,
                         i, num_ignore)
 
             end
         end
         total_fxs = sum(H_fnums[j])
         fx_offset += total_fxs
-        bit_offset += ceil(UInt,log2(total_fxs))
+        bit_offset += ceil(UInt, log2(total_fxs)) +
+                      ceil(UInt, log2(sum(H_post_fnums[j])))
 
         post_total_fxs = sum(H_post_fnums[j])
         post_fx_offset += post_total_fxs
-        post_bit_offset += ceil(UInt,log2(total_fxs))
         @inbounds points[tid, j] = pt
     end
 

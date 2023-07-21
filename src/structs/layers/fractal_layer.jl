@@ -31,13 +31,13 @@ function default_params(a::Type{FractalLayer}; config = :standard,
                 calc_max_value = false, max_value = 1, ArrayType = ArrayType,
                 FloatType = FloatType, num_ignore = 20, dims = dims,
                 solver_type = :semi_random, num_particles = num_particles,
-                num_iterations = num_iterations, overlay = true)
+                num_iterations = num_iterations, overlay = false)
     elseif config == :fractal_flame
         return (numthreads = 256, gamma = 2.2, logscale = true,
                 calc_max_value = true, max_value = 1, ArrayType = ArrayType,
                 FloatType = FloatType, num_ignore = 20, dims = dims,
                 solver_type = :semi_random, num_particles = num_particles,
-                num_iterations = num_iterations, overlay = true)
+                num_iterations = num_iterations, overlay = false)
     end
 end
 
@@ -46,7 +46,7 @@ function params(a::Type{FractalLayer}; numthreads = 256,
                 logscale = false, gamma = 2.2, calc_max_value = false,
                 max_value = 1, num_ignore = 20, num_particles = 1000,
                 num_iterations = 1000, dims = 2, solver_type = :semi_random,
-                overlay = true)
+                overlay = false)
     return (numthreads = numthreads,
             ArrayType = ArrayType,
             FloatType = FloatType,
@@ -105,7 +105,7 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                       numthreads = 256,
                       num_particles = 1000, num_iterations = 1000, dims = 2,
                       H = Hutchinson(), H_post = nothing,
-                      solver_type = :semi_random, overlay = true)
+                      solver_type = :semi_random, overlay = false)
     if isa(H, FractalOperator)
         H = Hutchinson(H)
     end

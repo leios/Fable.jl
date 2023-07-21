@@ -30,5 +30,4 @@ end
 @info("Created Function: multi_example(num_particles, num_iterations;
                                        ArrayType = Array,
                                        filename = 'out.png',
-                                       output_type = :overlay)\n"*
-      "output_type can be: {:overlay, :average}")
+                                       overlay = true)")
