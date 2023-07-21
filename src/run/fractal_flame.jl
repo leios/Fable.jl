@@ -317,9 +317,8 @@ end
 
                 pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j],
                              H_kwargs; fx_offset)
-                pt = recenter(pt, bounds, bin_widths)
-                clr = clr_loop(H_clrs, fid, pt, clr, frame,
-                               H_fnums[j], H_clr_kwargs; fx_offset)
+                clr = clr_loop(H_clrs, fid, recenter(pt, bounds, bin_widths),
+                               clr, frame, H_fnums[j], H_clr_kwargs; fx_offset)
 
                 fid = (fid+1) << bit_offset+1
 
@@ -375,9 +374,8 @@ end
 
                 pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j], H_kwargs;
                              fx_offset)
-                pt = recenter(pt, bounds, bin_widths)
-                clr = clr_loop(H_clrs, fid, pt, clr,
-                               frame, H_fnums[j], H_clr_kwargs; fx_offset)
+                clr = clr_loop(H_clrs, fid, recenter(pt, bounds, bin_widths),
+                               clr, frame, H_fnums[j], H_clr_kwargs; fx_offset)
 
                 fid = (fid+1) << bit_offset
 
@@ -452,15 +450,14 @@ end
 
                 pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j], H_kwargs;
                              fx_offset)
-                pt = recenter(pt, bounds, bin_widths)
-                clr = clr_loop(H_clrs, fid, pt, clr,
-                               frame, H_fnums[j], H_clr_kwargs; fx_offset)
+                clr = clr_loop(H_clrs, fid, recenter(pt, bounds, bin_widths),
+                               clr, frame, H_fnums[j], H_clr_kwargs; fx_offset)
 
                 output_pt = pt_loop(H_post_fxs, fid, pt, frame,
                                     H_post_fnums[j], H_post_kwargs;
                                     fx_offset = post_fx_offset)
-                output_pt = recenter(output_pt, bounds, bin_widths)
-                output_clr = clr_loop(H_post_clrs, fid_2, pt, clr,
+                output_clr = clr_loop(H_post_clrs, fid_2,
+                                      recenter(pt, bounds, bin_widths), clr,
                                       frame, H_post_fnums[j],
                                       H_post_clr_kwargs;
                                       fx_offset = post_fx_offset)
