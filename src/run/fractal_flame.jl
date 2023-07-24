@@ -423,7 +423,6 @@ end
     bit_offset = UInt(0)
     fx_offset = 0
 
-    post_bit_offset = UInt(0)
     post_fx_offset = 0
     for j = 1:size(points, 2)
         pt = points[tid, j]
