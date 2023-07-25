@@ -21,13 +21,7 @@ export run!
 
 @generated function call_pt_fx(fxs, pt, frame, kwargs, idx)
     exs = Expr[]
-    ex = quote
-        if idx == 1
-            pt = fxs[1](pt.y, pt.x, frame; kwargs[1]...) 
-        end
-    end
-    push!(exs, ex)
-    for i = 2:length(fxs.parameters)
+    for i = 1:length(fxs.parameters)
         ex = quote
             if idx == $i
                 pt = fxs[$i](pt.y, pt.x, frame; kwargs[$i]...) 
@@ -50,7 +44,6 @@ end
     for i = 1:length(fnums.parameters)
         ex = quote
             idx = decode_fid(fid, bit_offset, fnums[$i]) + fx_offset
-            #println(idx)
             pt = call_pt_fx(fxs, pt, frame, kwargs, idx)
             bit_offset += ceil(UInt,log2(fnums[$i]))
             fx_offset += fnums[$i]
@@ -68,13 +61,7 @@ end
 
 @generated function call_clr_fx(fxs, pt, clr, frame, kwargs, idx)
     exs = Expr[]
-    ex = quote
-        if idx == 1
-            clr = call_clr_fx(fxs[1], pt, clr, frame, kwargs[1]) 
-        end
-    end
-    push!(exs, ex)
-    for i = 2:length(fxs.parameters)
+    for i = 1:length(fxs.parameters)
         ex = quote
             if idx == $i
                 clr = call_clr_fx(fxs[$i], pt, clr, frame, kwargs[$i])
@@ -188,9 +175,10 @@ end
 @inbounds @inline function histogram_output!(layer_values,
                                              layer_reds, layer_greens,
                                              layer_blues, layer_alphas,
-                                             priorities, fid,
+                                             priorities::AT, fid,
                                              pt, clr, bounds, dims,
-                                             bin_widths, i, num_ignore)
+                                             bin_widths, i,
+                                             num_ignore) where AT<:AbstractArray
     on_img_flag = on_image(pt.y,pt.x, bounds, dims)
     if i > num_ignore && on_img_flag
         @inbounds bin = find_bin(layer_values, pt.y, pt.x, bounds, bin_widths)
@@ -204,6 +192,14 @@ end
             priorities[bin] = fid
         end
     end
+end
+
+# this is a stupid hack so that things compile on the GPU. Otherwise, the GPU
+# will try to compile the above function with priorities as nothing, which
+# cannot access the [bin] index
+@inbounds @inline function histogram_output!(layer_values, layer_reds,
+     layer_greens, layer_blues, layer_alphas, priorities::AT, fid, pt, clr,
+     bounds, dims, bin_widths, i, num_ignore) where AT<:Nothing
 end
 
 @inbounds @inline function atomic_histogram_output!(layer_values, layer_reds,
@@ -328,7 +324,7 @@ end
                         bounds, dims, bin_widths, i, num_ignore)
             end
         end
-        #println()
+
         fx_offset += total_fxs
         bit_offset += ceil(UInt,log2(total_fxs))+1
         @inbounds points[tid, j] = pt
