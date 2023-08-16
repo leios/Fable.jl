@@ -21,6 +21,8 @@ export run!
 
 @generated function call_pt_fx(fxs, pt, frame, kwargs, idx)
     exs = Expr[]
+    push!(exs, :(@inline))
+    push!(exs, Expr(:inbounds, true))
     for i = 1:length(fxs.parameters)
         ex = quote
             if idx == $i
@@ -29,6 +31,7 @@ export run!
         end
         push!(exs, ex)
     end
+    push!(exs, Expr(:inbounds, :pop))
     push!(exs, :(return pt))
 
     return Expr(:block, exs...)
@@ -36,9 +39,10 @@ end
 
 # These functions essentially unroll the loops in the kernel because of a
 # known julia bug preventing us from using for i = 1:10...
-@generated function pt_loop(fxs, fid, pt, frame, fnums, kwargs;
+@inline @generated function pt_loop(fxs, fid, pt, frame, fnums, kwargs;
                              bit_offset = UInt(0), fx_offset = 0)
     exs = Expr[]
+    push!(exs, :(@inline))
     push!(exs, :(bit_offset = bit_offset))
     push!(exs, :(fx_offset = fx_offset))
     for i = 1:length(fnums.parameters)
@@ -59,8 +63,9 @@ end
     return Expr(:block, exs...)
 end
 
-@generated function call_clr_fx(fxs, pt, clr, frame, kwargs, idx)
+@inline @generated function call_clr_fx(fxs, pt, clr, frame, kwargs, idx)
     exs = Expr[]
+    push!(exs, :(@inline))
     for i = 1:length(fxs.parameters)
         ex = quote
             if idx == $i
@@ -78,9 +83,10 @@ end
     return fx(pt.y, pt.x, clr, frame; kwargs...)
 end
 
-@generated function call_clr_fx(fx::Tuple, pt::Point2D, clr,
+@inline @generated function call_clr_fx(fx::Tuple, pt::Point2D, clr,
                                 frame, kwargs::Tuple)
     exs = Expr[]
+    push!(exs, :(@inline))
     for i = 1:length(fx.parameters)
         ex = :(clr = fx[$i](pt.y, pt.x, clr, frame; kwargs[$i]...))
         push!(exs, ex)
@@ -91,9 +97,10 @@ end
     return Expr(:block, exs...)
 end
 
-@generated function clr_loop(fxs, fid, pt, clr, frame, fnums, kwargs;
+@inline @generated function clr_loop(fxs, fid, pt, clr, frame, fnums, kwargs;
                              bit_offset = UInt(0), fx_offset = 0)
     exs = Expr[]
+    push!(exs, :(@inline))
     push!(exs, :(bit_offset = bit_offset))
     push!(exs, :(fx_offset = fx_offset))
     for i = 1:length(fnums.parameters)
@@ -114,7 +121,7 @@ end
     return Expr(:block, exs...)
 end
 
-@generated function semi_random_loop!(layer_values, layer_reds, layer_greens,
+@inline @generated function semi_random_loop!(layer_values, layer_reds, layer_greens,
                                       layer_blues, layer_alphas, priorities,
                                       fid, fxs, clr_fxs, pt, clr,
                                       frame, fnums, kwargs, clr_kwargs,
@@ -122,6 +129,7 @@ end
                                       iteration, num_ignore, overlay;
                                       fx_offset = 0)
     exs = Expr[]
+    push!(exs, :(@inline))
     push!(exs, :(temp_prob = 0.0))
     push!(exs, :(fx_max_range = fx_offset + sum(fnums)))
     push!(exs, :(curr_pt = pt))
@@ -146,8 +154,6 @@ end
         end
         push!(exs, ex)
     end
-
-    push!(exs)
 
     # to return 3 separate colors to mix separately
     # return :(Expr(:tuple, $exs...))
@@ -181,7 +187,7 @@ end
                                              num_ignore) where AT<:AbstractArray
     on_img_flag = on_image(pt.y,pt.x, bounds, dims)
     if i > num_ignore && on_img_flag
-        @inbounds bin = find_bin(layer_values, pt.y, pt.x, bounds, bin_widths)
+        bin = find_bin(layer_values, pt.y, pt.x, bounds, bin_widths)
         if bin > 0 && bin <= length(layer_values) && priorities[bin] < fid
         #if bin > 0 && bin <= length(layer_values)
             layer_values[bin] = 1
@@ -209,7 +215,7 @@ end
                                                     bin_widths, i, num_ignore)
     on_img_flag = on_image(pt.y,pt.x, bounds, dims)
     if i > num_ignore && on_img_flag
-        @inbounds bin = find_bin(layer_values, pt.y, pt.x, bounds, bin_widths)
+        bin = find_bin(layer_values, pt.y, pt.x, bounds, bin_widths)
         if bin > 0 && bin <= length(layer_values)
             @atomic layer_values[bin] += 1
             @atomic layer_reds[bin] += clr.r
