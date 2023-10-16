@@ -2,7 +2,7 @@ using Fable, Images
 
 function multi_example(num_particles, num_iterations;
                        ArrayType = Array, filename = "out.png",
-                       output_type = :overlay)
+                       overlay = true)
     world_size = (9*0.15, 16*0.15)
 
     ppu = 1920/world_size[2]
@@ -20,7 +20,7 @@ function multi_example(num_particles, num_iterations;
                          world_size = world_size, ppu = ppu,
                          H = final_H, num_particles = num_particles,
                          num_iterations = num_iterations,
-                         output_type = output_type)
+                         overlay = overlay)
 
     run!(layer)
 
@@ -30,5 +30,4 @@ end
 @info("Created Function: multi_example(num_particles, num_iterations;
                                        ArrayType = Array,
                                        filename = 'out.png',
-                                       output_type = :overlay)\n"*
-      "output_type can be: {:overlay, :average}")
+                                       overlay = true)")
