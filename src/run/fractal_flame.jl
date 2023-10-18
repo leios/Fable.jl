@@ -125,24 +125,27 @@ end
 end
 
 @inline @generated function semi_random_loop!(layer_values, layer_reds, layer_greens,
-                                      layer_blues, layer_alphas, priorities,
-                                      fid, fxs, clr_fxs, pt, clr,
-                                      frame, fnums, kwargs, clr_kwargs,
-                                      probs, bounds, dims, bin_widths,
-                                      iteration, num_ignore, overlay;
-                                      fx_offset = 0)
+                                              layer_blues, layer_alphas,
+                                              priorities, fid, fxs, call_set,
+                                              clr_fxs, clr_call_set, pt, clr,
+                                              frame, fnums, kwargs, clr_kwargs,
+                                              probs, bounds, dims, bin_widths,
+                                              iteration, num_ignore, overlay;
+                                              fx_offset = 0)
     exs = Expr[]
     push!(exs, :(@inline))
     push!(exs, :(temp_prob = 0.0))
     push!(exs, :(fx_max_range = fx_offset + sum(fnums)))
     push!(exs, :(curr_pt = pt))
     push!(exs, :(curr_clr = clr))
-    for i = 1:length(fxs.parameters)
+    for i = 1:length(call_set.parameters)
         ex = quote
             if fx_offset + 1 <= $i <= fx_max_range
-                curr_pt = fxs[$i](curr_pt.y, curr_pt.x, frame; kwargs[$i]...)
-                curr_clr = clr_fxs[$i](curr_pt.y, curr_pt.x, curr_clr, frame;
-                                       clr_kwargs[$i]...)
+                idx = call_set[$i]
+                curr_pt = fxs[idx](curr_pt.y, curr_pt.x, frame; kwargs[$i]...)
+                idx = clr_call_set[$i]
+                curr_clr = clr_fxs[idx](curr_pt.y, curr_pt.x, curr_clr, frame;
+                                        clr_kwargs[$i]...)
                 temp_prob += probs[$i]
                 if isapprox(temp_prob, 1.0) || temp_prob >= 1.0
                     output!(layer_values, layer_reds, layer_greens,
@@ -380,16 +383,18 @@ end
                     fid = UInt(1)
                 end
 
-                pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j], H_kwargs;
-                             fx_offset)
+                pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j], H_call_set,
+                             H_kwargs; fx_offset)
                 clr = clr_loop(H_clrs, fid, recenter(pt, bounds, bin_widths),
-                               clr, frame, H_fnums[j], H_clr_kwargs; fx_offset)
+                               clr, frame, H_fnums[j], H_clr_call_set,
+                               H_clr_kwargs; fx_offset)
 
                 fid = (fid+1) << bit_offset
 
                 semi_random_loop!(layer_values, layer_reds, layer_greens,
                                   layer_blues, layer_alphas, priorities, fid, 
-                                  H_post_fxs, H_post_clrs,
+                                  H_post_fxs, H_post_call_set,
+                                  H_post_clrs, H_post_clr_call_set,
                                   pt, clr, frame, H_post_fnums[j],
                                   H_post_kwargs, H_post_clr_kwargs,
                                   H_post_probs, bounds, dims, bin_widths,
