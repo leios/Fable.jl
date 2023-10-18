@@ -19,14 +19,14 @@
 #------------------------------------------------------------------------------#
 export run!
 
-@generated function call_pt_fx(fxs, pt, frame, kwargs, idx)
+@generated function call_pt_fx(fxs, pt, frame, kwargs, idx, fidx)
     exs = Expr[]
     push!(exs, :(@inline))
     push!(exs, Expr(:inbounds, true))
     for i = 1:length(fxs.parameters)
         ex = quote
-            if idx == $i
-                pt = fxs[$i](pt.y, pt.x, frame; kwargs[$i]...) 
+            if fidx == $i
+                pt = fxs[$i](pt.y, pt.x, frame; kwargs[idx]...) 
             end
         end
         push!(exs, ex)
@@ -39,16 +39,17 @@ end
 
 # These functions essentially unroll the loops in the kernel because of a
 # known julia bug preventing us from using for i = 1:10...
-@inline @generated function pt_loop(fxs, fid, pt, frame, fnums, kwargs;
-                             bit_offset = UInt(0), fx_offset = 0)
+@inline @generated function pt_loop(fxs, fid, pt, frame, fnums,
+                                    call_set, kwargs;
+                                    bit_offset = UInt(0), fx_offset = 0)
     exs = Expr[]
     push!(exs, :(@inline))
     push!(exs, :(bit_offset = bit_offset))
     push!(exs, :(fx_offset = fx_offset))
     for i = 1:length(fnums.parameters)
         ex = quote
-            idx = decode_fid(fid, bit_offset, fnums[$i]) + fx_offset
-            pt = call_pt_fx(fxs, pt, frame, kwargs, idx)
+            idx = decode_fid(fid, bit_offset, fnums[$i])+fx_offset
+            pt = call_pt_fx(fxs, pt, frame, kwargs, idx, call_set[idx])
             bit_offset += ceil(UInt,log2(fnums[$i]))
             fx_offset += fnums[$i]
         end
@@ -63,13 +64,13 @@ end
     return Expr(:block, exs...)
 end
 
-@inline @generated function call_clr_fx(fxs, pt, clr, frame, kwargs, idx)
+@inline @generated function call_clr_fx(fxs, pt, clr, frame, kwargs, idx, fidx)
     exs = Expr[]
     push!(exs, :(@inline))
     for i = 1:length(fxs.parameters)
         ex = quote
-            if idx == $i
-                clr = call_clr_fx(fxs[$i], pt, clr, frame, kwargs[$i])
+            if fidx == $i
+                clr = call_clr_fx(fxs[$i], pt, clr, frame, kwargs[idx])
             end
         end
         push!(exs, ex)
@@ -97,8 +98,9 @@ end
     return Expr(:block, exs...)
 end
 
-@inline @generated function clr_loop(fxs, fid, pt, clr, frame, fnums, kwargs;
-                             bit_offset = UInt(0), fx_offset = 0)
+@inline @generated function clr_loop(fxs, fid, pt, clr, frame, fnums, 
+                                     clr_call_set, kwargs;
+                                     bit_offset = UInt(0), fx_offset = 0)
     exs = Expr[]
     push!(exs, :(@inline))
     push!(exs, :(bit_offset = bit_offset))
@@ -106,7 +108,8 @@ end
     for i = 1:length(fnums.parameters)
         ex = quote
             idx = decode_fid(fid, bit_offset, fnums[$i]) + fx_offset
-            clr = call_clr_fx(fxs, pt, clr, frame, kwargs, idx)
+            clr = call_clr_fx(fxs, pt, clr, frame, kwargs, idx,
+                              clr_call_set[idx])
             bit_offset += ceil(UInt,log2(fnums[$i]))
             fx_offset += fnums[$i]
         end
@@ -261,20 +264,21 @@ function iterate!(layer::FractalLayer, H::Hutchinson, n,
     kernel! = fx(backend, layer.params.numthreads)
 
     if isnothing(H_post)
-        kernel!(layer.particles, n, H.fxs, combine(H.kwargs, H.fis),
-                H.color_fxs, combine(H.color_kwargs, H.color_fis),
+        kernel!(layer.particles, n, H.fxs, H.call_set, combine(H.kwargs, H.fis),
+                H.color_fxs, H.color_call_set,
+                combine(H.color_kwargs, H.color_fis),
                 H.prob_set, H.fnums, layer.values,
                 layer.reds, layer.greens, layer.blues, layer.alphas,
                 layer.priorities, frame, bounds, Tuple(bin_widths),
                 layer.params.num_ignore, max_range, layer.params.overlay,
                 ndrange=size(layer.particles)[1])
     else
-        kernel!(layer.particles, n, H.fxs, combine(H.kwargs, H.fis),
-                H.color_fxs, combine(H.color_kwargs, H.color_fis),
-                H.prob_set, H.fnums,
-                H_post.fxs, combine(H_post.kwargs, H_post.fis),
-                H_post.color_fxs, combine(H_post.color_kwargs,
-                                          H_post.color_fis),
+        kernel!(layer.particles, n, H.fxs, H.call_set, combine(H.kwargs, H.fis),
+                H.color_fxs, H.color_call_set,
+                combine(H.color_kwargs, H.color_fis), H.prob_set, H.fnums,
+                H_post.fxs, H_post.call_set, combine(H_post.kwargs, H_post.fis),
+                H_post.color_fxs, H_post.color_call_set,
+                combine(H_post.color_kwargs, H_post.color_fis),
                 H_post.prob_set, H_post.fnums,
                 layer.values, layer.reds, layer.greens, layer.blues,
                 layer.alphas, layer.priorities,
@@ -284,8 +288,8 @@ function iterate!(layer::FractalLayer, H::Hutchinson, n,
     end
 end
 
-@kernel function naive_chaos_kernel!(points, n, H_fxs, H_kwargs,
-                                     H_clrs, H_clr_kwargs,
+@kernel function naive_chaos_kernel!(points, n, H_fxs, H_call_set, H_kwargs,
+                                     H_clrs, H_clr_call_set, H_clr_kwargs,
                                      H_probs, H_fnums,
                                      layer_values, layer_reds, layer_greens,
                                      layer_blues, layer_alphas, priorities,
@@ -316,10 +320,11 @@ end
                     fid = UInt(1)
                 end
 
-                pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j],
+                pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j], H_call_set,
                              H_kwargs; fx_offset)
                 clr = clr_loop(H_clrs, fid, recenter(pt, bounds, bin_widths),
-                               clr, frame, H_fnums[j], H_clr_kwargs; fx_offset)
+                               clr, frame, H_fnums[j], H_clr_call_set,
+                               H_clr_kwargs; fx_offset)
 
                 fid = (fid+1) << bit_offset+1
 
@@ -337,11 +342,13 @@ end
 
 end
 
-@kernel function semi_random_chaos_kernel!(points, n, H_fxs, H_kwargs,
-                                           H_clrs, H_clr_kwargs,
-                                           H_probs, H_fnums,
-                                           H_post_fxs, H_post_kwargs,
-                                           H_post_clrs, H_post_clr_kwargs,
+@kernel function semi_random_chaos_kernel!(points, n, H_fxs, H_call_set,
+                                           H_kwargs, H_clrs, H_clr_call_set,
+                                           H_clr_kwargs, H_probs, H_fnums,
+                                           H_post_fxs, H_post_call_set,
+                                           H_post_kwargs, H_post_clrs,
+                                           H_post_clr_call_set,
+                                           H_post_clr_kwargs,
                                            H_post_probs, H_post_fnums,
                                            layer_values, layer_reds,
                                            layer_greens, layer_blues,
@@ -401,11 +408,12 @@ end
 
 end
 
-@kernel function naive_chaos_kernel!(points, n, H_fxs, H_kwargs,
-                                     H_clrs, H_clr_kwargs,
+@kernel function naive_chaos_kernel!(points, n, H_fxs, H_call_set, H_kwargs,
+                                     H_clrs, H_clr_call_set, H_clr_kwargs,
                                      H_probs, H_fnums,
-                                     H_post_fxs, H_post_kwargs,
-                                     H_post_clrs, H_post_clr_kwargs,
+                                     H_post_fxs, H_post_call_set, H_post_kwargs,
+                                     H_post_clrs, H_post_clr_call_set,
+                                     H_post_clr_kwargs,
                                      H_post_probs, H_post_fnums,
                                      layer_values, layer_reds, layer_greens,
                                      layer_blues, layer_alphas, priorities,
@@ -448,17 +456,20 @@ end
                     fid_2 = UInt(1)
                 end
 
-                pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j], H_kwargs;
-                             fx_offset)
+                pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j], H_call_set,
+                             H_kwargs; fx_offset)
                 clr = clr_loop(H_clrs, fid, recenter(pt, bounds, bin_widths),
-                               clr, frame, H_fnums[j], H_clr_kwargs; fx_offset)
+                               clr, frame, H_fnums[j], H_clr_call_set,
+                               H_clr_kwargs; fx_offset)
 
-                output_pt = pt_loop(H_post_fxs, fid, pt, frame,
-                                    H_post_fnums[j], H_post_kwargs;
+                output_pt = pt_loop(H_post_fxs, fid_2, pt, frame,
+                                    H_post_fnums[j], H_post_call_set,
+                                    H_post_kwargs;
                                     fx_offset = post_fx_offset)
                 output_clr = clr_loop(H_post_clrs, fid_2,
                                       recenter(pt, bounds, bin_widths), clr,
                                       frame, H_post_fnums[j],
+                                      H_post_clr_call_set,
                                       H_post_clr_kwargs;
                                       fx_offset = post_fx_offset)
 
