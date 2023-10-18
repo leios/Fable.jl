@@ -178,6 +178,8 @@ function flatten(kwargs::Tuple, fis::Tuple, fxs::Tuple,
         new_probs = (new_probs..., temp_probs...)
         new_fnums = (new_fnums..., temp_fnums...)
     end
+    #new_fxs, new_call_set = make_unique(new_fxs)
+    #new_color_fxs, new_color_call_set = make_unique(new_color_fxs)
     return (new_kwargs, new_fis, new_fxs,
             new_color_kwargs, new_color_fis, new_color_fxs,
             new_probs, fnums)
@@ -207,4 +209,28 @@ end
 
 function extract_ops_info(op::FractalUserMethod)
     return (op.kwargs, op.fis, op.fx)
+end
+
+function make_unique(t::Tuple)
+    new_t, call_set = make_unique(t[1])
+    count = length(new_t)
+    for i = 2:length(t)
+        temp_t, temp_set = make_unique(t[i])
+        for j = 1:length(temp_t)
+            if in(temp_t[j], new_t)
+                idx = findfirst(isequal(temp_t[j]),new_t)
+                call_set = (call_set..., idx)
+            else
+                count += 1
+                new_t = (new_t...,temp_t[j])
+                call_set = (call_set..., count)
+            end
+        end
+    end
+
+    return new_t, call_set
+end
+
+function make_unique(a)
+    return (a,), (1,)
 end
