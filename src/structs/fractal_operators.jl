@@ -143,18 +143,16 @@ flatten(t) = (t,)
 function flatten(kwargs, fis, fxs,
                  color_kwargs, color_fis, color_fxs,
                  probs, fnums)
-    fxs, call_set = make_unique(fxs)
-    color_fxs, color_call_set = make_unique(color_fxs)
-    return ((kwargs,), (fis,), (fxs,), (call_set,),
-            (color_kwargs,), (color_fis,), (color_fxs,), (color_call_set,),
+    return ((kwargs,), (fis,), (fxs,),
+            (color_kwargs,), (color_fis,), (color_fxs,),
             (probs,), (fnums,))
 end
 
 function flatten(kwargs::Tuple, fis::Tuple, fxs::Tuple,
                  color_kwargs::Tuple, color_fis::Tuple, color_fxs::Tuple,
                  probs::Tuple, fnums)
-    new_kwargs, new_fis, new_fxs, new_call_set,
-        new_color_kwargs, new_color_fis, new_color_fxs, new_color_call_set, 
+    new_kwargs, new_fis, new_fxs,
+        new_color_kwargs, new_color_fis, new_color_fxs,
         new_probs, new_fnums = flatten(kwargs[1], fis[1], fxs[1],
                                        color_kwargs[1],
                                        color_fis[1],
@@ -162,9 +160,8 @@ function flatten(kwargs::Tuple, fis::Tuple, fxs::Tuple,
                                        probs[1], fnums[1])
 
     for i = 2:length(fxs)
-        temp_kwargs, temp_fis, temp_fxs, temp_call_set,
+        temp_kwargs, temp_fis, temp_fxs,
             temp_color_kwargs, temp_color_fis, temp_color_fxs,
-            temp_color_call_set,
             temp_probs, temp_fnums = flatten(kwargs[i], fis[i], fxs[i],
                                              color_kwargs[i],
                                              color_fis[i],
@@ -181,10 +178,10 @@ function flatten(kwargs::Tuple, fis::Tuple, fxs::Tuple,
         new_probs = (new_probs..., temp_probs...)
         new_fnums = (new_fnums..., temp_fnums...)
     end
-    new_fxs, new_call_set = make_unique(new_fxs)
-    new_color_fxs, new_color_call_set = make_unique(new_color_fxs)
-    return (new_kwargs, new_fis, new_fxs, new_call_set,
-            new_color_kwargs, new_color_fis, new_color_fxs, new_color_call_set, 
+    #new_fxs, new_call_set = make_unique(new_fxs)
+    #new_color_fxs, new_color_call_set = make_unique(new_color_fxs)
+    return (new_kwargs, new_fis, new_fxs,
+            new_color_kwargs, new_color_fis, new_color_fxs,
             new_probs, fnums)
 end
 
@@ -215,17 +212,19 @@ function extract_ops_info(op::FractalUserMethod)
 end
 
 function make_unique(t::Tuple)
-    new_t = (t[1],)
-    count = 1
-    call_set = (count,)
+    new_t, call_set = make_unique(t[1])
+    count = length(new_t)
     for i = 2:length(t)
-        if in(t[i], new_t)
-            idx = findfirst(isequal(t[i]),new_t)
-            call_set = (call_set..., idx)
-        else
-            count += 1
-            new_t = (new_t...,t[i])
-            call_set = (call_set..., count)
+        temp_t, temp_set = make_unique(t[i])
+        for j = 1:length(temp_t)
+            if in(temp_t[j], new_t)
+                idx = findfirst(isequal(temp_t[j]),new_t)
+                call_set = (call_set..., idx)
+            else
+                count += 1
+                new_t = (new_t...,temp_t[j])
+                call_set = (call_set..., count)
+            end
         end
     end
 
@@ -233,5 +232,5 @@ function make_unique(t::Tuple)
 end
 
 function make_unique(a)
-    return a, 1
+    return (a,), (1,)
 end
