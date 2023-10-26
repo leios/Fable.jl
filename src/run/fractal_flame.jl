@@ -85,7 +85,7 @@ end
 end
 
 @inline @generated function call_clr_fx(fx::Tuple, pt::Point2D, clr,
-                                frame, kwargs::Tuple)
+                                        frame, kwargs::Tuple)
     exs = Expr[]
     push!(exs, :(@inline))
     for i = 1:length(fx.parameters)
