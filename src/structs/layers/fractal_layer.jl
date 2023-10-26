@@ -11,8 +11,6 @@ mutable struct FractalLayer <: AbstractLayer
     greens::AFT where AFT <: AbstractArray{FT} where FT <: AbstractFloat
     blues::AFT where AFT <: AbstractArray{FT} where FT <: AbstractFloat
     alphas::AFT where AFT <: AbstractArray{FT} where FT <: AbstractFloat
-    priorities::AFT where AFT <: Union{AbstractArray{UI},
-                                       Nothing} where UI <: Unsigned
     canvas::ACT where ACT <: AbstractArray{CT} where CT <: RGBA
     position::Tuple
     world_size::Tuple
@@ -31,13 +29,13 @@ function default_params(a::Type{FractalLayer}; config = :standard,
                 calc_max_value = false, max_value = 1, ArrayType = ArrayType,
                 FloatType = FloatType, num_ignore = 20, dims = dims,
                 solver_type = :semi_random, num_particles = num_particles,
-                num_iterations = num_iterations, overlay = false)
+                num_iterations = num_iterations, output_type = :overlay)
     elseif config == :fractal_flame
         return (numthreads = 256, gamma = 2.2, logscale = true,
                 calc_max_value = true, max_value = 1, ArrayType = ArrayType,
                 FloatType = FloatType, num_ignore = 20, dims = dims,
                 solver_type = :semi_random, num_particles = num_particles,
-                num_iterations = num_iterations, overlay = false)
+                num_iterations = num_iterations, output_type = :overlay)
     end
 end
 
@@ -46,7 +44,7 @@ function params(a::Type{FractalLayer}; numthreads = 256,
                 logscale = false, gamma = 2.2, calc_max_value = false,
                 max_value = 1, num_ignore = 20, num_particles = 1000,
                 num_iterations = 1000, dims = 2, solver_type = :semi_random,
-                overlay = false)
+                output_type = overlay)
     return (numthreads = numthreads,
             ArrayType = ArrayType,
             FloatType = FloatType,
@@ -59,12 +57,12 @@ function params(a::Type{FractalLayer}; numthreads = 256,
             num_iterations = num_iterations,
             dims = dims,
             solver_type = solver_type,
-            overlay = overlay)
+            output_type = output_type)
 end
 
 
 # Creating a default call
-function FractalLayer(p, v, r, g, b, a, pr, c, position, world_size, ppu;
+function FractalLayer(p, v, r, g, b, a, c, position, world_size, ppu;
                       postprocessing_steps = AbstractPostProcess[],
                       config = standard,
                       H = Hutchinson(), H_post = nothing)
@@ -87,7 +85,7 @@ function FractalLayer(p, v, r, g, b, a, pr, c, position, world_size, ppu;
     end
 
     postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
-    return FractalLayer(H, H_post, p, v, r, g, b, a, pr, c,
+    return FractalLayer(H, H_post, p, v, r, g, b, a, c,
                         position, world_size, ppu,
                         default_params(FractalLayer,
                                        config = config,
@@ -105,7 +103,7 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                       numthreads = 256,
                       num_particles = 1000, num_iterations = 1000, dims = 2,
                       H = Hutchinson(), H_post = nothing,
-                      solver_type = :semi_random, overlay = false)
+                      solver_type = :semi_random, output_type = :overlay)
     if isa(H, FractalOperator)
         H = Hutchinson(H)
     end
@@ -130,14 +128,9 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
     g = ArrayType(zeros(FloatType,res))
     b = ArrayType(zeros(FloatType,res))
     a = ArrayType(zeros(FloatType,res))
-    if overlay
-        pr = ArrayType(zeros(UInt64,res))
-    else
-        pr = nothing
-    end
     c = ArrayType(fill(RGBA(FloatType(0),0,0,0), res))
     if config == :standard || config == :fractal_flame
-        return FractalLayer(H, H_post, p, v, r, g, b, a, pr, c,
+        return FractalLayer(H, H_post, p, v, r, g, b, a, c,
                             position, world_size, ppu,
                             default_params(FractalLayer;
                                            ArrayType = ArrayType,
@@ -148,7 +141,7 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                                            dims = dims),
                             postprocessing_steps)
     else
-        return FractalLayer(H, H_post, p, v, r, g, b, a, pr, c,
+        return FractalLayer(H, H_post, p, v, r, g, b, a, c,
                             position, world_size, ppu,
                             params(FractalLayer;
                                    ArrayType=ArrayType,
@@ -162,7 +155,7 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                                    num_iterations = num_iterations,
                                    dims = dims,
                                    solver_type = solver_type,
-                                   overlay = overlay),
+                                   output_type = output_type),
                             postprocessing_steps)
     end
 end

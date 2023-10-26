@@ -21,9 +21,13 @@ export run!
 
 @generated function call_pt_fx(fxs, pt, frame, kwargs, idx)
     exs = Expr[]
-    push!(exs, :(@inline))
-    push!(exs, Expr(:inbounds, true))
-    for i = 1:length(fxs.parameters)
+    ex = quote
+        if idx == 1
+            pt = fxs[1](pt.y, pt.x, frame; kwargs[1]...) 
+        end
+    end
+    push!(exs, ex)
+    for i = 2:length(fxs.parameters)
         ex = quote
             if idx == $i
                 pt = fxs[$i](pt.y, pt.x, frame; kwargs[$i]...) 
@@ -31,7 +35,6 @@ export run!
         end
         push!(exs, ex)
     end
-    push!(exs, Expr(:inbounds, :pop))
     push!(exs, :(return pt))
 
     return Expr(:block, exs...)
@@ -39,10 +42,9 @@ end
 
 # These functions essentially unroll the loops in the kernel because of a
 # known julia bug preventing us from using for i = 1:10...
-@inline @generated function pt_loop(fxs, fid, pt, frame, fnums, kwargs;
-                             bit_offset = UInt(0), fx_offset = 0)
+@generated function pt_loop(fxs, fid, pt, frame, fnums, kwargs;
+                             bit_offset = 0, fx_offset = 0)
     exs = Expr[]
-    push!(exs, :(@inline))
     push!(exs, :(bit_offset = bit_offset))
     push!(exs, :(fx_offset = fx_offset))
     for i = 1:length(fnums.parameters)
@@ -63,10 +65,15 @@ end
     return Expr(:block, exs...)
 end
 
-@inline @generated function call_clr_fx(fxs, pt, clr, frame, kwargs, idx)
+@generated function call_clr_fx(fxs, pt, clr, frame, kwargs, idx)
     exs = Expr[]
-    push!(exs, :(@inline))
-    for i = 1:length(fxs.parameters)
+    ex = quote
+        if idx == 1
+            clr = call_clr_fx(fxs[1], pt, clr, frame, kwargs[1]) 
+        end
+    end
+    push!(exs, ex)
+    for i = 2:length(fxs.parameters)
         ex = quote
             if idx == $i
                 clr = call_clr_fx(fxs[$i], pt, clr, frame, kwargs[$i])
@@ -83,10 +90,9 @@ end
     return fx(pt.y, pt.x, clr, frame; kwargs...)
 end
 
-@inline @generated function call_clr_fx(fx::Tuple, pt::Point2D, clr,
+@generated function call_clr_fx(fx::Tuple, pt::Point2D, clr,
                                 frame, kwargs::Tuple)
     exs = Expr[]
-    push!(exs, :(@inline))
     for i = 1:length(fx.parameters)
         ex = :(clr = fx[$i](pt.y, pt.x, clr, frame; kwargs[$i]...))
         push!(exs, ex)
@@ -97,10 +103,9 @@ end
     return Expr(:block, exs...)
 end
 
-@inline @generated function clr_loop(fxs, fid, pt, clr, frame, fnums, kwargs;
-                             bit_offset = UInt(0), fx_offset = 0)
+@generated function clr_loop(fxs, fid, pt, clr, frame, fnums, kwargs;
+                             bit_offset = 0, fx_offset = 0)
     exs = Expr[]
-    push!(exs, :(@inline))
     push!(exs, :(bit_offset = bit_offset))
     push!(exs, :(fx_offset = fx_offset))
     for i = 1:length(fnums.parameters)
@@ -121,15 +126,13 @@ end
     return Expr(:block, exs...)
 end
 
-@inline @generated function semi_random_loop!(layer_values, layer_reds, layer_greens,
-                                      layer_blues, layer_alphas, priorities,
-                                      fid, fxs, clr_fxs, pt, clr,
-                                      frame, fnums, kwargs, clr_kwargs,
+@generated function semi_random_loop!(layer_values, layer_reds, layer_greens,
+                                      layer_blues, layer_alphas, fxs, clr_fxs, 
+                                      pt, clr, frame, fnums, kwargs, clr_kwargs,
                                       probs, bounds, dims, bin_widths,
-                                      iteration, num_ignore, overlay;
+                                      iteration, num_ignore, output_fx;
                                       fx_offset = 0)
     exs = Expr[]
-    push!(exs, :(@inline))
     push!(exs, :(temp_prob = 0.0))
     push!(exs, :(fx_max_range = fx_offset + sum(fnums)))
     push!(exs, :(curr_pt = pt))
@@ -142,10 +145,10 @@ end
                                        clr_kwargs[$i]...)
                 temp_prob += probs[$i]
                 if isapprox(temp_prob, 1.0) || temp_prob >= 1.0
-                    output!(layer_values, layer_reds, layer_greens,
-                            layer_blues, layer_alphas, priorities, fid+UInt($i),
-                            curr_pt, curr_clr, overlay, bounds,
-                            dims, bin_widths, iteration, num_ignore)
+                    output_fx(layer_values, layer_reds, layer_greens,
+                              layer_blues, layer_alphas,
+                              curr_pt, curr_clr, bounds,
+                              dims, bin_widths, iteration, num_ignore)
                     curr_pt = pt
                     curr_clr = clr
                     temp_prob = 0.0
@@ -155,73 +158,43 @@ end
         push!(exs, ex)
     end
 
+    push!(exs)
+
     # to return 3 separate colors to mix separately
     # return :(Expr(:tuple, $exs...))
 
     return Expr(:block, exs...)
 end
 
-@inline function output!(layer_values, layer_reds, layer_greens,
-                         layer_blues, layer_alphas, priorities, fid,
-                         pt, clr, overlay, bounds, dims,
-                         bin_widths, i, num_ignore)
-    if overlay
-        histogram_output!(layer_values, layer_reds, layer_greens,
-                          layer_blues, layer_alphas, priorities, fid,
-                          pt, clr, bounds, dims, bin_widths, i, num_ignore)
-    else
-        atomic_histogram_output!(layer_values, layer_reds,
-                                 layer_greens, layer_blues,
-                                 layer_alphas, pt, clr, bounds, dims,
-                                 bin_widths, i, num_ignore)
-
-    end
-end
-
-@inbounds @inline function histogram_output!(layer_values,
-                                             layer_reds, layer_greens,
-                                             layer_blues, layer_alphas,
-                                             priorities::AT, fid,
-                                             pt, clr, bounds, dims,
-                                             bin_widths, i,
-                                             num_ignore) where AT<:AbstractArray
+@inline function histogram_output!(layer_values, layer_reds, layer_greens,
+                                   layer_blues, layer_alphas, pt, clr,
+                                   bounds, dims, bin_widths, i, num_ignore)
     on_img_flag = on_image(pt.y,pt.x, bounds, dims)
     if i > num_ignore && on_img_flag
-        bin = find_bin(layer_values, pt.y, pt.x, bounds, bin_widths)
-        if bin > 0 && bin <= length(layer_values) && priorities[bin] < fid
-        #if bin > 0 && bin <= length(layer_values)
-            layer_values[bin] = 1
-            layer_reds[bin] = clr.r
-            layer_greens[bin] = clr.g
-            layer_blues[bin] = clr.b
-            layer_alphas[bin] = clr.alpha
-            priorities[bin] = fid
+        @inbounds bin = find_bin(layer_values, pt.y, pt.x, bounds, bin_widths)
+        if bin > 0 && bin <= length(layer_values)
+            @inbounds layer_values[bin] = 1
+            @inbounds layer_reds[bin] = clr.r
+            @inbounds layer_greens[bin] = clr.g
+            @inbounds layer_blues[bin] = clr.b
+            @inbounds layer_alphas[bin] = clr.alpha
         end
     end
 end
 
-# this is a stupid hack so that things compile on the GPU. Otherwise, the GPU
-# will try to compile the above function with priorities as nothing, which
-# cannot access the [bin] index
-@inbounds @inline function histogram_output!(layer_values, layer_reds,
-     layer_greens, layer_blues, layer_alphas, priorities::AT, fid, pt, clr,
-     bounds, dims, bin_widths, i, num_ignore) where AT<:Nothing
-end
-
-@inbounds @inline function atomic_histogram_output!(layer_values, layer_reds,
-                                                    layer_greens, layer_blues,
-                                                    layer_alphas, pt,
-                                                    clr, bounds, dims,
-                                                    bin_widths, i, num_ignore)
+@inline function atomic_histogram_output!(layer_values, layer_reds,
+                                          layer_greens, layer_blues,
+                                          layer_alphas, pt, clr, bounds, dims,
+                                          bin_widths, i, num_ignore)
     on_img_flag = on_image(pt.y,pt.x, bounds, dims)
     if i > num_ignore && on_img_flag
-        bin = find_bin(layer_values, pt.y, pt.x, bounds, bin_widths)
+        @inbounds bin = find_bin(layer_values, pt.y, pt.x, bounds, bin_widths)
         if bin > 0 && bin <= length(layer_values)
-            @atomic layer_values[bin] += 1
-            @atomic layer_reds[bin] += clr.r
-            @atomic layer_greens[bin] += clr.g
-            @atomic layer_blues[bin] += clr.b
-            @atomic layer_alphas[bin] += clr.alpha
+            @inbounds @atomic layer_values[bin] += 1
+            @inbounds @atomic layer_reds[bin] += clr.r
+            @inbounds @atomic layer_greens[bin] += clr.g
+            @inbounds @atomic layer_blues[bin] += clr.b
+            @inbounds @atomic layer_alphas[bin] += clr.alpha
         end
     end
 end
@@ -257,6 +230,16 @@ function iterate!(layer::FractalLayer, H::Hutchinson, n,
         fx = naive_chaos_kernel!
     end
 
+    if layer.params.output_type == :average
+        output_fx = atomic_histogram_output!
+    elseif layer.params.output_type == :overlay
+        output_fx = histogram_output!
+    else
+        @warn(string(layer.params.output_type)*" is not a valid output type!\n"*
+              "Defaulting to overlay...")
+        fx = histogram_output!
+    end
+
     max_range = maximum(values(bounds))*10
     backend = get_backend(layer.canvas)
     kernel! = fx(backend, layer.params.numthreads)
@@ -266,8 +249,8 @@ function iterate!(layer::FractalLayer, H::Hutchinson, n,
                 H.color_fxs, combine(H.color_kwargs, H.color_fis),
                 H.prob_set, H.fnums, layer.values,
                 layer.reds, layer.greens, layer.blues, layer.alphas,
-                layer.priorities, frame, bounds, Tuple(bin_widths),
-                layer.params.num_ignore, max_range, layer.params.overlay,
+                frame, bounds, Tuple(bin_widths),
+                layer.params.num_ignore, max_range, output_fx,
                 ndrange=size(layer.particles)[1])
     else
         kernel!(layer.particles, n, H.fxs, combine(H.kwargs, H.fis),
@@ -278,9 +261,8 @@ function iterate!(layer::FractalLayer, H::Hutchinson, n,
                                           H_post.color_fis),
                 H_post.prob_set, H_post.fnums,
                 layer.values, layer.reds, layer.greens, layer.blues,
-                layer.alphas, layer.priorities,
-                frame, bounds, Tuple(bin_widths),
-                layer.params.num_ignore, max_range, layer.params.overlay,
+                layer.alphas, frame, bounds, Tuple(bin_widths),
+                layer.params.num_ignore, max_range, output_fx,
                 ndrange=size(layer.particles)[1])
     end
 end
@@ -289,9 +271,9 @@ end
                                      H_clrs, H_clr_kwargs,
                                      H_probs, H_fnums,
                                      layer_values, layer_reds, layer_greens,
-                                     layer_blues, layer_alphas, priorities,
-                                     frame, bounds, bin_widths,
-                                     num_ignore, max_range, overlay)
+                                     layer_blues, layer_alphas, frame, bounds,
+                                     bin_widths, num_ignore, max_range,
+                                     output_fx)
 
     tid = @index(Global,Linear)
 
@@ -318,21 +300,17 @@ end
                 end
 
                 pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j],
-                             H_kwargs; fx_offset)
-                clr = clr_loop(H_clrs, fid, recenter(pt, bounds, bin_widths),
-                               clr, frame, H_fnums[j], H_clr_kwargs; fx_offset)
+                             H_kwargs; bit_offset, fx_offset)
+                clr = clr_loop(H_clrs, fid, pt, clr, frame,
+                               H_fnums[j], H_clr_kwargs;
+                               bit_offset, fx_offset)
 
-                fid = (fid+1) << bit_offset+1
-
-                output!(layer_values, layer_reds, layer_greens,
-                        layer_blues, layer_alphas, priorities, fid,
-                        pt, clr, overlay,
-                        bounds, dims, bin_widths, i, num_ignore)
+                output_fx(layer_values, layer_reds, layer_greens,
+                          layer_blues, layer_alphas, pt, clr,
+                          bounds, dims, bin_widths, i, num_ignore)
             end
         end
-
         fx_offset += total_fxs
-        bit_offset += ceil(UInt,log2(total_fxs))+1
         @inbounds points[tid, j] = pt
     end
 
@@ -346,9 +324,9 @@ end
                                            H_post_probs, H_post_fnums,
                                            layer_values, layer_reds,
                                            layer_greens, layer_blues,
-                                           layer_alphas, priorities,
-                                           frame, bounds, bin_widths,
-                                           num_ignore, max_range, overlay)
+                                           layer_alphas, frame, bounds,
+                                           bin_widths, num_ignore, max_range,
+                                           output_fx)
 
     tid = @index(Global,Linear)
 
@@ -375,27 +353,24 @@ end
                 end
 
                 pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j], H_kwargs;
-                             fx_offset)
-                clr = clr_loop(H_clrs, fid, recenter(pt, bounds, bin_widths),
-                               clr, frame, H_fnums[j], H_clr_kwargs; fx_offset)
-
-                fid = (fid+1) << bit_offset
+                             bit_offset, fx_offset)
+                clr = clr_loop(H_clrs, fid, pt, clr,
+                               frame, H_fnums[j], H_clr_kwargs;
+                               bit_offset, fx_offset)
 
                 semi_random_loop!(layer_values, layer_reds, layer_greens,
-                                  layer_blues, layer_alphas, priorities, fid, 
+                                  layer_blues, layer_alphas,
                                   H_post_fxs, H_post_clrs,
                                   pt, clr, frame, H_post_fnums[j],
                                   H_post_kwargs, H_post_clr_kwargs,
                                   H_post_probs, bounds, dims, bin_widths,
-                                  i, num_ignore, overlay;
+                                  i, num_ignore, output_fx;
                                   fx_offset = post_fx_offset)
 
             end
         end
         total_fxs = sum(H_fnums[j])
         fx_offset += total_fxs
-        bit_offset += ceil(UInt, log2(total_fxs)) +
-                      ceil(UInt, log2(sum(H_post_fnums[j])))
         post_fx_offset += sum(H_post_fnums[j])
         @inbounds points[tid, j] = pt
     end
@@ -409,9 +384,9 @@ end
                                      H_post_clrs, H_post_clr_kwargs,
                                      H_post_probs, H_post_fnums,
                                      layer_values, layer_reds, layer_greens,
-                                     layer_blues, layer_alphas, priorities,
-                                     frame, bounds, bin_widths, num_ignore,
-                                     max_range, overlay)
+                                     layer_blues, layer_alphas, frame, bounds,
+                                     bin_widths, num_ignore, max_range,
+                                     output_fx)
 
     tid = @index(Global,Linear)
 
@@ -425,6 +400,7 @@ end
     bit_offset = UInt(0)
     fx_offset = 0
 
+    post_bit_offset = UInt(0)
     post_fx_offset = 0
     for j = 1:size(points, 2)
         pt = points[tid, j]
@@ -450,33 +426,30 @@ end
                 end
 
                 pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j], H_kwargs;
-                             fx_offset)
-                clr = clr_loop(H_clrs, fid, recenter(pt, bounds, bin_widths),
-                               clr, frame, H_fnums[j], H_clr_kwargs; fx_offset)
+                             fx_offset, bit_offset)
+                clr = clr_loop(H_clrs, fid, pt, clr,
+                               frame, H_fnums[j], H_clr_kwargs;
+                               fx_offset, bit_offset)
 
                 output_pt = pt_loop(H_post_fxs, fid, pt, frame,
                                     H_post_fnums[j], H_post_kwargs;
+                                    bit_offset = post_bit_offset,
                                     fx_offset = post_fx_offset)
-                output_clr = clr_loop(H_post_clrs, fid_2,
-                                      recenter(pt, bounds, bin_widths), clr,
+                output_clr = clr_loop(H_post_clrs, fid_2, pt, clr,
                                       frame, H_post_fnums[j],
                                       H_post_clr_kwargs;
+                                      bit_offset = post_bit_offset,
                                       fx_offset = post_fx_offset)
 
-                # a bit sketchy
-                fid = (fid+1) << bit_offset
-
-                output!(layer_values, layer_reds, layer_greens,
-                        layer_blues, layer_alphas, priorities, fid, output_pt,
-                        output_clr, overlay, bounds, dims, bin_widths,
-                        i, num_ignore)
+                output_fx(layer_values, layer_reds, layer_greens,
+                          layer_blues, layer_alphas, output_pt,
+                          output_clr, bounds, dims, bin_widths,
+                          i, num_ignore)
 
             end
         end
         total_fxs = sum(H_fnums[j])
         fx_offset += total_fxs
-        bit_offset += ceil(UInt, log2(total_fxs)) +
-                      ceil(UInt, log2(sum(H_post_fnums[j])))
 
         post_total_fxs = sum(H_post_fnums[j])
         post_fx_offset += post_total_fxs

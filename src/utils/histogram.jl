@@ -1,28 +1,27 @@
-unsafe_ceil(T, x) = Base.unsafe_trunc(T, round(x, RoundUp))
-
-@inbounds @inline function find_bin(histogram_output, input_y, input_x,
+@inline function find_bin(histogram_output, input_y, input_x,
                           bounds, bin_widths)
 
-    bin = unsafe_ceil(Int, (input_y - bounds[1]) / bin_widths[1])
+    bin = ceil(Int, (input_y - bounds[1]) / bin_widths[1])
 
     slab = size(histogram_output)[1]
-    bin += unsafe_ceil(Int, ((input_x - bounds[3]) / bin_widths[2])-1)*slab
+    bin += Int(ceil(((input_x - bounds[3]) / bin_widths[2])-1)*slab)
 
     return bin
 
 end
 
-@inbounds @inline function find_bin(histogram_output, input,
-                          tid, dims, bounds, bin_widths)    
+@inline function find_bin(histogram_output, input,
+                          tid, dims, bounds, bin_widths)
+
     b_index = 1
-    bin = unsafe_ceil(Int, (input[tid, 1] - bounds[1]) / bin_widths[1]) 
+    bin = ceil(Int, (input[tid, 1] - bounds[1]) / bin_widths[1])
     slab = 1
 
     for i = 2:dims
         slab *= size(histogram_output)[i-1]
         b_index += 2
-        bin += unsafe_ceil(Int,(((input[tid, i]) - bounds[b_index]) / 
-                               bin_widths[i])-1)*slab
+        bin += Int(ceil(Int,(((input[tid, i]) - bounds[b_index]) / 
+                               bin_widths[i])-1)*slab)
     end
 
     return bin

@@ -41,6 +41,7 @@ function square_example(num_particles, num_iterations;
                          num_particles = num_particles,
                          num_iterations = num_iterations,
                          solver_type = solver_type)
+
     run!(layer)
 
     write_image(layer; filename = filename)
