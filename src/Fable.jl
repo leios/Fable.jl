@@ -6,8 +6,11 @@ using KernelAbstractions: @atomic
 using MacroTools
 using Unitful
 
-using Images
+using ImageIO
+using FileIO
 using VideoIO
+using Colors
+using FixedPointNumbers # for N0f8 output for VideoIO
 
 # Constants
 global OUTPUT = true

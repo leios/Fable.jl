@@ -1,4 +1,4 @@
-using Fable, Images
+using Fable
 
 function image_example(; input_filename = "check.png",
                          output_filename = "check_copy.png")

@@ -1,5 +1,5 @@
 using Fable
-using Images
+using Colors
 
 blob = @fum shader function blob(y, x; position = (0,0), radius = 1,
                                  rotation = 0.0, frequencies = (),
