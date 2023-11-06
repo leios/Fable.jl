@@ -38,7 +38,9 @@ end
 
 @kernel function clip_kernel!(output, canvas, clip_op, intensity_function, threshold, c)
     tid = @index(Global, Linear)
-    if clip_op(intensity_function(canvas[tid]), threshold)
-        output[tid] = c
+    @inbounds begin
+        if clip_op(intensity_function(canvas[tid]), threshold)
+            output[tid] = c
+        end
     end
 end

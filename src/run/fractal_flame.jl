@@ -22,16 +22,14 @@ export run!
 @generated function call_pt_fx(fxs, pt, frame, kwargs, idx)
     exs = Expr[]
     push!(exs, :(@inline))
-    push!(exs, Expr(:inbounds, true))
     for i = 1:length(fxs.parameters)
         ex = quote
             if idx == $i
-                pt = fxs[$i](pt.y, pt.x, frame; kwargs[$i]...) 
+                @inbounds pt = fxs[$i](pt.y, pt.x, frame; kwargs[$i]...) 
             end
         end
         push!(exs, ex)
     end
-    push!(exs, Expr(:inbounds, :pop))
     push!(exs, :(return pt))
 
     return Expr(:block, exs...)
@@ -47,10 +45,10 @@ end
     push!(exs, :(fx_offset = fx_offset))
     for i = 1:length(fnums.parameters)
         ex = quote
-            idx = decode_fid(fid, bit_offset, fnums[$i]) + fx_offset
+            @inbounds idx = decode_fid(fid, bit_offset, fnums[$i]) + fx_offset
             pt = call_pt_fx(fxs, pt, frame, kwargs, idx)
-            bit_offset += ceil(UInt,log2(fnums[$i]))
-            fx_offset += fnums[$i]
+            @inbounds bit_offset += ceil(UInt,log2(fnums[$i]))
+            @inbounds fx_offset += fnums[$i]
         end
         push!(exs, ex)
     end
@@ -69,7 +67,7 @@ end
     for i = 1:length(fxs.parameters)
         ex = quote
             if idx == $i
-                clr = call_clr_fx(fxs[$i], pt, clr, frame, kwargs[$i])
+                @inbounds clr = call_clr_fx(fxs[$i], pt, clr, frame, kwargs[$i])
             end
         end
         push!(exs, ex)
@@ -88,7 +86,7 @@ end
     exs = Expr[]
     push!(exs, :(@inline))
     for i = 1:length(fx.parameters)
-        ex = :(clr = fx[$i](pt.y, pt.x, clr, frame; kwargs[$i]...))
+        ex = :(@inbounds clr = fx[$i](pt.y, pt.x, clr, frame; kwargs[$i]...))
         push!(exs, ex)
     end
 
@@ -105,10 +103,10 @@ end
     push!(exs, :(fx_offset = fx_offset))
     for i = 1:length(fnums.parameters)
         ex = quote
-            idx = decode_fid(fid, bit_offset, fnums[$i]) + fx_offset
+            @inbounds idx = decode_fid(fid, bit_offset, fnums[$i]) + fx_offset
             clr = call_clr_fx(fxs, pt, clr, frame, kwargs, idx)
-            bit_offset += ceil(UInt,log2(fnums[$i]))
-            fx_offset += fnums[$i]
+            @inbounds bit_offset += ceil(UInt,log2(fnums[$i]))
+            @inbounds fx_offset += fnums[$i]
         end
         push!(exs, ex)
     end
@@ -137,10 +135,13 @@ end
     for i = 1:length(fxs.parameters)
         ex = quote
             if fx_offset + 1 <= $i <= fx_max_range
-                curr_pt = fxs[$i](curr_pt.y, curr_pt.x, frame; kwargs[$i]...)
-                curr_clr = clr_fxs[$i](curr_pt.y, curr_pt.x, curr_clr, frame;
-                                       clr_kwargs[$i]...)
-                temp_prob += probs[$i]
+                @inbounds begin
+                    curr_pt = fxs[$i](curr_pt.y, curr_pt.x, frame;
+                                      kwargs[$i]...)
+                    curr_clr = clr_fxs[$i](curr_pt.y, curr_pt.x, curr_clr,
+                                           frame; clr_kwargs[$i]...)
+                    temp_prob += probs[$i]
+                end
                 if isapprox(temp_prob, 1.0) || temp_prob >= 1.0
                     output!(layer_values, layer_reds, layer_greens,
                             layer_blues, layer_alphas, priorities, fid+UInt($i),
@@ -178,24 +179,26 @@ end
     end
 end
 
-@inbounds @inline function histogram_output!(layer_values,
-                                             layer_reds, layer_greens,
-                                             layer_blues, layer_alphas,
-                                             priorities::AT, fid,
-                                             pt, clr, bounds, dims,
-                                             bin_widths, i,
-                                             num_ignore) where AT<:AbstractArray
+@inline function histogram_output!(layer_values,
+                                   layer_reds, layer_greens,
+                                   layer_blues, layer_alphas,
+                                   priorities::AT, fid,
+                                   pt, clr, bounds, dims,
+                                   bin_widths, i,
+                                   num_ignore) where AT<:AbstractArray
     on_img_flag = on_image(pt.y,pt.x, bounds, dims)
     if i > num_ignore && on_img_flag
         bin = find_bin(layer_values, pt.y, pt.x, bounds, bin_widths)
         if bin > 0 && bin <= length(layer_values) && priorities[bin] < fid
         #if bin > 0 && bin <= length(layer_values)
-            layer_values[bin] = 1
-            layer_reds[bin] = clr.r
-            layer_greens[bin] = clr.g
-            layer_blues[bin] = clr.b
-            layer_alphas[bin] = clr.alpha
-            priorities[bin] = fid
+            @inbounds begin
+                layer_values[bin] = 1
+                layer_reds[bin] = clr.r
+                layer_greens[bin] = clr.g
+                layer_blues[bin] = clr.b
+                layer_alphas[bin] = clr.alpha
+                priorities[bin] = fid
+            end
         end
     end
 end
@@ -203,25 +206,27 @@ end
 # this is a stupid hack so that things compile on the GPU. Otherwise, the GPU
 # will try to compile the above function with priorities as nothing, which
 # cannot access the [bin] index
-@inbounds @inline function histogram_output!(layer_values, layer_reds,
+@inline function histogram_output!(layer_values, layer_reds,
      layer_greens, layer_blues, layer_alphas, priorities::AT, fid, pt, clr,
      bounds, dims, bin_widths, i, num_ignore) where AT<:Nothing
 end
 
-@inbounds @inline function atomic_histogram_output!(layer_values, layer_reds,
-                                                    layer_greens, layer_blues,
-                                                    layer_alphas, pt,
-                                                    clr, bounds, dims,
-                                                    bin_widths, i, num_ignore)
+@inline function atomic_histogram_output!(layer_values, layer_reds,
+                                          layer_greens, layer_blues,
+                                          layer_alphas, pt,
+                                          clr, bounds, dims,
+                                          bin_widths, i, num_ignore)
     on_img_flag = on_image(pt.y,pt.x, bounds, dims)
     if i > num_ignore && on_img_flag
         bin = find_bin(layer_values, pt.y, pt.x, bounds, bin_widths)
         if bin > 0 && bin <= length(layer_values)
-            @atomic layer_values[bin] += 1
-            @atomic layer_reds[bin] += clr.r
-            @atomic layer_greens[bin] += clr.g
-            @atomic layer_blues[bin] += clr.b
-            @atomic layer_alphas[bin] += clr.alpha
+            @inbounds begin
+                @atomic layer_values[bin] += 1
+                @atomic layer_reds[bin] += clr.r
+                @atomic layer_greens[bin] += clr.g
+                @atomic layer_blues[bin] += clr.b
+                @atomic layer_alphas[bin] += clr.alpha
+            end
         end
     end
 end
@@ -295,7 +300,7 @@ end
 
     tid = @index(Global,Linear)
 
-    dims = Fable.dims(points[tid])
+    @inbounds dims = Fable.dims(points[tid])
 
     seed = quick_seed(tid)
 
@@ -303,24 +308,28 @@ end
     bit_offset = UInt(0)
     fx_offset = 0
     for j = 1:size(points,2)
-        pt = points[tid, j]
-        total_fxs = sum(H_fnums[j])
+        @inbounds pt = points[tid, j]
+        @inbounds total_fxs = sum(H_fnums[j])
         for i = 1:n
             # quick way to tell if in range to be calculated or not
             sketchy_sum = absum(pt)
     
             if sketchy_sum < max_range
-                if length(H_fnums[j]) > 1 || H_fnums[j][1] > 1
-                    seed = simple_rand(seed)
-                    fid = create_fid(H_probs, H_fnums[j], seed, fx_offset + 1)
-                else
-                    fid = UInt(1)
-                end
+                @inbounds begin
+                    if length(H_fnums[j]) > 1 || H_fnums[j][1] > 1
+                        seed = simple_rand(seed)
+                        fid = create_fid(H_probs, H_fnums[j], seed,
+                                         fx_offset + 1)
+                    else
+                        fid = UInt(1)
+                    end
 
-                pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j],
-                             H_kwargs; fx_offset)
-                clr = clr_loop(H_clrs, fid, recenter(pt, bounds, bin_widths),
-                               clr, frame, H_fnums[j], H_clr_kwargs; fx_offset)
+                    pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j],
+                                 H_kwargs; fx_offset)
+                    clr = clr_loop(H_clrs, fid,
+                                   recenter(pt, bounds, bin_widths), clr, frame,
+                                   H_fnums[j], H_clr_kwargs; fx_offset)
+                end
 
                 fid = (fid+1) << bit_offset+1
 
@@ -352,7 +361,7 @@ end
 
     tid = @index(Global,Linear)
 
-    dims = Fable.dims(points[tid])
+    @inbounds dims = Fable.dims(points[tid])
 
     seed = quick_seed(tid)
 
@@ -360,43 +369,47 @@ end
     fx_offset = 0
     post_fx_offset = 0
     for j = 1:size(points, 2)
-        pt = points[tid, j]
+        @inbounds pt = points[tid, j]
         clr = RGBA{Float32}(0,0,0,0)
         for i = 1:n
             # quick way to tell if in range to be calculated or not
             sketchy_sum = absum(pt)
 
             if sketchy_sum < max_range
-                if length(H_fnums[j]) > 1 || H_fnums[j][1] > 1
-                    seed = simple_rand(seed)
-                    fid = create_fid(H_probs, H_fnums[j], seed, fx_offset + 1)
-                else
-                    fid = UInt(1)
+                @inbounds begin
+                    if length(H_fnums[j]) > 1 || H_fnums[j][1] > 1
+                        seed = simple_rand(seed)
+                        fid = create_fid(H_probs, H_fnums[j], seed,
+                                         fx_offset + 1)
+                    else
+                        fid = UInt(1)
+                    end
+
+                    pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j], H_kwargs;
+                                 fx_offset)
+                    clr = clr_loop(H_clrs, fid,
+                                   recenter(pt, bounds, bin_widths), clr, frame,
+                                   H_fnums[j], H_clr_kwargs; fx_offset)
+
+                    fid = (fid+1) << bit_offset
+
+                    semi_random_loop!(layer_values, layer_reds, layer_greens,
+                                      layer_blues, layer_alphas, priorities,
+                                      fid, H_post_fxs, H_post_clrs,
+                                      pt, clr, frame, H_post_fnums[j],
+                                      H_post_kwargs, H_post_clr_kwargs,
+                                      H_post_probs, bounds, dims, bin_widths,
+                                      i, num_ignore, overlay;
+                                      fx_offset = post_fx_offset)
                 end
-
-                pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j], H_kwargs;
-                             fx_offset)
-                clr = clr_loop(H_clrs, fid, recenter(pt, bounds, bin_widths),
-                               clr, frame, H_fnums[j], H_clr_kwargs; fx_offset)
-
-                fid = (fid+1) << bit_offset
-
-                semi_random_loop!(layer_values, layer_reds, layer_greens,
-                                  layer_blues, layer_alphas, priorities, fid, 
-                                  H_post_fxs, H_post_clrs,
-                                  pt, clr, frame, H_post_fnums[j],
-                                  H_post_kwargs, H_post_clr_kwargs,
-                                  H_post_probs, bounds, dims, bin_widths,
-                                  i, num_ignore, overlay;
-                                  fx_offset = post_fx_offset)
 
             end
         end
-        total_fxs = sum(H_fnums[j])
+        @inbounds total_fxs = sum(H_fnums[j])
         fx_offset += total_fxs
-        bit_offset += ceil(UInt, log2(total_fxs)) +
-                      ceil(UInt, log2(sum(H_post_fnums[j])))
-        post_fx_offset += sum(H_post_fnums[j])
+        @inbounds bit_offset += ceil(UInt, log2(total_fxs)) +
+                                ceil(UInt, log2(sum(H_post_fnums[j])))
+        @inbounds post_fx_offset += sum(H_post_fnums[j])
         @inbounds points[tid, j] = pt
     end
 
@@ -415,8 +428,8 @@ end
 
     tid = @index(Global,Linear)
 
-    output_pt = points[tid]
-    dims = Fable.dims(points[tid])
+    @inbounds output_pt = points[tid]
+    @inbounds dims = Fable.dims(points[tid])
 
     output_clr = RGBA{Float32}(0,0,0,0)
 
@@ -427,41 +440,45 @@ end
 
     post_fx_offset = 0
     for j = 1:size(points, 2)
-        pt = points[tid, j]
+        @inbounds pt = points[tid, j]
         clr = RGBA{Float32}(0,0,0,0)
         for i = 1:n
             # quick way to tell if in range to be calculated or not
             sketchy_sum = absum(pt)
 
             if sketchy_sum < max_range
-                if length(H_fnums[j]) > 1 || H_fnums[j][1] > 1
-                    seed = simple_rand(seed)
-                    fid = create_fid(H_probs, H_fnums[j], seed, fx_offset + 1)
-                else
-                    fid = UInt(1)
+                @inbounds begin
+                    if length(H_fnums[j]) > 1 || H_fnums[j][1] > 1
+                        seed = simple_rand(seed)
+                        fid = create_fid(H_probs, H_fnums[j], seed,
+                                         fx_offset + 1)
+                    else
+                        fid = UInt(1)
+                    end
+
+                    if length(H_post_fnums[j]) > 1 || H_post_fnums[j][1] > 1
+                        seed = simple_rand(seed)
+                        fid_2 = create_fid(H_post_probs, H_post_fnums[j], seed,
+                                           post_fx_offset + 1)
+                    else
+                        fid_2 = UInt(1)
+                    end
+
+                    pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j], H_kwargs;
+                                 fx_offset)
+                    clr = clr_loop(H_clrs, fid,
+                                   recenter(pt, bounds, bin_widths), clr, frame,
+                                   H_fnums[j], H_clr_kwargs; fx_offset)
+
+                    output_pt = pt_loop(H_post_fxs, fid, pt, frame,
+                                        H_post_fnums[j], H_post_kwargs;
+                                        fx_offset = post_fx_offset)
+                    output_clr = clr_loop(H_post_clrs, fid_2,
+                                          recenter(pt, bounds, bin_widths), clr,
+                                          frame, H_post_fnums[j],
+                                          H_post_clr_kwargs;
+                                          fx_offset = post_fx_offset)
                 end
-
-                if length(H_post_fnums[j]) > 1 || H_post_fnums[j][1] > 1
-                    seed = simple_rand(seed)
-                    fid_2 = create_fid(H_post_probs, H_post_fnums[j], seed,
-                                       post_fx_offset + 1)
-                else
-                    fid_2 = UInt(1)
-                end
-
-                pt = pt_loop(H_fxs, fid, pt, frame, H_fnums[j], H_kwargs;
-                             fx_offset)
-                clr = clr_loop(H_clrs, fid, recenter(pt, bounds, bin_widths),
-                               clr, frame, H_fnums[j], H_clr_kwargs; fx_offset)
-
-                output_pt = pt_loop(H_post_fxs, fid, pt, frame,
-                                    H_post_fnums[j], H_post_kwargs;
-                                    fx_offset = post_fx_offset)
-                output_clr = clr_loop(H_post_clrs, fid_2,
-                                      recenter(pt, bounds, bin_widths), clr,
-                                      frame, H_post_fnums[j],
-                                      H_post_clr_kwargs;
-                                      fx_offset = post_fx_offset)
 
                 # a bit sketchy
                 fid = (fid+1) << bit_offset
@@ -473,12 +490,12 @@ end
 
             end
         end
-        total_fxs = sum(H_fnums[j])
+        @inbounds total_fxs = sum(H_fnums[j])
         fx_offset += total_fxs
-        bit_offset += ceil(UInt, log2(total_fxs)) +
-                      ceil(UInt, log2(sum(H_post_fnums[j])))
+        @inbounds bit_offset += ceil(UInt, log2(total_fxs)) +
+                                ceil(UInt, log2(sum(H_post_fnums[j])))
 
-        post_total_fxs = sum(H_post_fnums[j])
+        @inbounds post_total_fxs = sum(H_post_fnums[j])
         post_fx_offset += post_total_fxs
         @inbounds points[tid, j] = pt
     end

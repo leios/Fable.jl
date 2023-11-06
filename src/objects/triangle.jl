@@ -4,8 +4,8 @@ triangle_fill = @fum function triangle_fill(x,y;
                                             A = (0,0),
                                             B = (0,0),
                                             C = (0,0))
-    midpoint_y = (A[1] + B[1] + C[1]) ./ 3
-    midpoint_x = (A[2] + B[2] + C[2]) ./ 3
+    @inbounds midpoint_y = (A[1] + B[1] + C[1]) ./ 3
+    @inbounds midpoint_x = (A[2] + B[2] + C[2]) ./ 3
 
     y = midpoint_y - (y - midpoint_y) * 0.5
     x = midpoint_x - (x - midpoint_x) * 0.5
@@ -26,7 +26,7 @@ function define_triangle(; A::Union{Vector,Tuple,FractalInput}=(sqrt(3)/4,-0.5),
 
     color_set = define_color_operators(color; fnum = fnum)
 
-    return fo(fums, color_set, Tuple([1/fnum for i = 1:fnum]))
+    @inbounds return fo(fums, color_set, Tuple([1/fnum for i = 1:fnum]))
 end
 
 # This specifically returns the fums for a triangle triangle

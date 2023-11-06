@@ -47,42 +47,52 @@ dims(pt::Point3D) = 3
 dims(pt::Point4D) = 4
 
 function recenter(pt::Point1D, bounds, bin_widths)
-    return point((floor((pt.y - bounds[1])/bin_widths[1])+0.5)*bin_widths[1]+
-                 +bounds[1])
+    @inbounds begin
+        return point((floor((pt.y - bounds[1])/bin_widths[1])+0.5)*
+                     bin_widths[1] + bounds[1])
+    end
 end
 
 function recenter(pt::Point2D, bounds, bin_widths)
-    return point((floor((pt.y - bounds[1])/bin_widths[1])+0.5)*bin_widths[1]+
-                 +bounds[1],
-                 (floor((pt.x - bounds[3])/bin_widths[2])+0.5)*bin_widths[2]+
-                 +bounds[3])
+    @inbounds begin
+        return point((floor((pt.y - bounds[1])/bin_widths[1])+0.5)*
+                     bin_widths[1] + bounds[1],
+                     (floor((pt.x - bounds[3])/bin_widths[2])+0.5)*
+                     bin_widths[2] + bounds[3])
+    end
 end
 
 function recenter(pt::Point3D, bounds, bin_widths)
-    return point((floor((pt.y - bounds[1])/bin_widths[1])+0.5)*bin_widths[1]+
-                 +bounds[1],
-                 (floor((pt.x - bounds[3])/bin_widths[2])+0.5)*bin_widths[2]+
-                 +bounds[3],
-                 (floor((pt.z - bounds[5])/bin_widths[3])+0.5)*bin_widths[3]+
-                 +bounds[5])
+    @inbounds begin
+        return point((floor((pt.y - bounds[1])/bin_widths[1])+0.5)*
+                     bin_widths[1] + bounds[1],
+                     (floor((pt.x - bounds[3])/bin_widths[2])+0.5)*
+                     bin_widths[2] + bounds[3],
+                     (floor((pt.z - bounds[5])/bin_widths[3])+0.5)*
+                     bin_widths[3] + bounds[5])
+    end
 end
 
 function recenter(pt::Point4D, bounds, bin_widths)
-    return point((floor((pt.y - bounds[1])/bin_widths[1])+0.5)*bin_widths[1]+
-                 bounds[1],
-                 (floor((pt.x - bounds[3])/bin_widths[2])+0.5)*bin_widths[2]+
-                 +bounds[3],
-                 (floor((pt.z - bounds[5])/bin_widths[3])+0.5)*bin_widths[3]+
-                 +bounds[5],
-                 (floor((pt.w - bounds[7])/bin_widths[4])+0.5)*bin_widths[4]+
-                 +bounds[7])
+    @inbounds begin
+        return point((floor((pt.y - bounds[1])/bin_widths[1])+0.5)*
+                     bin_widths[1] + bounds[1],
+                     (floor((pt.x - bounds[3])/bin_widths[2])+0.5)*
+                     bin_widths[2] + bounds[3],
+                     (floor((pt.z - bounds[5])/bin_widths[3])+0.5)*
+                     bin_widths[3] + bounds[5],
+                     (floor((pt.w - bounds[7])/bin_widths[4])+0.5)*
+                     bin_widths[4] + bounds[7])
+    end
 end
 
 
 
 function generate_point(; dims=2, bounds = find_bounds((0,0), (2,2)))
-    return point([rand() * (bounds[i*2] - bounds[i*2-1]) +
-                  bounds[i*2-1] for i=1:dims]...)
+    @inbounds begin
+        return point([rand() * (bounds[i*2] - bounds[i*2-1]) +
+                      bounds[i*2-1] for i=1:dims]...)
+    end
 end
 
 function generate_points(N::Int; ArrayType=Array, dims=2,
