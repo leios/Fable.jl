@@ -121,28 +121,24 @@ function zero!(layer::FractalLayer)
     end
 end
 
-@kernel function zero_kernel!(layer_values, layer_reds,
+@kernel inbounds=true function zero_kernel!(layer_values, layer_reds,
                                             layer_greens, layer_blues,
                                             priorities)
     tid = @index(Global, Cartesian)
-    @inbounds begin
-        layer_values[tid] = 0
-        layer_reds[tid] = 0
-        layer_greens[tid] = 0
-        layer_blues[tid] = 0
-        priorities[tid] = 0
-    end
+    layer_values[tid] = 0
+    layer_reds[tid] = 0
+    layer_greens[tid] = 0
+    layer_blues[tid] = 0
+    priorities[tid] = 0
 end
 
-@kernel function zero_kernel!(layer_values, layer_reds,
+@kernel inbounds=true function zero_kernel!(layer_values, layer_reds,
                                             layer_greens, layer_blues)
     tid = @index(Global, Cartesian)
-    @inbounds begin
-        layer_values[tid] = 0
-        layer_reds[tid] = 0
-        layer_greens[tid] = 0
-        layer_blues[tid] = 0
-    end
+    layer_values[tid] = 0
+    layer_reds[tid] = 0
+    layer_greens[tid] = 0
+    layer_blues[tid] = 0
 end
 
 
