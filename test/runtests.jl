@@ -1,7 +1,7 @@
 using Test
 using KernelAbstractions
 using Fable
-using Images
+using Colors
 
 ArrayTypes = [Array]
 using CUDA

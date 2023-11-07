@@ -4,8 +4,8 @@ export define_circle
 
 naive_disk = @fum function naive_disk(x, y; radius = 1, position = (0,0),
                                       function_index = 0)
-    x_temp = (x-position[2])/radius
-    y_temp = (y-position[1])/radius
+    @inbounds x_temp = (x-position[2])/radius
+    @inbounds y_temp = (y-position[1])/radius
     r = sqrt(x_temp*x_temp + y_temp*y_temp)
 
     theta = pi
@@ -19,8 +19,8 @@ naive_disk = @fum function naive_disk(x, y; radius = 1, position = (0,0),
     theta2 = (r+function_index)*pi
     r2 = theta/(2*pi)
 
-    x = radius*r2*cos(theta2)+position[2]
-    y = radius*r2*sin(theta2)+position[1]
+    @inbounds x = radius*r2*cos(theta2)+position[2]
+    @inbounds y = radius*r2*sin(theta2)+position[1]
     return point(y,x)
 end
 
@@ -28,8 +28,8 @@ constant_disk = @fum function constant_disk(x, y; radius = 1,
                                             position = (0,0),
                                             function_index = 0)
 
-    x_temp = (x-position[2])/radius
-    y_temp = (y-position[1])/radius
+    @inbounds x_temp = (x-position[2])/radius
+    @inbounds y_temp = (y-position[1])/radius
     r = x_temp*x_temp + y_temp*y_temp
 
     theta = pi
@@ -43,8 +43,8 @@ constant_disk = @fum function constant_disk(x, y; radius = 1,
     theta2 = (r+function_index)*pi
     r2 = sqrt(theta/(2*pi))
 
-    x = radius*r2*cos(theta2)+position[2]
-    y = radius*r2*sin(theta2)+position[1]
+    @inbounds x = radius*r2*cos(theta2)+position[2]
+    @inbounds y = radius*r2*sin(theta2)+position[1]
     return point(y,x)
 end
 

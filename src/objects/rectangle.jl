@@ -11,21 +11,23 @@ rectangle_object = @fum function rectangle_object(y,x;
     scale_x *= 0.5
     scale_y *= 0.5
 
-    if vertex == 1
-        p_x = scale_x*cos(rotation) - scale_y*sin(rotation) + position[2]
-        p_y = scale_x*sin(rotation) + scale_y*cos(rotation) + position[1]
-    elseif vertex == 2
-        p_x = scale_x*cos(rotation) + scale_y*sin(rotation) + position[2]
-        p_y = scale_x*sin(rotation) - scale_y*cos(rotation) + position[1]
-    elseif vertex == 3
-        p_x = - scale_x*cos(rotation) + scale_y*sin(rotation) + position[2]
-        p_y = - scale_x*sin(rotation) - scale_y*cos(rotation) + position[1]
-    elseif vertex == 4
-        p_x = - scale_x*cos(rotation) - scale_y*sin(rotation) + position[2]
-        p_y = - scale_x*sin(rotation) + scale_y*cos(rotation) + position[1]
-    else
-        p_x = 0.0
-        p_y = 0.0
+    @inbounds begin
+        if vertex == 1
+            p_x = scale_x*cos(rotation) - scale_y*sin(rotation) + position[2]
+            p_y = scale_x*sin(rotation) + scale_y*cos(rotation) + position[1]
+        elseif vertex == 2
+            p_x = scale_x*cos(rotation) + scale_y*sin(rotation) + position[2]
+            p_y = scale_x*sin(rotation) - scale_y*cos(rotation) + position[1]
+        elseif vertex == 3
+            p_x = - scale_x*cos(rotation) + scale_y*sin(rotation) + position[2]
+            p_y = - scale_x*sin(rotation) - scale_y*cos(rotation) + position[1]
+        elseif vertex == 4
+            p_x = - scale_x*cos(rotation) - scale_y*sin(rotation) + position[2]
+            p_y = - scale_x*sin(rotation) + scale_y*cos(rotation) + position[1]
+        else
+            p_x = 0.0
+            p_y = 0.0
+        end
     end
 
     return point(0.5*(p_y + y), 0.5*(p_x + x))

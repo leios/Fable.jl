@@ -29,15 +29,20 @@ end
 @kernel function quad_add!(output, canvas_y, canvas_x)
     tid = @index(Global, Linear)
 
-    r = sqrt(canvas_y[tid].r*canvas_y[tid].r + canvas_x[tid].r*canvas_x[tid].r)
-    g = sqrt(canvas_y[tid].g*canvas_y[tid].g + canvas_x[tid].g*canvas_x[tid].g)
-    b = sqrt(canvas_y[tid].b*canvas_y[tid].b + canvas_x[tid].b*canvas_x[tid].b)
-    if eltype(output) <: RGBA
-        alpha = sqrt(canvas_y[tid].alpha*canvas_y[tid].alpha +
-                     canvas_x[tid].alpha*canvas_x[tid].alpha)
-        output[tid] = clip(RGBA(r, g, b, alpha), 1)
-    else
-        output[tid] = clip(RGB(r, g, b), 1)
+    @inbounds begin
+        r = sqrt(canvas_y[tid].r*canvas_y[tid].r +
+                 canvas_x[tid].r*canvas_x[tid].r)
+        g = sqrt(canvas_y[tid].g*canvas_y[tid].g +
+                 canvas_x[tid].g*canvas_x[tid].g)
+        b = sqrt(canvas_y[tid].b*canvas_y[tid].b +
+                 canvas_x[tid].b*canvas_x[tid].b)
+        if eltype(output) <: RGBA
+            alpha = sqrt(canvas_y[tid].alpha*canvas_y[tid].alpha +
+                         canvas_x[tid].alpha*canvas_x[tid].alpha)
+            output[tid] = clip(RGBA(r, g, b, alpha), 1)
+        else
+            output[tid] = clip(RGB(r, g, b), 1)
+        end
     end
 end
 

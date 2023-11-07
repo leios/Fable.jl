@@ -9,16 +9,16 @@ identity = @fum function identity(y, x)
 end
 
 scale = @fum function scale(y, x; scale = (1,1))
-    x = scale[2]*x
-    y = scale[1]*y
+    @inbounds x = scale[2]*x
+    @inbounds y = scale[1]*y
     return point(y,x)
 end
 
 scale_and_translate = @fum function scale_and_translate(y, x;
                                                        translation = (0,0),
                                                        scale = (1, 1))
-    x = scale[2]*x + translation[2]
-    y = scale[1]*y + translation[1]
+    @inbounds x = scale[2]*x + translation[2]
+    @inbounds y = scale[1]*y + translation[1]
     return point(y,x)
 end
 
@@ -76,8 +76,8 @@ popcorn = @fum function popcorn(y, x; c = 1, f = 1)
 end
 
 shift = @fum function shift(y, x; loc = (0,0))
-    x += loc[2]
-    y += loc[1]
+    @inbounds x += loc[2]
+    @inbounds y += loc[1]
     return point(y,x)
 end
 
@@ -98,8 +98,8 @@ bubble = @fum function bubble(y, x)
 end
 
 halfway = @fum function halfway(y, x; loc=(0,0))
-    x = 0.5*(loc[2] + x)
-    y = 0.5*(loc[1] + y)
+    @inbounds x = 0.5*(loc[2] + x)
+    @inbounds y = 0.5*(loc[1] + y)
     return point(y,x)
 end
 

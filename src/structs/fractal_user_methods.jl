@@ -32,12 +32,18 @@ end
 #    NamedTuple{Tuple(args.(kwargs[:],1))}(Tuple(args.(kwargs[:],2)))
 #end
 
-function __define_fum_stuff(expr, config, mod)
+function __define_fum_stuff(expr, config, mod, force_inbounds)
     def = MacroTools.splitdef(expr)
     def[:name] = name = Symbol(def[:name], :_fum)
     used_args = def[:args]
     args = __set_args(used_args, config)
     def[:args] = args
+    if force_inbounds
+        body_qt = quote
+            @inbounds $(def[:body])
+        end
+        def[:body] = body_qt
+    end
     kwargs = NamedTuple()
     fum_fx = combinedef(def)
     return kwargs, Core.eval(mod, fum_fx)
@@ -50,16 +56,21 @@ end
 macro fum(ex...)
 
     config = :fractal
+    force_inbounds = false
 
     if length(ex) == 1
-    elseif length(ex) == 2
-        if ex[1] == :color || ex[1] == :shader ||
-           ex[1] == :(:shader) || ex[1] == :(:color)
-            config = :shader
-        end
     else
-        error("Improperly formatted function definition!\n"*
-              "Too many arguments provided!")
+        for i = 1:length(ex)-1
+            if ex[i] == :color || ex[i] == :shader ||
+               ex[i] == :(:shader) || ex[i] == :(:color)
+                config = :shader
+            elseif ex[i] isa Expr && ex[i].head == :(=) &&
+                ex[i].args[1] == :inbounds && ex[i].args[2] isa Bool
+                force_inbounds = ex[i].args[2]
+            else
+                error("Incorrect config argument ", ex[i], "!")
+            end
+        end
     end
 
     expr = ex[end]
@@ -70,13 +81,15 @@ macro fum(ex...)
     elseif expr.head == :(=)
         # inline function definitions
         if isa(expr.args[1], Expr)
-            kwargs, fum_fx = __define_fum_stuff(expr, config, __module__)
+            kwargs, fum_fx = __define_fum_stuff(expr, config, __module__,
+                                                force_inbounds)
         else
             error("Cannot create FractalUserMethod.\n"*
                   "Input is not a valid function definition!")
         end
     elseif expr.head == :function
-        kwargs, fum_fx = __define_fum_stuff(expr, config, __module__)
+        kwargs, fum_fx = __define_fum_stuff(expr, config, __module__,
+                                            force_inbounds)
     else
         error("Cannot convert expr to Fractal User Method!")
     end

@@ -28,7 +28,7 @@ function Identity(; filter_size = 3, ArrayType = Array)
     end
     filter = zeros(filter_size, filter_size)
     idx = ceil(Int, filter_size*0.5)
-    filter[idx, idx] = 1
+    @inbounds filter[idx, idx] = 1
 
     return Filter(filter!, ArrayType(filter), nothing, false)
 end
@@ -54,7 +54,7 @@ function Gaussian(; filter_size = 3, ArrayType = Array, sigma = 1.0)
             y = -1 + 2*(i-1)/(filter_size-1) 
             for j = 1:filter_size
                 x = -1 + 2*(j-1)/(filter_size-1) 
-                filter[i,j] = gaussian(x, y, sigma)
+                @inbounds filter[i,j] = gaussian(x, y, sigma)
             end
         end
     else

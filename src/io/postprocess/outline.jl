@@ -72,18 +72,22 @@ end
 
 @kernel function ridge_kernel!(canvas, intensity_function, threshold, c)
     tid = @index(Global, Linear)
-    if intensity_function(canvas[tid]) > threshold
-        canvas[tid] = RGBA(c.r, c.g, c.b, c.alpha)
-    else
-        canvas[tid] = RGBA(0,0,0,0)
+    @inbounds begin
+        if intensity_function(canvas[tid]) > threshold
+            canvas[tid] = RGBA(c.r, c.g, c.b, c.alpha)
+        else
+            canvas[tid] = RGBA(0,0,0,0)
+        end
     end
 end
 
 @kernel function superimpose_kernel!(canvas, layer)
     tid = @index(Global, Linear)
-    r = layer[tid].alpha*layer[tid].r + (1-layer[tid].alpha)*canvas[tid].r
-    g = layer[tid].alpha*layer[tid].g + (1-layer[tid].alpha)*canvas[tid].g
-    b = layer[tid].alpha*layer[tid].b + (1-layer[tid].alpha)*canvas[tid].b
-    alpha = max(layer[tid].alpha, canvas[tid].alpha)
-    canvas[tid] = RGBA(r, g, b, alpha)
+    @inbounds begin
+        r = layer[tid].alpha*layer[tid].r + (1-layer[tid].alpha)*canvas[tid].r
+        g = layer[tid].alpha*layer[tid].g + (1-layer[tid].alpha)*canvas[tid].g
+        b = layer[tid].alpha*layer[tid].b + (1-layer[tid].alpha)*canvas[tid].b
+        alpha = max(layer[tid].alpha, canvas[tid].alpha)
+        canvas[tid] = RGBA(r, g, b, alpha)
+    end
 end

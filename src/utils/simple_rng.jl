@@ -33,7 +33,7 @@ end
     p = 0.0
 
     for i = start:start + fnum - 1
-        p += prob_set[i]
+        @inbounds p += prob_set[i]
         if rnd <= p
             return i - start + 1
         end
@@ -58,7 +58,7 @@ end
 
     for i = 1:length(fnums)
         # needed bits to hold the fnum
-        bitsize = ceil(UI, log2(fnums[i]))
+        @inbounds bitsize = ceil(UI, log2(fnums[i]))
 
         # set of 1's to mask only those bits in the rng string
         bitmask = UI(2^(bitsize + offset) - 1 - (2^offset - 1))
@@ -68,8 +68,10 @@ end
 
         # checking if that option is actually valid,
         # if not, using the rng string to create an adhoc new choice
-        if a+1 > fnums[i]
-            a = UI(rng % fnums[i])
+        @inbounds begin
+            if a+1 > fnums[i]
+                a = UI(rng % fnums[i])
+            end
         end
 
         # Shifting back to appropriate location
@@ -88,14 +90,16 @@ end
 @inline function create_fid(probs, fnums, seed, fx_offset)
     fid = UInt(0)
     bit_offset = 0
-    for i = 1:length(fnums)
-        if probs[fx_offset] < 1
-            seed = simple_rand(UInt(seed))
-            choice = find_choice(probs, fx_offset, fnums[i], seed)
-            fid += ((choice-1) << bit_offset)
-            bit_offset += ceil(UInt, log2(fnums[i]))
+    @inbounds begin
+        for i = 1:length(fnums)
+            if probs[fx_offset] < 1
+                seed = simple_rand(UInt(seed))
+                choice = find_choice(probs, fx_offset, fnums[i], seed)
+                fid += ((choice-1) << bit_offset)
+                bit_offset += ceil(UInt, log2(fnums[i]))
+            end
+            fx_offset += fnums[i]
         end
-        fx_offset += fnums[i]
     end
     return fid
 end
@@ -104,14 +108,16 @@ end
     fid = UInt(0)
     bit_offset = 0
     fx_offset = 1
-    for i = 1:length(fnums)
-        if probs[fx_offset] < 1
-            seed = simple_rand(UInt(seed))
-            choice = find_choice(probs, fx_offset, fnums[i], seed)
-            fid += ((choice-1) << bit_offset)
-            bit_offset += ceil(UInt, log2(fnums[i]))
+    @inbounds begin
+        for i = 1:length(fnums)
+            if probs[fx_offset] < 1
+                seed = simple_rand(UInt(seed))
+                choice = find_choice(probs, fx_offset, fnums[i], seed)
+                fid += ((choice-1) << bit_offset)
+                bit_offset += ceil(UInt, log2(fnums[i]))
+            end
+            fx_offset += fnums[i]
         end
-        fx_offset += fnums[i]
     end
     return fid
 end
@@ -130,11 +136,13 @@ end
     bit_offset = 0
     fx_offset = 0
     t_out = ()
-    for i = 1:length(fnums)
-        idx = decode_fid(fid, bit_offset, fnums[i]) + fx_offset
-        t_out = (t_out...,idx)
-        bit_offset += ceil(UInt,log2(fnums[i]))
-        fx_offset += fnums[i]
+    @inbounds begin
+        for i = 1:length(fnums)
+            idx = decode_fid(fid, bit_offset, fnums[i]) + fx_offset
+            t_out = (t_out...,idx)
+            bit_offset += ceil(UInt,log2(fnums[i]))
+            fx_offset += fnums[i]
+        end
     end
 
     return t_out

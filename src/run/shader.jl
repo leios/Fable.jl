@@ -3,7 +3,7 @@ export run!
 @generated function shader_loop(fxs, y, x, color, frame, kwargs)
     exs = Expr[]
     for i = 1:length(fxs.parameters)
-        ex = :(color = fxs[$i](y, x, color, frame; kwargs[$i]...))
+        ex = :(@inbounds color = fxs[$i](y, x, color, frame; kwargs[$i]...))
         push!(exs, ex)
     end
 

@@ -9,7 +9,7 @@ null = @fum function null(y, x)
     return point(y, x)
 end
 
-stretch_and_rotate = @fum function stretch_and_rotate(
+stretch_and_rotate = @fum inbounds=true function stretch_and_rotate(
     y,x;
     object_position = (0,0),
     scale = (1,1),
@@ -35,8 +35,8 @@ simple_smear = @fum function simple_smear(y,x;
     temp = abs.(object_position .- previous_position)
     temp = ((temp .- previous_velocity) ./ factor) .+ 1
 
-    x = (x-object_position[2])*temp[2] + object_position[2]
-    y = (y-object_position[1])*temp[1] + object_position[1]
+    @inbounds x = (x-object_position[2])*temp[2] + object_position[2]
+    @inbounds y = (y-object_position[1])*temp[1] + object_position[1]
     return point(y,x)
 end
 

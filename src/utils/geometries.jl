@@ -1,8 +1,8 @@
 export in_ellipse, in_rectangle, in_blob
 
 @inline function in_ellipse(y, x, position, rotation, r1, r2)
-    x -= position[2]
-    y -= position[1]
+    @inbounds x -= position[2]
+    @inbounds y -= position[1]
     r = sqrt(x*x + y*y)
     theta = atan(y,x)
     x2 = r*cos(theta-rotation)
@@ -15,8 +15,8 @@ export in_ellipse, in_rectangle, in_blob
 end
 
 @inline function in_rectangle(y, x, position, rotation, scale_x, scale_y)
-    x -= position[2]
-    y -= position[1]
+    @inbounds x -= position[2]
+    @inbounds y -= position[1]
     r = sqrt(x*x + y*y)
     theta = atan(y,x)
     x2 = r*cos(theta-rotation)
@@ -30,16 +30,16 @@ end
 
 @inline function in_blob(y, x, position, rotation, radius,
                          frequencies, amplitudes)
-    x -= position[2]
-    y -= position[1]
+    @inbounds x -= position[2]
+    @inbounds y -= position[1]
     theta = atan(y, x)
     theta -= rotation
 
     y_val = radius*sin(theta)
     x_val = radius*cos(theta)
     for i = 1:length(frequencies)
-        y_val += amplitudes[i]*sin(frequencies[i]*theta)
-        x_val += amplitudes[i]*cos(frequencies[i]*theta)
+        @inbounds y_val += amplitudes[i]*sin(frequencies[i]*theta)
+        @inbounds x_val += amplitudes[i]*cos(frequencies[i]*theta)
     end
 
     if x*x + y*y <= x_val*x_val + y_val*y_val

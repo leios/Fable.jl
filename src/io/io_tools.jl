@@ -51,17 +51,19 @@ end
     tid = @index(Global, Cartesian)
     idx_1 = CartesianIndex(Tuple(tid) .+ Tuple(start_index_1) .- (1,1))
     idx_2 = CartesianIndex(Tuple(tid) .+ Tuple(start_index_2) .- (1,1))
-    if canvas_2[idx_2].alpha > 0
+    @inbounds begin
+        if canvas_2[idx_2].alpha > 0
 
-        @inbounds r = op(canvas_1[idx_1].r*(1-canvas_2[idx_2].alpha),
-                         canvas_2[idx_2].r*canvas_2[idx_2].alpha)
-        @inbounds g = op(canvas_1[idx_1].g*(1-canvas_2[idx_2].alpha),
-                         canvas_2[idx_2].g*canvas_2[idx_2].alpha)
-        @inbounds b = op(canvas_1[idx_1].b*(1-canvas_2[idx_2].alpha),
-                         canvas_2[idx_2].b*canvas_2[idx_2].alpha)
-        @inbounds a = max(canvas_1[idx_1].alpha, canvas_2[idx_2].alpha)
+            r = op(canvas_1[idx_1].r*(1-canvas_2[idx_2].alpha),
+                   canvas_2[idx_2].r*canvas_2[idx_2].alpha)
+            g = op(canvas_1[idx_1].g*(1-canvas_2[idx_2].alpha),
+                   canvas_2[idx_2].g*canvas_2[idx_2].alpha)
+            b = op(canvas_1[idx_1].b*(1-canvas_2[idx_2].alpha),
+                   canvas_2[idx_2].b*canvas_2[idx_2].alpha)
+            a = max(canvas_1[idx_1].alpha, canvas_2[idx_2].alpha)
 
-        @inbounds canvas_1[idx_1] = RGBA(r,g,b,a)
+            canvas_1[idx_1] = RGBA(r,g,b,a)
+        end
     end
 end
 
@@ -78,16 +80,18 @@ end
 
     idx_2 = find_bin(canvas_2, x, y, bounds_2, (1/ppu_2, 1/ppu_2))
 
-    if canvas_2[idx_2].alpha > 0
-        @inbounds r = op(canvas_1[idx_1].r*(1-canvas_2[idx_2].alpha),
-                         canvas_2[idx_2].r*canvas_2[idx_2].alpha)
-        @inbounds g = op(canvas_1[idx_1].g*(1-canvas_2[idx_2].alpha),
-                         canvas_2[idx_2].g*canvas_2[idx_2].alpha)
-        @inbounds b = op(canvas_1[idx_1].b*(1-canvas_2[idx_2].alpha),
-                         canvas_2[idx_2].b*canvas_2[idx_2].alpha)
-        @inbounds a = max(canvas_1[idx_1].alpha, canvas_2[idx_2].alpha)
+    @inbounds begin
+        if canvas_2[idx_2].alpha > 0
+            r = op(canvas_1[idx_1].r*(1-canvas_2[idx_2].alpha),
+                   canvas_2[idx_2].r*canvas_2[idx_2].alpha)
+            g = op(canvas_1[idx_1].g*(1-canvas_2[idx_2].alpha),
+                   canvas_2[idx_2].g*canvas_2[idx_2].alpha)
+            b = op(canvas_1[idx_1].b*(1-canvas_2[idx_2].alpha),
+                   canvas_2[idx_2].b*canvas_2[idx_2].alpha)
+            a = max(canvas_1[idx_1].alpha, canvas_2[idx_2].alpha)
 
-        @inbounds canvas_1[idx_1] = RGBA(r,g,b,a)
+            canvas_1[idx_1] = RGBA(r,g,b,a)
+        end
     end
 
 end
@@ -97,11 +101,11 @@ function create_canvas(s; ArrayType = Array)
 end
 
 function zero!(a::AT) where AT <: AbstractArray{T} where T <: Union{RGB, RGBA}
-    a[:] .= RGBA(0.0, 0.0, 0.0, 0.0)
+    @inbounds a[:] .= RGBA(0.0, 0.0, 0.0, 0.0)
 end
 
 function zero!(layer::AL) where AL <: AbstractLayer
-    layer.canvas[:] .= RGBA(0.0, 0.0, 0.0, 0.0)
+    @inbounds layer.canvas[:] .= RGBA(0.0, 0.0, 0.0, 0.0)
 end
 
 function zero!(layer::FractalLayer)
@@ -117,8 +121,9 @@ function zero!(layer::FractalLayer)
     end
 end
 
-@kernel function zero_kernel!(layer_values, layer_reds, layer_greens,
-                              layer_blues, priorities)
+@kernel inbounds=true function zero_kernel!(layer_values, layer_reds,
+                                            layer_greens, layer_blues,
+                                            priorities)
     tid = @index(Global, Cartesian)
     layer_values[tid] = 0
     layer_reds[tid] = 0
@@ -127,8 +132,8 @@ end
     priorities[tid] = 0
 end
 
-@kernel function zero_kernel!(layer_values, layer_reds, layer_greens,
-                              layer_blues)
+@kernel inbounds=true function zero_kernel!(layer_values, layer_reds,
+                                            layer_greens, layer_blues)
     tid = @index(Global, Cartesian)
     layer_values[tid] = 0
     layer_reds[tid] = 0
@@ -153,7 +158,7 @@ function reset!(layer::AL) where AL <: AbstractLayer
 end
 
 function reset!(layer::ColorLayer)
-    layer.canvas .= layer.color
+    @inbounds layer.canvas .= layer.color
 end
 
 function write_image(layer;
@@ -184,13 +189,13 @@ function write_image(layers::Vector{AL};
                      img = fill(RGBA{Float32}(0,0,0,0),
                                 size(layers[1].canvas))) where AL<:AbstractLayer
 
-    postprocess!(layers[1])
+    @inbounds postprocess!(layers[1])
     for i = 2:length(layers)
-        postprocess!(layers[i])
-        mix_layers!(layers[1], layers[i]; mode = :simple)
+        @inbounds postprocess!(layers[i])
+        @inbounds mix_layers!(layers[1], layers[i]; mode = :simple)
     end
 
-    img .= Array(layers[1].canvas)
+    @inbounds img .= Array(layers[1].canvas)
 
     if reset
         reset!(layers)
@@ -207,13 +212,13 @@ function write_video!(v::VideoParams,
                       layers::Vector{AL};
                       reset = true) where AL <: AbstractLayer
  
-    postprocess!(layers[1])
+    @inbounds postprocess!(layers[1])
     for i = 2:length(layers)
         postprocess!(layers[i])
-        mix_layers!(layers[1], layers[i]; mode = :simple)
+        @inbounds mix_layers!(layers[1], layers[i]; mode = :simple)
     end
 
-    v.frame .= Array(layers[1].canvas)
+    @inbounds v.frame .= Array(layers[1].canvas)
 
     if OUTPUT
         write(v.writer, v.frame)
@@ -229,10 +234,10 @@ end
 # in the case OUTPUT = false
 function write_video!(n::Nothing, layers::Vector{AL};
                       reset = true) where AL <: AbstractLayer
-    postprocess!(layers[1])
+    @inbounds postprocess!(layers[1])
     for i = 2:length(layers)
-        postprocess!(layers[i])
-        mix_layers!(layers[1], layers[i]; mode = :simple)
+        @inbounds postprocess!(layers[i])
+        @inbounds mix_layers!(layers[1], layers[i]; mode = :simple)
     end
 
     if reset

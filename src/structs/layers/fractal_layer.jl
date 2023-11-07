@@ -240,7 +240,7 @@ end
 
         @inbounds canvas[tid] = RGBA(r,g,b,a)
     else
-        @inbounds canvas[tid] = RGBA(FT(0), 0, 0, 0)
+        @inbounds canvas[tid] = RGBA(FT(0), FT(0), FT(0), FT(0))
     end
 end
 

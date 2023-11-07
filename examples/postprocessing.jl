@@ -1,4 +1,4 @@
-using Fable, Images
+using Fable, Colors
 
 function quick_circle(num_particles, num_iterations; ArrayType = Array,
                       filename = "out.png")

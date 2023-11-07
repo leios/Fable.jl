@@ -7,7 +7,7 @@ function prob_check(probs::T) where T <: Tuple
         end
     else
         for i = 1:length(probs)
-            prob_check(probs[i])
+            @inbounds prob_check(probs[i])
         end
     end
 end
@@ -58,10 +58,12 @@ FractalOperator(fo::FractalOperator) = fo
 
 function FractalOperator(fos::T) where T <: Union{Vector{FractalOperator},
                                                   Tuple}
-    if isnothing(fos[1])
-        curr_fo = fo(Smears.null, Shaders.null)
-    else
-        curr_fo = fos[1]
+    @inbounds begin
+        if isnothing(fos[1])
+            curr_fo = fo(Smears.null, Shaders.null)
+        else
+            curr_fo = fos[1]
+        end
     end
 
     fxs = (curr_fo.ops,)
@@ -72,7 +74,7 @@ function FractalOperator(fos::T) where T <: Union{Vector{FractalOperator},
     probs = (curr_fo.probs,)
 
     for i = 2:length(fos)
-        curr_fo = fo(fos[i])
+        @inbounds curr_fo = fo(fos[i])
         if isnothing(curr_fo)
             curr_fo = fo(Smears.null, Shaders.null)
         end
@@ -89,8 +91,10 @@ function FractalOperator(fos::T) where T <: Union{Vector{FractalOperator},
 end
 
 function extract_info(fos::T) where T <: Union{Tuple, Vector{FractalOperator}}
-    kwargs, fis, fxs, color_kwargs, color_fis, color_fxs,
-        probs, fnums = extract_info(fos[1])
+    @inbounds begin
+        kwargs, fis, fxs, color_kwargs, color_fis, color_fxs,
+            probs, fnums = extract_info(fos[1])
+    end
 
     kwargs, fis, fxs,
         color_kwargs, color_fis, color_fxs,
@@ -106,9 +110,11 @@ function extract_info(fos::T) where T <: Union{Tuple, Vector{FractalOperator}}
     fnums = (fnums,)
 
     for i = 2:length(fos)
-        new_kwargs, new_fis, new_fxs, new_color_kwargs,
-            new_color_fis, new_color_fxs, new_probs,
-            new_fnums = extract_info(fos[i])
+        @inbounds begin
+            new_kwargs, new_fis, new_fxs, new_color_kwargs,
+                new_color_fis, new_color_fxs, new_probs,
+                new_fnums = extract_info(fos[i])
+        end
         new_kwargs, new_fis, new_fxs,
             new_color_kwargs, new_color_fis, new_color_fxs,
             new_probs, new_fnums = flatten(new_kwargs, new_fis, new_fxs,
@@ -151,32 +157,34 @@ end
 function flatten(kwargs::Tuple, fis::Tuple, fxs::Tuple,
                  color_kwargs::Tuple, color_fis::Tuple, color_fxs::Tuple,
                  probs::Tuple, fnums)
-    new_kwargs, new_fis, new_fxs,
-        new_color_kwargs, new_color_fis, new_color_fxs,
-        new_probs, new_fnums = flatten(kwargs[1], fis[1], fxs[1],
-                                       color_kwargs[1],
-                                       color_fis[1],
-                                       color_fxs[1],
-                                       probs[1], fnums[1])
+    @inbounds begin
+        new_kwargs, new_fis, new_fxs,
+            new_color_kwargs, new_color_fis, new_color_fxs,
+            new_probs, new_fnums = flatten(kwargs[1], fis[1], fxs[1],
+                                           color_kwargs[1],
+                                           color_fis[1],
+                                           color_fxs[1],
+                                           probs[1], fnums[1])
 
-    for i = 2:length(fxs)
-        temp_kwargs, temp_fis, temp_fxs,
-            temp_color_kwargs, temp_color_fis, temp_color_fxs,
-            temp_probs, temp_fnums = flatten(kwargs[i], fis[i], fxs[i],
-                                             color_kwargs[i],
-                                             color_fis[i],
-                                             color_fxs[i],
-                                             probs[i], new_fnums[1])
+        for i = 2:length(fxs)
+            temp_kwargs, temp_fis, temp_fxs,
+                temp_color_kwargs, temp_color_fis, temp_color_fxs,
+                temp_probs, temp_fnums = flatten(kwargs[i], fis[i], fxs[i],
+                                                 color_kwargs[i],
+                                                 color_fis[i],
+                                                 color_fxs[i],
+                                                 probs[i], new_fnums[1])
 
 
-        new_kwargs = (new_kwargs..., temp_kwargs...)
-        new_fis = (new_fis..., temp_fis...)
-        new_fxs = (new_fxs..., temp_fxs...)
-        new_color_kwargs = (new_color_kwargs..., temp_color_kwargs...)
-        new_color_fis = (new_color_fis..., temp_color_fis...)
-        new_color_fxs = (new_color_fxs..., temp_color_fxs...)
-        new_probs = (new_probs..., temp_probs...)
-        new_fnums = (new_fnums..., temp_fnums...)
+            new_kwargs = (new_kwargs..., temp_kwargs...)
+            new_fis = (new_fis..., temp_fis...)
+            new_fxs = (new_fxs..., temp_fxs...)
+            new_color_kwargs = (new_color_kwargs..., temp_color_kwargs...)
+            new_color_fis = (new_color_fis..., temp_color_fis...)
+            new_color_fxs = (new_color_fxs..., temp_color_fxs...)
+            new_probs = (new_probs..., temp_probs...)
+            new_fnums = (new_fnums..., temp_fnums...)
+        end
     end
     return (new_kwargs, new_fis, new_fxs,
             new_color_kwargs, new_color_fis, new_color_fxs,
@@ -184,23 +192,27 @@ function flatten(kwargs::Tuple, fis::Tuple, fxs::Tuple,
 end
 
 function flatten(t::Tuple)
-    new_tuple = flatten(t[1])
-    for i = 2:length(t)
-        new_tuple = (new_tuple..., flatten(t[i])...)
+    @inbounds begin
+        new_tuple = flatten(t[1])
+        for i = 2:length(t)
+            new_tuple = (new_tuple..., flatten(t[i])...)
+        end
     end
     return new_tuple
 end
 
 function extract_ops_info(ops::Tuple)
-    kwargs, fis, fxs = extract_ops_info(ops[1])
-    kwargs = (kwargs,)
-    fis = (fis,)
-    fxs = (fxs,)
-    for i = 2:length(ops)
-        new_kwargs, new_fis, new_fxs = extract_ops_info(ops[i])
-        kwargs = (kwargs..., new_kwargs)
-        fis = (fis..., new_fis)
-        fxs = (fxs..., new_fxs)
+    @inbounds begin
+        kwargs, fis, fxs = extract_ops_info(ops[1])
+        kwargs = (kwargs,)
+        fis = (fis,)
+        fxs = (fxs,)
+        for i = 2:length(ops)
+            new_kwargs, new_fis, new_fxs = extract_ops_info(ops[i])
+            kwargs = (kwargs..., new_kwargs)
+            fis = (fis..., new_fis)
+            fxs = (fxs..., new_fxs)
+        end
     end
     return (kwargs, fis, fxs)
 end

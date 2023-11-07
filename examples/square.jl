@@ -1,4 +1,4 @@
-using Fable, Images
+using Fable, Colors
 
 # num_particles is the number of points being tracked by the chaos game
 # num_iterations is the number of times each point moves in space
