@@ -1,11 +1,11 @@
 export run!
 
 function run!(layer::AbstractLayer, time::TimeInterface)
-    run!(layer; frame = frame(time))
+    run!(layer; frame = current_frame(time))
 end
 
 function run!(layers::Vector{AbstractLayer}, time::TimeInterface)
-    run!(layers; frame = frame(time))
+    run!(layers; frame = current_frame(time))
 end
 
 function run!(layers::Vector{AbstractLayer}; frame = 0)

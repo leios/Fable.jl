@@ -1,17 +1,17 @@
-export frame, current_time, set_fps!
+export current_frame, current_time, set_fps!
 
 global FPS = 30.0
 TimeInterface = Union{Int, AbstractFloat, Quantity}
 
-function frame(f::Int)
+function current_frame(f::Int)
     return f
 end
 
-function frame(t::AbstractFloat)
+function current_frame(t::AbstractFloat)
     return floor(Int, t*FPS)
 end
 
-function frame(q::Quantity)
+function current_frame(q::Quantity)
     if !isa(q, Unitful.Time)
         error(string(q) * " does not have units of time!")
     end
