@@ -114,31 +114,34 @@ function zero!(layer::FractalLayer)
     kernel! = zero_kernel!(backend, layer.params.numthreads)
     if layer.params.overlay
         kernel!(layer.values, layer.reds, layer.greens, layer.blues,
-                layer.priorities, ndrange = size(layer.values))
+                layer.alphas, layer.priorities, ndrange = size(layer.values))
     else
         kernel!(layer.values, layer.reds, layer.greens, layer.blues,
-                ndrange = size(layer.values))
+                layer.alphas, ndrange = size(layer.values))
     end
 end
 
 @kernel inbounds=true function zero_kernel!(layer_values, layer_reds,
                                             layer_greens, layer_blues,
-                                            priorities)
+                                            layer_alphas, priorities)
     tid = @index(Global, Cartesian)
     layer_values[tid] = 0
     layer_reds[tid] = 0
     layer_greens[tid] = 0
     layer_blues[tid] = 0
+    layer_alphas[tid] = 0
     priorities[tid] = 0
 end
 
 @kernel inbounds=true function zero_kernel!(layer_values, layer_reds,
-                                            layer_greens, layer_blues)
+                                            layer_greens, layer_blues,
+                                            layer_alphas)
     tid = @index(Global, Cartesian)
     layer_values[tid] = 0
     layer_reds[tid] = 0
     layer_greens[tid] = 0
     layer_blues[tid] = 0
+    layer_alphas[tid] = 0
 end
 
 
