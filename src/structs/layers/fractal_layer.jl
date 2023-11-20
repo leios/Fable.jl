@@ -28,13 +28,13 @@ function default_params(a::Type{FractalLayer}; config = :standard,
 
     if config == :standard
         return (numthreads = 256, gamma = 2.2, logscale = false,
-                calc_max_value = logscale, max_value = 1, ArrayType = ArrayType,
+                calc_max_value = false, max_value = 1, ArrayType = ArrayType,
                 FloatType = FloatType, num_ignore = 20, dims = dims,
                 solver_type = :semi_random, num_particles = num_particles,
                 num_iterations = num_iterations, overlay = false)
     elseif config == :fractal_flame
         return (numthreads = 256, gamma = 2.2, logscale = true,
-                calc_max_value = logscale, max_value = 1, ArrayType = ArrayType,
+                calc_max_value = true, max_value = 1, ArrayType = ArrayType,
                 FloatType = FloatType, num_ignore = 20, dims = dims,
                 solver_type = :semi_random, num_particles = num_particles,
                 num_iterations = num_iterations, overlay = false)
