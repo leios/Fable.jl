@@ -43,7 +43,7 @@ end
 
 function params(a::Type{FractalLayer}; numthreads = 256,
                 ArrayType = Array, FloatType = Float32,
-                logscale = false, gamma = 2.2, calc_max_value = false,
+                logscale = false, gamma = 2.2, calc_max_value = logscale,
                 max_value = 1, num_ignore = 20, num_particles = 1000,
                 num_iterations = 1000, dims = 2, solver_type = :semi_random,
                 overlay = false)
@@ -101,7 +101,7 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                       postprocessing_steps = AbstractPostProcess[],
                       world_size = (0.9, 1.6), position = (0.0, 0.0),
                       ppu = 1200, gamma = 2.2, logscale = false,
-                      calc_max_value = false, max_value = 1,
+                      calc_max_value = logscale, max_value = 1,
                       numthreads = 256,
                       num_particles = 1000, num_iterations = 1000, dims = 2,
                       H = Hutchinson(), H_post = nothing,
@@ -205,9 +205,10 @@ function to_canvas!(layer::FractalLayer)
         f = FL_logscale_kernel!
     end
 
-    if layer.params.calc_max_value != 0
+    if layer.params.calc_max_value
         update_params!(layer; max_value = maximum(layer.values))
     end
+
     backend = get_backend(layer.canvas)
     kernel! = f(backend, layer.params.numthreads)
 
@@ -259,6 +260,6 @@ end
         @inbounds a = layer_alphas[tid]^(1/layer_gamma) * alpha^(1/layer_gamma)
         @inbounds canvas[tid] = RGBA(r,g,b,a)
     else
-        @inbounds canvas[tid] = RGBA(FT(0), 0, 0, 0)
+        @inbounds canvas[tid] = RGBA(FT(0), FT(0), FT(0), FT(0))
     end
 end
