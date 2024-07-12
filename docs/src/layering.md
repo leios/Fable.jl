@@ -5,9 +5,9 @@ These layers indicate how the user would like to create an object or field.
 Right now, the following layers are available:
 
 * `ColorLayer`: This layer is essentially a single color spread across some number of pixels in a rectangle.
-* `ShaderLayer`: This layer is a "shader" that uses a `FractalUserMethod` to color every pixel in a rectangle.
+* `ShaderLayer`: This layer is a "shader" that uses a `FableUserMethod` to color every pixel in a rectangle.
 * `ImageLayer`: This layer is used to import images generated outside of Fable.jl. Note that remedial resizing functions are available, but these need to be cleaned up in the future.
-* `FractalLayer`: This layer is for using Iterated Function Systems and generating objects via fractals.
+* `FableLayer`: This layer is for using Iterated Function Systems and generating objects via fractals.
 
 These layers eventually write to their respective `canvas` objects, which are composed into a final image or frame via:
 
@@ -52,7 +52,7 @@ Running this, will provide the following image:
 ## Shader Layers
 
 Shader Layers are a bit more complicated than Color Layers, but are ultimately user-specified functions spread across an image.
-So, let's say the user specified the following `FractalUserMethod`:
+So, let's say the user specified the following `FableUserMethod`:
 
 ```
 radial = @fum function radial(y, x; origin = (0,0))
@@ -103,9 +103,9 @@ write_image(ilayer, filename_2)
 
 It can also take all the same arguments as other layers (`position`, `ppu`, and `world_size`), but the resizing is done in a very naive way, so if the image looks odd through Fable.jl, it might be best to figure out the exact pixel size you need and to make the image fit those dimensions with another program.
 
-## Fractal Layers and combing layers together
+## Fable Layers and combing layers together
 
-Because Fractal Layers are a bit tricky, there are additional examples in the documentation to describe how they work.
+Because Fable Layers are a bit tricky, there are additional examples in the documentation to describe how they work.
 For now, I will show an example of how you might composite two layers together by modifying the example shown for the Color Layer above:
 
 ```
@@ -117,7 +117,7 @@ function layering_example(num_particles, num_iterations; ArrayType = Array)
     square = define_rectangle(position = [0.0,0.0],
                               rotation = pi/4,
                               color = RGBA(1,0,1))
-    flayer = FractalLayer(; ArrayType = ArrayType, H1 = square,
+    flayer = FableLayer(; ArrayType = ArrayType, H1 = square,
                           world_size = world_size, ppu = ppu,
                           num_particles = num_particles,
                           num_iterations = num_iterations)
@@ -136,6 +136,6 @@ This will provide the following image:
 
 ![Layering Example](res/layering_fractal.png)
 
-Note that the `clayer` (Color Layer) is written *before* the `flayer` (Fractal Layer).
+Note that the `clayer` (Color Layer) is written *before* the `flayer` (Fable Layer).
 In general, the first layer acts as the base layer for rendering and acts as your "camera" for viewing all other layers.
 This might need a better abstraction in the future, but works for now.

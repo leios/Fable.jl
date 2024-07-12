@@ -64,7 +64,7 @@ Now I will define the image and video parameters:
     world_size = (9, 16)
     ppu = 1920 / 16
     res = (1080, 1920)
-    layer = FractalLayer(; ArrayType = ArrayType,
+    layer = FableLayer(; ArrayType = ArrayType,
                          world_size = world_size, ppu = ppu,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
@@ -101,7 +101,7 @@ And now we start getting ready for the smear frame transformation:
                                       scale = scale, theta = theta)
 
     # now turning it into a fractal operator
-    smear_transform = fee(Hutchinson, FractalOperator(smear))
+    smear_transform = fee(Hutchinson, FableOperator(smear))
 ```
 
 For this, we are creating fractal inputs (`object_position`, `scale`, and `theta`) for the `stretch_and_rotate` fractal user method. We then turn this into a fractal operator.
@@ -127,7 +127,7 @@ stretch_and_rotate = @fum function stretch_and_rotate(
 end
 ```
 
-After this, we need to attach the newly generated operators to the `FractalLayer`:
+After this, we need to attach the newly generated operators to the `FableLayer`:
 
 ```
     # attaching each operator to the layer
@@ -200,7 +200,7 @@ function smear_example(num_particles, num_iterations, total_frames;
     world_size = (9, 16)
     ppu = 1920 / 16
     res = (1080, 1920)
-    layer = FractalLayer(; ArrayType = ArrayType, FloatType = FloatType,
+    layer = FableLayer(; ArrayType = ArrayType, FloatType = FloatType,
                          world_size = world_size, ppu = ppu,
                          num_particles = num_particles,
                          num_iterations = num_iterations)

@@ -48,7 +48,7 @@ Notationally, we are using the variable `H` to designate a Hutchinson operator, 
 Finally, we need to attach this function to the layer and run everything with the `run!(...)` function and write it to an image:
 
 ```
-    layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
+    layer = FableLayer(; ArrayType = ArrayType, logscale = false,
                          world_size = world_size, ppu = ppu, H = H,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
@@ -59,7 +59,7 @@ Finally, we need to attach this function to the layer and run everything with th
 
 ```
 
-Note that the `H = H` keyword argument is the one actually defining `H` as the first Hutchinson operator for the `FractalLayer`.
+Note that the `H = H` keyword argument is the one actually defining `H` as the first Hutchinson operator for the `FableLayer`.
 After running this, we will get the following image:
 
 ![a simple square](res/swirled_square_1.png)
@@ -92,7 +92,7 @@ The code here does not change significantly, except that we create a `H_post` an
 ...
     H_post = Hutchinson(swirl_operator)
 
-    layer = FractalLayer(res; ArrayType = ArrayType, logscale = false,
+    layer = FableLayer(res; ArrayType = ArrayType, logscale = false,
                          FloatType = FloatType, H = H, H_post = H_post,
                          num_particles = num_particles,
                          num_iterations = num_iterations)
@@ -104,7 +104,7 @@ The code here does not change significantly, except that we create a `H_post` an
 There are a few nuances to point out:
 
 1. We are using `Shaders.previous`, which simply means that the swirl will use whatever colors were specified in `H`.
-2. Fractal operators can be called with `fee` or `Hutchinson` and require `Array` or `Tuple` inputs.
+2. Fable operators can be called with `fee` or `Hutchinson` and require `Array` or `Tuple` inputs.
 3. `final = true`, means that this is a post processing operation. In other words, `H` creates the object primitive (square), and `H_post` always operates on that square.
 4. We are specifying the Floating Type, `FloatType`, as `Float32`, but that is not necessary.
 
@@ -126,7 +126,7 @@ If we want, we can make `H_post` operate on the object, itself, by creating a ne
 ```
     final_H = fee(Hutchinson, [H, H_post])
 
-    layer = FractalLayer(res; ArrayType = ArrayType, logscale = false,
+    layer = FableLayer(res; ArrayType = ArrayType, logscale = false,
                          FloatType = FloatType, H = final_H
                          num_particles = num_particles,
                          num_iterations = num_iterations)
@@ -168,7 +168,7 @@ function square_example(num_particles, num_iterations;
         H = fee(Hutchinson, [H, Hutchinson(swirl_operator)])
     end
 
-    layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
+    layer = FableLayer(; ArrayType = ArrayType, logscale = false,
                          world_size = world_size, ppu = ppu,
                          H = H, H_post = H_post,
                          num_particles = num_particles,

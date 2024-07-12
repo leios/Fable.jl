@@ -3,10 +3,10 @@ export write_image, write_video!, zero!, reset!, create_canvas, mix_layers!
 function mix_layers!(layer_1::AL1, layer_2::AL2;
                      mode = :simple) where {AL1 <: AbstractLayer,
                                             AL2 <: AbstractLayer}
-    if AL1 <: FractalLayer
+    if AL1 <: FableLayer
         to_canvas!(layer_1)
     end
-    if AL2 <: FractalLayer
+    if AL2 <: FableLayer
         to_canvas!(layer_2)
     end
 
@@ -108,7 +108,7 @@ function zero!(layer::AL) where AL <: AbstractLayer
     @inbounds layer.canvas[:] .= RGBA(0.0, 0.0, 0.0, 0.0)
 end
 
-function zero!(layer::FractalLayer)
+function zero!(layer::FableLayer)
     
     backend = get_backend(layer.canvas)
     kernel! = zero_kernel!(backend, layer.params.numthreads)

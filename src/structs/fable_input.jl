@@ -1,13 +1,13 @@
-export FractalInput, fi, @fi, set!, combine, to_args, find_fi_index, value
+export FableInput, fi, @fi, set!, combine, to_args, find_fi_index, value
 
-struct FractalInput
+struct FableInput
     s::Union{Symbol, String}
     x::Ref{Union{Number, Tuple, Vector}}
 end
 
-fi(args...) = FractalInput(args...)
+fi(args...) = FableInput(args...)
 
-function set!(fi::FractalInput, val)
+function set!(fi::FableInput, val)
     fi.x.x = val
 end
 
@@ -15,9 +15,9 @@ function combine(nt::Tuple, fis::Tuple)
     return Tuple(combine(nt[i], fis[i]) for i = 1:length(fis))
 end
 
-combine(fis::Vector{FractalInput}, nt::NamedTuple) = combine(nt, fis)
+combine(fis::Vector{FableInput}, nt::NamedTuple) = combine(nt, fis)
 
-function combine(nt::NamedTuple, fis::Vector{FractalInput})
+function combine(nt::NamedTuple, fis::Vector{FableInput})
     if length(fis) == 0
         return nt
     end
@@ -32,7 +32,7 @@ function to_args(nt::Tuple, fis::Tuple)
     return Tuple(combine(fis[i], nt[i]) for i = 1:length(fis))
 end
 
-function to_args(nt::NamedTuple, fis::Vector{FractalInput})
+function to_args(nt::NamedTuple, fis::Vector{FableInput})
     if length(fis) == 0
         return values(nt)
     end
@@ -40,7 +40,7 @@ function to_args(nt::NamedTuple, fis::Vector{FractalInput})
     return (values(nt)..., fi_vals...)
 end
 
-function find_fi_index(s, fis::FT) where FT <: Union{Vector{FractalInput},
+function find_fi_index(s, fis::FT) where FT <: Union{Vector{FableInput},
                                                      Tuple}
     for i = 1:length(fis)
         if Symbol(fis[i].s) == Symbol(s)
@@ -49,5 +49,5 @@ function find_fi_index(s, fis::FT) where FT <: Union{Vector{FractalInput},
     end
 end
 
-value(fi::FractalInput) = fi.x.x
+value(fi::FableInput) = fi.x.x
 value(a) = a

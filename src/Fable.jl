@@ -29,14 +29,14 @@ include("utils/geometries.jl")
 # KA kernels
 include("utils/histogram.jl")
 
-# Fractal flame structures
-include("structs/fractal_input.jl")
-include("structs/fractal_user_methods.jl")
+# Fable flame structures
+include("structs/fable_input.jl")
+include("structs/fable_user_methods.jl")
 include("fums/shaders.jl")
-include("structs/fractal_operators.jl")
-include("structs/fractal_executable/fractal_executable.jl")
-include("structs/fractal_executable/hutchinson.jl")
-include("structs/fractal_executable/shader.jl")
+include("structs/fable_operators.jl")
+include("structs/fable_executable/fable_executable.jl")
+include("structs/fable_executable/hutchinson.jl")
+include("structs/fable_executable/shader.jl")
 
 # Operations
 include("utils/simple_rng.jl")

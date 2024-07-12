@@ -1,7 +1,7 @@
-export FractalUserMethod, @fum
+export FableUserMethod, @fum
 
-struct FractalUserMethod{NT <: NamedTuple,
-                         V <: Vector{FractalInput},
+struct FableUserMethod{NT <: NamedTuple,
+                         V <: Vector{FableInput},
                          F <: Function}
     kwargs::NT
     fis::V
@@ -77,28 +77,28 @@ macro fum(ex...)
     kwargs = nothing
 
     if isa(expr, Symbol)
-        error("Cannot convert Symbol to Fractal User Method!")
+        error("Cannot convert Symbol to Fable User Method!")
     elseif expr.head == :(=)
         # inline function definitions
         if isa(expr.args[1], Expr)
             kwargs, fum_fx = __define_fum_stuff(expr, config, __module__,
                                                 force_inbounds)
         else
-            error("Cannot create FractalUserMethod.\n"*
+            error("Cannot create FableUserMethod.\n"*
                   "Input is not a valid function definition!")
         end
     elseif expr.head == :function
         kwargs, fum_fx = __define_fum_stuff(expr, config, __module__,
                                             force_inbounds)
     else
-        error("Cannot convert expr to Fractal User Method!")
+        error("Cannot convert expr to Fable User Method!")
     end
 
-    return FractalUserMethod(kwargs, FractalInput[], fum_fx)
+    return FableUserMethod(kwargs, FableInput[], fum_fx)
 end
 
 
-function (a::FractalUserMethod)(args...; kwargs...)
+function (a::FableUserMethod)(args...; kwargs...)
 
     # we do not reason about standard args right now, although this could
     # be considered in the future if we ensure users always configure their
@@ -130,7 +130,7 @@ function (a::FractalUserMethod)(args...; kwargs...)
             error_flag = true
         end
 
-        if isa(vals[i], FractalInput)
+        if isa(vals[i], FableInput)
             push!(final_fi_idxs, i)
         else
             push!(final_kwarg_idxs, i)
@@ -143,11 +143,11 @@ function (a::FractalUserMethod)(args...; kwargs...)
               "key-word arguments?")
     end
 
-    fis = [FractalInput(ks[i], vals[i].x) for i in final_fi_idxs]
+    fis = [FableInput(ks[i], vals[i].x) for i in final_fi_idxs]
 
     ks = Tuple(ks[final_kwarg_idxs])
     vals = Tuple(remove_vectors.(vals[final_kwarg_idxs]))
 
     final_kwargs = NamedTuple{ks}(vals)
-    return FractalUserMethod(final_kwargs, fis, a.fx)
+    return FableUserMethod(final_kwargs, fis, a.fx)
 end

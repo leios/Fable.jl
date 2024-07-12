@@ -1,6 +1,6 @@
 export define_circle
 
-# Code examples modified from: https://www.math.uwaterloo.ca/~wgilbert/FractalGallery/IFS/IFS.html
+# Code examples modified from: https://www.math.uwaterloo.ca/~wgilbert/FableGallery/IFS/IFS.html
 
 naive_disk = @fum function naive_disk(x, y; radius = 1, position = (0,0),
                                       function_index = 0)
@@ -49,8 +49,8 @@ constant_disk = @fum function constant_disk(x, y; radius = 1,
 end
 
 # Returns back H, colors, and probs for a circle
-function define_circle(; position::Union{Tuple, Vector, FractalInput} = (0, 0),
-                         radius::Union{Number, FractalInput} = 1.0,
+function define_circle(; position::Union{Tuple, Vector, FableInput} = (0, 0),
+                         radius::Union{Number, FableInput} = 1.0,
                          color = Shaders.gray,
                          chosen_fx = :constant_disk)
 
@@ -60,8 +60,8 @@ function define_circle(; position::Union{Tuple, Vector, FractalInput} = (0, 0),
 end
 
 # This specifically returns the fums for a circle
-function define_circle_operators(position::Union{Vector, Tuple, FractalInput},
-                                 radius::Union{Number, FractalInput};
+function define_circle_operators(position::Union{Vector, Tuple, FableInput},
+                                 radius::Union{Number, FableInput};
                                  chosen_fx = :constant_disk)
 
     f_0 = fi("f_0", 0)

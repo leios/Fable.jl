@@ -32,7 +32,7 @@ function barnsley_example(num_particles, num_iterations;
 
     H_post = fee(Hutchinson, fo([fo_1, fo_2]))
 
-    layer = FractalLayer(; ArrayType = ArrayType,
+    layer = FableLayer(; ArrayType = ArrayType,
                          world_size = (10, 16), position = (5, 0),
                          ppu = 1920/16, num_particles = num_particles,
                          num_iterations = num_iterations,

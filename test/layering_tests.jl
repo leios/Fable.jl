@@ -24,7 +24,7 @@ function layering_tests(ArrayType::Type{AT}) where AT <: AbstractArray
                      ArrayType = ArrayType)
     circle = Fable.define_circle(; position = [0.0,0.0], radius = 2.0, 
                                  color = [0.0, 0.0, 1.0, 1.0])
-    fl = FractalLayer(; world_size = (4,4), ppu = 11/4, H = circle,
+    fl = FableLayer(; world_size = (4,4), ppu = 11/4, H = circle,
                       ArrayType = ArrayType)
 
     layers = [cl, sl, fl]
@@ -107,9 +107,9 @@ function layer_mixing_tests(ArrayType::Type{AT}) where AT <: AbstractArray
     square_2 = define_square(; color = Shaders.white,
                                position = (0, 0.5), scale = 1)
 
-    flayer_1 = FractalLayer(; H = square_1, world_size = (1, 2), ppu = 1,
+    flayer_1 = FableLayer(; H = square_1, world_size = (1, 2), ppu = 1,
                             num_particles = 10, num_iterations = 1000)
-    flayer_2 = FractalLayer(; H = square_2, world_size = (1, 2), ppu = 1,
+    flayer_2 = FableLayer(; H = square_2, world_size = (1, 2), ppu = 1,
                             num_particles = 10, num_iterations = 1000)
 
     run!(flayer_1)

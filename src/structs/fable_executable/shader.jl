@@ -1,6 +1,6 @@
 export Shader
 
-mutable struct Shader <: FractalExecutable
+mutable struct Shader <: FableExecutable
     fxs::Tuple
     kwargs::Tuple
     fis::Tuple
@@ -8,13 +8,13 @@ end
 
 Shader() = Shader((),(),())
 
-function Shader(fum::FractalUserMethod)
+function Shader(fum::FableUserMethod)
     return Shader((fum.fx,), (fum.kwargs,), (fum.fis,))
 end
 
 function Shader(fums::Tuple)
     if length(fums) == 0
-        error("No FractalUserMethod provided!")
+        error("No FableUserMethod provided!")
     elseif length(fums) == 1
         return Shader(fums[1])
     else

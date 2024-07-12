@@ -33,10 +33,10 @@ rectangle_object = @fum function rectangle_object(y,x;
     return point(0.5*(p_y + y), 0.5*(p_x + x))
 end
 
-function define_rectangle(; position::Union{Vector, Tuple, FractalInput}=(0,0),
-                            rotation::Union{Number, FractalInput} = 0.0,
-                            scale_x::Union{Number, FractalInput} = 1.0,
-                            scale_y::Union{Number, FractalInput} = 1.0,
+function define_rectangle(; position::Union{Vector, Tuple, FableInput}=(0,0),
+                            rotation::Union{Number, FableInput} = 0.0,
+                            scale_x::Union{Number, FableInput} = 1.0,
+                            scale_y::Union{Number, FableInput} = 1.0,
                             color = Shaders.grey)
 
     fums = define_rectangle_operators(position, rotation, scale_x, scale_y)
@@ -46,9 +46,9 @@ function define_rectangle(; position::Union{Vector, Tuple, FractalInput}=(0,0),
 end
 
 # Returns back H, colors, and probs for a square
-function define_square(; position::Union{Vector, Tuple, FractalInput}=(0,0),
-                         rotation::Union{Number, FractalInput} = 0.0,
-                         scale::Union{Number, FractalInput} = 1.0,
+function define_square(; position::Union{Vector, Tuple, FableInput}=(0,0),
+                         rotation::Union{Number, FableInput} = 0.0,
+                         scale::Union{Number, FableInput} = 1.0,
                          color = Shaders.grey)
 
     return define_rectangle(; position = position, rotation = rotation,
@@ -56,10 +56,10 @@ function define_square(; position::Union{Vector, Tuple, FractalInput}=(0,0),
 end
 
 # This specifically returns the fums for a square
-function define_rectangle_operators(position::Union{Vector,Tuple,FractalInput},
-                                    rotation::Union{Number, FractalInput},
-                                    scale_x::Union{Number, FractalInput},
-                                    scale_y::Union{Number, FractalInput})
+function define_rectangle_operators(position::Union{Vector,Tuple,FableInput},
+                                    rotation::Union{Number, FableInput},
+                                    scale_x::Union{Number, FableInput},
+                                    scale_y::Union{Number, FableInput})
 
     square_1 = rectangle_object(position = position, rotation = rotation,
                                 scale_x = scale_x, scale_y = scale_y,

@@ -12,9 +12,9 @@ triangle_fill = @fum function triangle_fill(x,y;
     return point(y,x)
 end
 
-function define_triangle(; A::Union{Vector,Tuple,FractalInput}=(sqrt(3)/4,-0.5),
-                           B::Union{Vector,Tuple,FractalInput}=(-sqrt(3)/4,0),
-                           C::Union{Vector,Tuple,FractalInput}=(sqrt(3)/4,0.5),
+function define_triangle(; A::Union{Vector,Tuple,FableInput}=(sqrt(3)/4,-0.5),
+                           B::Union{Vector,Tuple,FableInput}=(-sqrt(3)/4,0),
+                           C::Union{Vector,Tuple,FableInput}=(sqrt(3)/4,0.5),
                            color = Shaders.gray,
                            chosen_fx = :fill)
     fums = define_triangle_operators(A, B, C; chosen_fx = chosen_fx)
@@ -30,9 +30,9 @@ function define_triangle(; A::Union{Vector,Tuple,FractalInput}=(sqrt(3)/4,-0.5),
 end
 
 # This specifically returns the fums for a triangle triangle
-function define_triangle_operators(A::Union{Vector, Tuple, FractalInput},
-                                   B::Union{Vector, Tuple, FractalInput},
-                                   C::Union{Vector, Tuple, FractalInput};
+function define_triangle_operators(A::Union{Vector, Tuple, FableInput},
+                                   B::Union{Vector, Tuple, FableInput},
+                                   C::Union{Vector, Tuple, FableInput};
                                    chosen_fx = :fill)
 
     if chosen_fx != :sierpinski && chosen_fx != :fill

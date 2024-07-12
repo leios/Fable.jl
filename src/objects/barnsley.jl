@@ -7,7 +7,7 @@ function define_barnsley(; color = Shaders.grey, tilt = 0)
 end
 
 # This specifically returns the fums for a barnsley fern
-function define_barnsley_operators(; tilt::Union{Number, FractalInput} = 0)
+function define_barnsley_operators(; tilt::Union{Number, FableInput} = 0)
 
     s_1 = @fum function s_1()
         return point(0.16*y, 0.0)

@@ -33,7 +33,7 @@ function ShaderLayer(shader::Shader;
 
 end
 
-function ShaderLayer(fums::Union{FractalUserMethod, Tuple};
+function ShaderLayer(fums::Union{FableUserMethod, Tuple};
                      postprocessing_steps = Vector{AbstractPostProcess}([]),
                      world_size = (0.9, 1.6),
                      position = (0.0, 0.0),

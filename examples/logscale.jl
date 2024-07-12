@@ -7,7 +7,7 @@ function logscale_example(num_particles, num_iterations; ArrayType = Array)
 
     circle = define_circle(chosen_fx = :naive_disk, color = Shaders.white)
 
-    flayer = FractalLayer(; ArrayType = ArrayType, H = circle,
+    flayer = FableLayer(; ArrayType = ArrayType, H = circle,
                           world_size = world_size, ppu = ppu,
                           num_particles = num_particles,
                           num_iterations = num_iterations,

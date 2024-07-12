@@ -1,6 +1,6 @@
 # Post processing
 
-Once you have generated an image via any of the provided Fractal Executables (such as Colors, Shaders, or Hutchinson operators), you may want to do additional operations before writing to file.
+Once you have generated an image via any of the provided Fable Executables (such as Colors, Shaders, or Hutchinson operators), you may want to do additional operations before writing to file.
 Right now, we support the following operations:
 
 * **Clipping**: This is the process of turning any pixel above a given threshold intensity into another desired color.
@@ -14,23 +14,23 @@ All the examples can be found in `examples/postprocessing.md`.
 ## General Notes
 
 The `postprocess!(...)` function is called when using `write_image(...)` or `write_video(...)`.
-This means that the post processing step happens after the all FractalExecutables have been `run(...)`.
+This means that the post processing step happens after the all FableExecutables have been `run(...)`.
 Importantly, all post processing steps act exclusively on the `canvas` for each `AbstractLayer` type.
 Each `canvas` is essentially an `Array` (`CuArray` or `ROCArray`) of `RGBA` values that are initialized before post processing occurs.
 Each post processing step is performed in the order they are added to the `postprocessing_steps` `Vector` in each `AbstractLayer`.
 
 There is no default post process for `Shader` and `Color` layers, which essentially means that no post process will be performed unless specified by the user.
-For `FractalLayer`s, there is always a `CopyToCanvas(...)` post process, which essentially takes the `RGBA` information from the `run(...)` function and turns it into a `canvas` for later post processing steps.
+For `FableLayer`s, there is always a `CopyToCanvas(...)` post process, which essentially takes the `RGBA` information from the `run(...)` function and turns it into a `canvas` for later post processing steps.
 In practice, this is a small discrepancy that users should not need to worry about.
 
-For the following examples, we will be performing post processing on a simple circle created via a FractalExecutable:
+For the following examples, we will be performing post processing on a simple circle created via a FableExecutable:
 
 ```
 function quick_circle(num_particles, num_iterations; ArrayType = Array,
                       filename = "out.png")
     circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
 
-    fl = FractalLayer(; H1 = circle, ArrayType = ArrayType)
+    fl = FableLayer(; H1 = circle, ArrayType = ArrayType)
 
     run!(fl)
     write_image(fl; filename = filename)
@@ -79,7 +79,7 @@ function clip_example(num_particles, num_iterations; ArrayType = Array,
 
     clip = Clip(; threshold = 0.5, color = RGBA(1, 1, 0, 1))
 
-    fl = FractalLayer(; H1 = circle, ArrayType = ArrayType,
+    fl = FableLayer(; H1 = circle, ArrayType = ArrayType,
                         postprocessing_steps = [clip])
 
     run!(fl)
@@ -169,7 +169,7 @@ function blur_example(num_particles, num_iterations; ArrayType = Array,
 
     blur = Blur(; filter_size = filter_size)
 
-    fl = FractalLayer(; H1 = circle, ArrayType = ArrayType,
+    fl = FableLayer(; H1 = circle, ArrayType = ArrayType,
                         postprocessing_steps = [blur])
 
     run!(fl)
@@ -201,7 +201,7 @@ function sobel_example(num_particles, num_iterations; ArrayType = Array,
 
     sobel = Sobel()
 
-    fl = FractalLayer(; H1 = circle, ArrayType = ArrayType,
+    fl = FableLayer(; H1 = circle, ArrayType = ArrayType,
                         postprocessing_steps = [sobel])
 
     run!(fl)
@@ -236,8 +236,8 @@ outline = Outline(; linewidth = 1,
 ```
 
 Here, `linewidth` is the desired line width of the outline, `color` is the desired color, `intensity_function` is the intensity function as described in the `Clip` subsection above, `threshold` is used for ridge detection, and `sigma` defines the width of the Gaussian for the blur kernel.
-The only tricky argument is `object_outline`, which is specifically for FractalLayers.
-It indicates that the user wants to outline the fractal object, itself, not any inner components from potentially using a `FractalUserMethod` for coloring the fractal object.
+The only tricky argument is `object_outline`, which is specifically for FableLayers.
+It indicates that the user wants to outline the fractal object, itself, not any inner components from potentially using a `FableUserMethod` for coloring the fractal object.
 
 Here is a quick example using the Outline post process:
 ```
@@ -248,7 +248,7 @@ function outline_example(num_particles, num_iterations; ArrayType = Array,
 
     outline = Outline(; linewidth = linewidth, object_outline = object_outline)
 
-    fl = FractalLayer(; H1 = circle, ArrayType = ArrayType,
+    fl = FableLayer(; H1 = circle, ArrayType = ArrayType,
                         postprocessing_steps = [outline])
 
     run!(fl)

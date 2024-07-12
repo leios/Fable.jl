@@ -19,7 +19,7 @@ For now, please go there for more information.
 
 ## General Fable.jl workflow
 
-Fable.jl is generally structured around building a Fractal Executable (`fee`).
+Fable.jl is generally structured around building a Fable Executable (`fee`).
 In the case you want to use the fractal rendering mode, this `fee` will be a function system, so for a Sierpinski Triangle, it would look like this:
 
 ```math
@@ -31,17 +31,17 @@ f_3(P,C) &= \frac{P+C}{2}.
 ```
 
 Here, $P$ is some point location and $A$, $B$, and $C$ are all vertices of the triangle.
-For Fable.jl, each function is called a Fractal User Method (`fum` or `FractalUserMethod`).
-If the user wants to change the variables dynamically, they might create a Fractal Input (`fi` or `FractalInput`).
+For Fable.jl, each function is called a Fable User Method (`fum` or `FableUserMethod`).
+If the user wants to change the variables dynamically, they might create a Fable Input (`fi` or `FableInput`).
 Finally, each function should have some sort of color (or shader) associated with it.
-Combining two `fum`s for both the position and color functions creates a Fractal Operator (`fo` or `FractalOperator`)
+Combining two `fum`s for both the position and color functions creates a Fable Operator (`fo` or `FableOperator`)
 So, how do you use Fable.jl?
 
 Well...
 
-* `fee`, the Fractal Executable is the thing you are building
-* `fi`, the Fractal Input(s) are the variables needed for your executable
-* `fo`, the Fractal Operator is the function you are using in your executable, complete with probability and color or shader information
-* `fum`, the Fractal User Method is how users actually create colors and Fractal Operators.
+* `fee`, the Fable Executable is the thing you are building
+* `fi`, the Fable Input(s) are the variables needed for your executable
+* `fo`, the Fable Operator is the function you are using in your executable, complete with probability and color or shader information
+* `fum`, the Fable User Method is how users actually create colors and Fable Operators.
 
 I am intending to write more docs here, but check out the examples for more information on specifically how to use these.
