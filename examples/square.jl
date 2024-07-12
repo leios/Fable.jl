@@ -35,7 +35,7 @@ function square_example(num_particles, num_iterations;
         square = fee(Hutchinson, fo([square, swirl_operator]))
     end
 
-    layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
+    layer = FableLayer(; ArrayType = ArrayType, logscale = false,
                          world_size = world_size, ppu = ppu,
                          H = square, H_post = H_post,
                          num_particles = num_particles,

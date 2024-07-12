@@ -1,8 +1,8 @@
-export FractalLayer, default_params, params, CopyToCanvas, to_canvas!
+export FableLayer, default_params, params, CopyToCanvas, to_canvas!
 
 # Note: the rgb components needed to be spread into separate arrays for indexing
 #       reasons in the KA kernels
-mutable struct FractalLayer <: AbstractLayer
+mutable struct FableLayer <: AbstractLayer
     H::Union{Nothing, Hutchinson}
     H_post::Union{Nothing, Hutchinson}
     particles::APT where APT <: AbstractArray{AP} where AP <: AbstractPoint
@@ -21,7 +21,7 @@ mutable struct FractalLayer <: AbstractLayer
     postprocessing_steps::Vector{APP} where APP <: AbstractPostProcess
 end
 
-function default_params(a::Type{FractalLayer}; config = :standard,
+function default_params(a::Type{FableLayer}; config = :standard,
                         ArrayType = Array, FloatType = Float32,
                         num_particles = 1000, num_iterations = 1000,
                         dims = 2)
@@ -41,7 +41,7 @@ function default_params(a::Type{FractalLayer}; config = :standard,
     end
 end
 
-function params(a::Type{FractalLayer}; numthreads = 256,
+function params(a::Type{FableLayer}; numthreads = 256,
                 ArrayType = Array, FloatType = Float32,
                 logscale = false, gamma = 2.2, calc_max_value = logscale,
                 max_value = 1, num_ignore = 20, num_particles = 1000,
@@ -64,15 +64,15 @@ end
 
 
 # Creating a default call
-function FractalLayer(p, v, r, g, b, a, pr, c, position, world_size, ppu;
+function FableLayer(p, v, r, g, b, a, pr, c, position, world_size, ppu;
                       postprocessing_steps = AbstractPostProcess[],
                       config = standard,
                       H = Hutchinson(), H_post = nothing)
-    if isa(H, FractalOperator)
+    if isa(H, FableOperator)
         H = Hutchinson(H)
     end
 
-    if isa(H_post, FractalOperator)
+    if isa(H_post, FableOperator)
         H_post = Hutchinson(H_post)
     end
 
@@ -87,9 +87,9 @@ function FractalLayer(p, v, r, g, b, a, pr, c, position, world_size, ppu;
     end
 
     postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
-    return FractalLayer(H, H_post, p, v, r, g, b, a, pr, c,
+    return FableLayer(H, H_post, p, v, r, g, b, a, pr, c,
                         position, world_size, ppu,
-                        default_params(FractalLayer,
+                        default_params(FableLayer,
                                        config = config,
                                        ArrayType = typeof(v),
                                        FloatType = eltype(v)),
@@ -97,7 +97,7 @@ function FractalLayer(p, v, r, g, b, a, pr, c, position, world_size, ppu;
 end
 
 # Create a blank, black image of size s
-function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
+function FableLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                       postprocessing_steps = AbstractPostProcess[],
                       world_size = (0.9, 1.6), position = (0.0, 0.0),
                       ppu = 1200, gamma = 2.2, logscale = false,
@@ -106,11 +106,11 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                       num_particles = 1000, num_iterations = 1000, dims = 2,
                       H = Hutchinson(), H_post = nothing,
                       solver_type = :semi_random, overlay = false)
-    if isa(H, FractalOperator)
+    if isa(H, FableOperator)
         H = Hutchinson(H)
     end
 
-    if isa(H_post, FractalOperator)
+    if isa(H_post, FableOperator)
         H_post = Hutchinson(H_post)
     end
 
@@ -137,9 +137,9 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
     end
     c = ArrayType(fill(RGBA(FloatType(0),0,0,0), res))
     if config == :standard || config == :fractal_flame
-        return FractalLayer(H, H_post, p, v, r, g, b, a, pr, c,
+        return FableLayer(H, H_post, p, v, r, g, b, a, pr, c,
                             position, world_size, ppu,
-                            default_params(FractalLayer;
+                            default_params(FableLayer;
                                            ArrayType = ArrayType,
                                            FloatType = FloatType,
                                            config = config,
@@ -148,9 +148,9 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                                            dims = dims),
                             postprocessing_steps)
     else
-        return FractalLayer(H, H_post, p, v, r, g, b, a, pr, c,
+        return FableLayer(H, H_post, p, v, r, g, b, a, pr, c,
                             position, world_size, ppu,
-                            params(FractalLayer;
+                            params(FableLayer;
                                    ArrayType=ArrayType,
                                    FloatType = FloatType,
                                    gamma = gamma,
@@ -168,7 +168,7 @@ function FractalLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
 end
 
 #------------------------------------------------------------------------------#
-# CopyToCanvas for FractalLayer
+# CopyToCanvas for FableLayer
 #------------------------------------------------------------------------------#
 
 struct CopyToCanvas <: AbstractPostProcess
@@ -178,7 +178,7 @@ end
 
 CopyToCanvas() = CopyToCanvas(to_canvas!, true)
 
-function norm_layer!(layer::FractalLayer)
+function norm_layer!(layer::FableLayer)
     layer.reds .= norm_component.(layer.reds, layer.values)
     layer.greens .= norm_component.(layer.greens, layer.values)
     layer.blues .= norm_component.(layer.blues, layer.values)
@@ -193,11 +193,11 @@ function norm_component(color, value)
     end
 end
 
-function to_canvas!(layer::FractalLayer, canvas_params::CopyToCanvas)
+function to_canvas!(layer::FableLayer, canvas_params::CopyToCanvas)
     to_canvas!(layer)
 end
 
-function to_canvas!(layer::FractalLayer)
+function to_canvas!(layer::FableLayer)
 
     f = FL_canvas_kernel!
     if layer.params.logscale

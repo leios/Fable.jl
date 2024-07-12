@@ -4,7 +4,7 @@ function quick_circle(num_particles, num_iterations; ArrayType = Array,
                       filename = "out.png")
     circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
 
-    fl = FractalLayer(; H = circle, ArrayType = ArrayType)
+    fl = FableLayer(; H = circle, ArrayType = ArrayType)
 
     run!(fl)
     write_image(fl; filename = filename)
@@ -17,7 +17,7 @@ function clip_example(num_particles, num_iterations; ArrayType = Array,
 
     clip = Clip(; threshold = 0.5, color = RGBA(1, 1, 0, 1))
 
-    fl = FractalLayer(; H = circle, ArrayType = ArrayType,
+    fl = FableLayer(; H = circle, ArrayType = ArrayType,
                         postprocessing_steps = [clip])
 
     run!(fl)
@@ -30,7 +30,7 @@ function identity_example(num_particles, num_iterations; ArrayType = Array,
 
     identity = Identity()
 
-    fl = FractalLayer(; H = circle, ArrayType = ArrayType,
+    fl = FableLayer(; H = circle, ArrayType = ArrayType,
                         postprocessing_steps = [identity])
 
     run!(fl)
@@ -43,7 +43,7 @@ function blur_example(num_particles, num_iterations; ArrayType = Array,
 
     blur = Blur(; filter_size = filter_size)
 
-    fl = FractalLayer(; H = circle, ArrayType = ArrayType,
+    fl = FableLayer(; H = circle, ArrayType = ArrayType,
                         postprocessing_steps = [blur])
 
     run!(fl)
@@ -56,7 +56,7 @@ function sobel_example(num_particles, num_iterations; ArrayType = Array,
 
     sobel = Sobel()
 
-    fl = FractalLayer(; H = circle, ArrayType = ArrayType,
+    fl = FableLayer(; H = circle, ArrayType = ArrayType,
                         postprocessing_steps = [sobel])
 
     run!(fl)
@@ -70,7 +70,7 @@ function outline_example(num_particles, num_iterations; ArrayType = Array,
 
     outline = Outline(; linewidth = linewidth, object_outline = object_outline)
 
-    fl = FractalLayer(; H = circle, ArrayType = ArrayType,
+    fl = FableLayer(; H = circle, ArrayType = ArrayType,
                         postprocessing_steps = [outline])
 
     run!(fl)

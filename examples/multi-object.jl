@@ -16,7 +16,7 @@ function multi_example(num_particles, num_iterations;
 
     final_H = Hutchinson([square_2, circle, square])
 
-    layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
+    layer = FableLayer(; ArrayType = ArrayType, logscale = false,
                          world_size = world_size, ppu = ppu,
                          H = final_H, num_particles = num_particles,
                          num_iterations = num_iterations,

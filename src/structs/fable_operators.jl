@@ -1,9 +1,9 @@
-export FractalOperator, fo
+export FableOperator, fo
 
 function prob_check(probs::T) where T <: Tuple
     if eltype(probs) <: Number
         if !isapprox(sum(probs), 1)
-            error("Fractal Operator probability != 1")
+            error("Fable Operator probability != 1")
         end
     else
         for i = 1:length(probs)
@@ -12,51 +12,51 @@ function prob_check(probs::T) where T <: Tuple
     end
 end
 
-struct FractalOperator
+struct FableOperator
     ops::Tuple
     colors::Tuple
     probs::Tuple
     fnums::Union{Int, Tuple}
 end
 
-fo(args...; kwargs...) = FractalOperator(args...; kwargs...)
+fo(args...; kwargs...) = FableOperator(args...; kwargs...)
 
-FractalOperator(n::Nothing) = fo(Smears.null, Shaders.null)
+FableOperator(n::Nothing) = fo(Smears.null, Shaders.null)
 
-function FractalOperator(fum::FractalUserMethod, color::FractalUserMethod,
+function FableOperator(fum::FableUserMethod, color::FableUserMethod,
                          prob::Number)
     if !isapprox(prob, 1.0)
-        @warn("Probabilities for FractalOperators should be 1!\n"*
+        @warn("Probabilities for FableOperators should be 1!\n"*
               "Setting probability to 1!")
     end
-    return FractalOperator((fum,), (color,), (1.0,), (1,))
+    return FableOperator((fum,), (color,), (1.0,), (1,))
 end
 
-function FractalOperator(f::FractalUserMethod, c::FractalUserMethod)
-    return FractalOperator((f,), (c,), (1.0,), (1,))
+function FableOperator(f::FableUserMethod, c::FableUserMethod)
+    return FableOperator((f,), (c,), (1.0,), (1,))
 end
 
-FractalOperator(f::FractalUserMethod) = FractalOperator((f,),
+FableOperator(f::FableUserMethod) = FableOperator((f,),
                                                         (Shaders.previous,),
                                                         (1.0,), (1,))
 
-function FractalOperator(fums, colors, probs)
+function FableOperator(fums, colors, probs)
     if !isapprox(sum(probs), 1)
-        error("Fractal Operator probability != 1")
+        error("Fable Operator probability != 1")
     end
 
     if length(fums) != length(colors) || length(fums) != length(probs)
-        error("Fractal Operators must have a color and probability\n"*
+        error("Fable Operators must have a color and probability\n"*
               " for each function!")
     end
 
-    return FractalOperator(Tuple(fums), Tuple(colors),
+    return FableOperator(Tuple(fums), Tuple(colors),
                            Tuple(probs), (length(fums),))
 end
 
-FractalOperator(fo::FractalOperator) = fo
+FableOperator(fo::FableOperator) = fo
 
-function FractalOperator(fos::T) where T <: Union{Vector{FractalOperator},
+function FableOperator(fos::T) where T <: Union{Vector{FableOperator},
                                                   Tuple}
     @inbounds begin
         if isnothing(fos[1])
@@ -87,10 +87,10 @@ function FractalOperator(fos::T) where T <: Union{Vector{FractalOperator},
         probs = (probs..., curr_fo.probs)
     end
 
-    return FractalOperator(fxs, clrs, probs, fnums)
+    return FableOperator(fxs, clrs, probs, fnums)
 end
 
-function extract_info(fos::T) where T <: Union{Tuple, Vector{FractalOperator}}
+function extract_info(fos::T) where T <: Union{Tuple, Vector{FableOperator}}
     @inbounds begin
         kwargs, fis, fxs, color_kwargs, color_fis, color_fxs,
             probs, fnums = extract_info(fos[1])
@@ -137,7 +137,7 @@ function extract_info(fos::T) where T <: Union{Tuple, Vector{FractalOperator}}
     return kwargs, fis, fxs, color_kwargs, color_fis, color_fxs, probs, fnums
 end
 
-function extract_info(fo::FractalOperator)
+function extract_info(fo::FableOperator)
     kwargs, fis, fxs = extract_ops_info(fo.ops)
     color_kwargs, color_fis, color_fxs = extract_ops_info(fo.colors)
     return flatten(kwargs, fis, fxs, color_kwargs, color_fis, color_fxs,
@@ -217,6 +217,6 @@ function extract_ops_info(ops::Tuple)
     return (kwargs, fis, fxs)
 end
 
-function extract_ops_info(op::FractalUserMethod)
+function extract_ops_info(op::FableUserMethod)
     return (op.kwargs, op.fis, op.fx)
 end

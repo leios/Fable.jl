@@ -31,7 +31,7 @@ function sierpinski_example(num_particles, num_iterations, num_frames;
 
     final_H = fee(Hutchinson, [H, H_2])
 
-    layer = FractalLayer(; ArrayType = ArrayType, logscale = false,
+    layer = FableLayer(; ArrayType = ArrayType, logscale = false,
                          world_size = (2.25, 4), ppu = 1920/4,
                          num_iterations = num_iterations,
                          num_particles = num_particles, H = final_H)

@@ -21,7 +21,7 @@ grey = gray
 
 end
 
-create_color(a::FractalUserMethod) = a
+create_color(a::FableUserMethod) = a
 
 function create_color(a::Union{Array, Tuple})
     if length(a) == 3
@@ -42,14 +42,14 @@ function create_color(a::RGBA)
     return Shaders.custom(r = a.r, g = a.g, b = a.b, a = a.alpha)
 end
 
-function define_color_operators(color::Union{RGBA, RGB, FractalUserMethod};
+function define_color_operators(color::Union{RGBA, RGB, FableUserMethod};
                                 fnum = 4)
     color = create_color(color)
     return [color for i = 1:fnum]
 end
 
 function define_color_operators(t_color::Union{Tuple, Vector}; fnum = 4)
-    if eltype(t_color) <: FractalUserMethod
+    if eltype(t_color) <: FableUserMethod
         return [t_color for i = 1:fnum]
     end
     if length(t_color) == 1

@@ -31,7 +31,7 @@ function smear_example(num_particles, num_iterations, total_frames;
     # now turning it into a fractal operator
     smear_transform = fee(Hutchinson, fo(smear))
 
-    layer = FractalLayer(; ArrayType = ArrayType, FloatType = FloatType,
+    layer = FableLayer(; ArrayType = ArrayType, FloatType = FloatType,
                          world_size = world_size, ppu = ppu,
                          num_particles = num_particles,
                          num_iterations = num_iterations,

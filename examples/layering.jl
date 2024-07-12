@@ -8,7 +8,7 @@ function layering_example(num_particles, num_iterations; ArrayType = Array)
     square = define_rectangle(position = [0.0,0.0],
                               rotation = pi/4,
                               color = RGBA(1,0,1))
-    flayer = FractalLayer(; ArrayType = ArrayType, H = square,
+    flayer = FableLayer(; ArrayType = ArrayType, H = square,
                           world_size = world_size, ppu = ppu,
                           num_particles = num_particles,
                           num_iterations = num_iterations)

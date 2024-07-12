@@ -247,7 +247,7 @@ end
     return flag
 end
 
-function iterate!(layer::FractalLayer, H::Hutchinson, n,
+function iterate!(layer::FableLayer, H::Hutchinson, n,
                   bounds, bin_widths, H_post::Union{Nothing, Hutchinson};
                   frame = 0)
     if isnothing(H_post) 
@@ -504,7 +504,7 @@ end
 end
 
 
-function run!(layer::FractalLayer; frame = 0)
+function run!(layer::FableLayer; frame = 0)
 
     res = size(layer.canvas)
     bounds = find_bounds(layer)

@@ -23,7 +23,7 @@ function chaos_tests(ArrayType::Type{AT}) where AT <: AbstractArray
                             color = [1.0, 1.0, 1.0, 1.0],
                             chosen_fx = :naive_disk)
 
-    fl = FractalLayer(; ArrayType = ArrayType, config = :fractal_flame,
+    fl = FableLayer(; ArrayType = ArrayType, config = :fractal_flame,
                       world_size = (4,4), ppu = 11/4, H = H)
 
     run!(fl)
@@ -39,7 +39,7 @@ function chaos_tests(ArrayType::Type{AT}) where AT <: AbstractArray
     H_post = Fable.define_circle(; position = [0.0,0.0], radius = 2.0,
                              color = [1.0, 1.0, 1.0, 1.0],
                            chosen_fx = :constant_disk)
-    fl = FractalLayer(; ArrayType = ArrayType, config = :simple, H = H_post,
+    fl = FableLayer(; ArrayType = ArrayType, config = :simple, H = H_post,
                       world_size = (4,4), ppu = 11/4)
     run!(fl)
     img = write_image(fl)
