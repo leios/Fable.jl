@@ -9,7 +9,7 @@ function square_tests(ArrayType::Type{AT}) where AT <: AbstractArray
                    [0.0, 0, 1, 1],
                    [1.0, 0, 1, 1]]
 
-    square = Fable.define_square(; position = [0.0,0.0], scale = 4.0,
+    square = Fable.create_square(; position = [0.0,0.0], scale = 4.0,
                                  color = color_array)
     fl = FableLayer(; H = square, ArrayType = ArrayType,
                       world_size = (4,4), ppu = 2.5)
@@ -31,7 +31,7 @@ function triangle_tests(ArrayType::Type{AT}) where AT <: AbstractArray
                    [0.0, 0, 1, 1],
                    [1.0, 0, 1, 1]]
 
-    triangle = Fable.define_triangle(; color = color_array)
+    triangle = Fable.create_triangle(; color = color_array)
 
     fl = FableLayer(; H = triangle, ArrayType = ArrayType,
                       world_size = (1,1), ppu =  11)

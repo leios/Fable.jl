@@ -32,7 +32,7 @@ end
 #    NamedTuple{Tuple(args.(kwargs[:],1))}(Tuple(args.(kwargs[:],2)))
 #end
 
-function __define_fum_stuff(expr, config, mod, force_inbounds)
+function __create_fum_stuff(expr, config, mod, force_inbounds)
     def = MacroTools.splitdef(expr)
     def[:name] = name = Symbol(def[:name], :_fum)
     used_args = def[:args]
@@ -81,14 +81,14 @@ macro fum(ex...)
     elseif expr.head == :(=)
         # inline function definitions
         if isa(expr.args[1], Expr)
-            kwargs, fum_fx = __define_fum_stuff(expr, config, __module__,
+            kwargs, fum_fx = __create_fum_stuff(expr, config, __module__,
                                                 force_inbounds)
         else
             error("Cannot create FableUserMethod.\n"*
                   "Input is not a valid function definition!")
         end
     elseif expr.head == :function
-        kwargs, fum_fx = __define_fum_stuff(expr, config, __module__,
+        kwargs, fum_fx = __create_fum_stuff(expr, config, __module__,
                                             force_inbounds)
     else
         error("Cannot convert expr to Fable User Method!")

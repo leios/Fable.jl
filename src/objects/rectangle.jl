@@ -1,4 +1,4 @@
-export define_rectangle, define_square
+export create_rectangle, create_square
 # Returns back H, colors, and probs for a square
 
 rectangle_object = @fum function rectangle_object(y,x;
@@ -33,30 +33,30 @@ rectangle_object = @fum function rectangle_object(y,x;
     return point(0.5*(p_y + y), 0.5*(p_x + x))
 end
 
-function define_rectangle(; position::Union{Vector, Tuple, FableInput}=(0,0),
+function create_rectangle(; position::Union{Vector, Tuple, FableInput}=(0,0),
                             rotation::Union{Number, FableInput} = 0.0,
                             scale_x::Union{Number, FableInput} = 1.0,
                             scale_y::Union{Number, FableInput} = 1.0,
                             color = Shaders.grey)
 
-    fums = define_rectangle_operators(position, rotation, scale_x, scale_y)
-    color_set = define_color_operators(color; fnum = 4)
+    fums = create_rectangle_operators(position, rotation, scale_x, scale_y)
+    color_set = create_color_operators(color; fnum = 4)
 
     return fo(fums, color_set, (0.25 for i = 1:4))
 end
 
 # Returns back H, colors, and probs for a square
-function define_square(; position::Union{Vector, Tuple, FableInput}=(0,0),
+function create_square(; position::Union{Vector, Tuple, FableInput}=(0,0),
                          rotation::Union{Number, FableInput} = 0.0,
                          scale::Union{Number, FableInput} = 1.0,
                          color = Shaders.grey)
 
-    return define_rectangle(; position = position, rotation = rotation,
+    return create_rectangle(; position = position, rotation = rotation,
                               scale_x = scale, scale_y = scale, color = color)
 end
 
 # This specifically returns the fums for a square
-function define_rectangle_operators(position::Union{Vector,Tuple,FableInput},
+function create_rectangle_operators(position::Union{Vector,Tuple,FableInput},
                                     rotation::Union{Number, FableInput},
                                     scale_x::Union{Number, FableInput},
                                     scale_y::Union{Number, FableInput})

@@ -1,4 +1,4 @@
-export define_triangle
+export create_triangle
 
 triangle_fill = @fum function triangle_fill(x,y;
                                             A = (0,0),
@@ -12,25 +12,25 @@ triangle_fill = @fum function triangle_fill(x,y;
     return point(y,x)
 end
 
-function define_triangle(; A::Union{Vector,Tuple,FableInput}=(sqrt(3)/4,-0.5),
+function create_triangle(; A::Union{Vector,Tuple,FableInput}=(sqrt(3)/4,-0.5),
                            B::Union{Vector,Tuple,FableInput}=(-sqrt(3)/4,0),
                            C::Union{Vector,Tuple,FableInput}=(sqrt(3)/4,0.5),
                            color = Shaders.gray,
                            chosen_fx = :fill)
-    fums = define_triangle_operators(A, B, C; chosen_fx = chosen_fx)
+    fums = create_triangle_operators(A, B, C; chosen_fx = chosen_fx)
 
     fnum = 3
     if chosen_fx == :fill
         fnum = 4
     end
 
-    color_set = define_color_operators(color; fnum = fnum)
+    color_set = create_color_operators(color; fnum = fnum)
 
     @inbounds return fo(fums, color_set, Tuple([1/fnum for i = 1:fnum]))
 end
 
 # This specifically returns the fums for a triangle triangle
-function define_triangle_operators(A::Union{Vector, Tuple, FableInput},
+function create_triangle_operators(A::Union{Vector, Tuple, FableInput},
                                    B::Union{Vector, Tuple, FableInput},
                                    C::Union{Vector, Tuple, FableInput};
                                    chosen_fx = :fill)
