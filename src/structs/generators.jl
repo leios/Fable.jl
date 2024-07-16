@@ -1,19 +1,22 @@
-export AbstractGenerator, ChaosGenerator
+#-------------generators.jl----------------------------------------------------#
+#
+# Purpose: Generators are types used to determine how the final `run` function
+#          is `@generated` at the end. To see how this works, look at the 
+#          files in the `run/` directory
+#
+#------------------------------------------------------------------------------#
+export AbstractGenerator, ChaosGenerator, StandardGenerator
 
-# All AbstractGenerators should also have `args` and `iterations`
 abstract type AbstractGenerator end;
 
-struct ChaosGenerator{A, I}
+struct ChaosGenerator{A, I, P, F} where {I <: Integer, P <: Tuple, F <: Tuple}
     args::A
     iterations::I
+    prob_set::P
+    fnums::F
 end
 
-run(gen::AbstractGenerator, tid)  = simple_rand(quick_seed(ttid))
-
-function chaos_game(tid, bounds, random_function, f_set, dims, n)
-    pt = randon_function(seed(tid), bounds, dims...)
-    
-    # now do Chaos Game for n iterations
+struct StandardGenerator{A, ND}
+    args::A
+    ndrange::ND
 end
-
-gen = ChaosGenerator(ChaosGame, (bounds, random_function, f_set...), 1000)

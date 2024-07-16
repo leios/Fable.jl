@@ -12,11 +12,11 @@ function prob_check(probs::T) where T <: Tuple
     end
 end
 
-struct FableOperator
-    ops::Tuple
-    colors::Tuple
-    probs::Tuple
-    fnums::Union{Int, Tuple}
+struct FableOperator{O, C, G} where {O <: Tuple, C <: Tuple,
+                                     g <: AbstractGenerator
+    ops::O
+    colors::C
+    gen::G
 end
 
 fo(args...; kwargs...) = FableOperator(args...; kwargs...)

@@ -30,6 +30,7 @@ include("utils/geometries.jl")
 include("utils/histogram.jl")
 
 # Fable flame structures
+include("structs/generators.jl")
 include("structs/fable_input.jl")
 include("structs/fable_user_methods.jl")
 include("fums/shaders.jl")
