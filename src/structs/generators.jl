@@ -9,7 +9,7 @@ export AbstractGenerator, ChaosGenerator, StandardGenerator
 
 abstract type AbstractGenerator end;
 
-struct ChaosGenerator{A, I, P, F} where {I <: Integer, P <: Tuple, F <: Tuple}
+struct ChaosGenerator{A, I <: Integer, P <: Tuple, F <: Tuple}
     args::A
     iterations::I
     prob_set::P
