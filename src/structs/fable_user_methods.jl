@@ -1,94 +1,102 @@
-#-------------fable-user_methods-----------------------------------------------#
-#
-# Purpose: This file is meant to define how users interact with fable user 
-#              methods.
-#          fums are essentially function fragments that will be compiled at
-#              a later stage of the Fable pipeline
-#
-#   Notes: I think the best way to carry fis with the user methods is
-#              to define a constructor function that reads in the expr block and
-#              kwargs, and then parses out the fis from that list. Then at the
-#              end of the @fum macro, I can call into that constructor.
-#          We could get fanc with our own @generated macro, but...
-#
-#------------------------------------------------------------------------------#
 export FableUserMethod, @fum
 
-struct FableUserMethod{E, F}
-    body::E
-    fis::F
+struct FableUserMethod{NT <: NamedTuple,
+                         V <: Vector{FableInput},
+                         F <: Function}
+    kwargs::NT
+    fis::V
+    fx::F
 end
-
 
 args(a,n) = a.args[n]
 
-function __warn_args(args, config)
-    correct_args = (:y, :x, :frame, :color)
-    max_arg_idx = 3
-    if config == :color
-        max_arg_idx = 4
+function __set_args(args, config)
+    if config == :fractal
+        correct_args = [:y, :x, :frame]
+    elseif config == :shader
+        correct_args = [:y, :x, :color, :frame]
     end
-    if !issubset(args, correct_args[1:max_arg_idx])
+    if !issubset(args, correct_args)
         error("Function arguments must be one of the following:\n"*
-              string(correct_args[1:max_arg_idx])*"\n"*
+              string(correct_args)*"\n"*
               "Please use key-word arguments for any additional arguments!")
     end
+    return correct_args
 end
 
-"""
-    f = @fum f(x) = x+1
+# this function can create a NamedTuple from kwargs in a macro, ie:
+# kwargs = __to_NamedTuple(def[:kwargs])
+# It is not currently used, but took a while to find out, so I'm leaving it
+# here for debugging purposes
+#function __to_NamedTuple(kwargs)
+#    NamedTuple{Tuple(args.(kwargs[:],1))}(Tuple(args.(kwargs[:],2)))
+#end
 
-Defines a Fable User Method (f) that can be used along with other fums to 
-build a Fable Executable.
-Note that these are not compiled until the Fable Executable is built!
-This means you will not have error checking until later in the process!
+function __create_fum_stuff(expr, config, mod, force_inbounds)
+    def = MacroTools.splitdef(expr)
+    def[:name] = name = Symbol(def[:name], :_fum)
+    used_args = def[:args]
+    args = __set_args(used_args, config)
+    def[:args] = args
+    if force_inbounds
+        body_qt = quote
+            @inbounds $(def[:body])
+        end
+        def[:body] = body_qt
+    end
+    kwargs = NamedTuple()
+    fum_fx = combinedef(def)
+    return kwargs, Core.eval(mod, fum_fx)
+end
 
-You may use `:color` to specify that the fum is meant for coloring.
-"""
-macro fum(exprs...)
+# Note: this operator currently works like this:
+#       f = @fum function config f(x) x+1 end
+#       There should be a way to define f in this macro, so we don't need to
+#       say `f = @fum function ...`, but instead just `@fum function ...`
+macro fum(ex...)
 
-    config = :default
+    config = :fractal
+    force_inbounds = false
 
-    if length(exprs) != 1
-        for i = 1:length(exprs)-1
-            if exprs[i] == :color || exprs[i] == :shader ||
-               exprs[i] == :(:shader) || exprs[i] == :(:color)
-                config = :color
+    if length(ex) == 1
+    else
+        for i = 1:length(ex)-1
+            if ex[i] == :color || ex[i] == :shader ||
+               ex[i] == :(:shader) || ex[i] == :(:color)
+                config = :shader
+            elseif ex[i] isa Expr && ex[i].head == :(=) &&
+                ex[i].args[1] == :inbounds && ex[i].args[2] isa Bool
+                force_inbounds = ex[i].args[2]
             else
                 error("Incorrect config argument ", ex[i], "!")
             end
         end
     end
 
-    ex = exprs[end]
+    expr = ex[end]
+    kwargs = nothing
 
-    if !isa(ex, Expr)
-        error("Cannot convert single inputs to Fable User Method!")
-    elseif ex.head == :(=) && !(isa(ex.args[1], Expr))
-        error("Invalid function definition!")
+    if isa(expr, Symbol)
+        error("Cannot convert Symbol to Fable User Method!")
+    elseif expr.head == :(=)
+        # inline function definitions
+        if isa(expr.args[1], Expr)
+            kwargs, fum_fx = __create_fum_stuff(expr, config, __module__,
+                                                force_inbounds)
+        else
+            error("Cannot create FableUserMethod.\n"*
+                  "Input is not a valid function definition!")
+        end
+    elseif expr.head == :function
+        kwargs, fum_fx = __create_fum_stuff(expr, config, __module__,
+                                            force_inbounds)
+    else
+        error("Cannot convert expr to Fable User Method!")
     end
 
-    def = MacroTools.splitdef(ex)
-    __warn_args(def[:args], config)
-    kwargs = def[:kwargs]
-    fis = Tuple(FableInput[])
-    for i = 1:length(kwargs)
-        if !isa(kwargs[i], Expr)
-            error("fum key word arguments must be an expression, like "*
-                  "`q = 5`")
-        end
-        kwargs[i].head = :(=)
-        if isa(kwargs[i].args[2], FableInput)
-            fis = (fis..., kwargs[i].args[2])
-        end
-    end
-
-    final_ex = Expr(:block, kwargs..., def[:body])
-    return esc(FableUserMethod(Expr(:block, def[:kwargs]..., def[:body]),
-               fis))
+    return FableUserMethod(kwargs, FableInput[], fum_fx)
 end
 
-#=
 
 function (a::FableUserMethod)(args...; kwargs...)
 
@@ -143,4 +151,3 @@ function (a::FableUserMethod)(args...; kwargs...)
     final_kwargs = NamedTuple{ks}(vals)
     return FableUserMethod(final_kwargs, fis, a.fx)
 end
-=#
