@@ -32,7 +32,7 @@ include("utils/histogram.jl")
 # Fable flame structures
 include("structs/fable_buffer.jl")
 include("structs/fable_input.jl")
-#include("structs/fable_user_methods.jl")
+include("structs/fable_user_methods.jl")
 #include("fums/shaders.jl")
 #include("structs/fable_operators/generators.jl")
 #include("structs/fable_operators/fable_operators.jl")
