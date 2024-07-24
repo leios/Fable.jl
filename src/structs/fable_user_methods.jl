@@ -33,8 +33,8 @@ it is created by calling a FableUserFragment as a function to configure its
 keyword arguments
 """
 struct FableUserMethod
-    name::Expr
     body::Expr
+    fi_num::Int
 end
 
 #------------------------------------------------------------------------------#
@@ -49,16 +49,28 @@ function __find_kind(s)
     end
 end
 
-function __check_args(args, kwargs, config)
-    correct_args = (:y, :x, :z, :frame, :color)
+function __find_kwarg_keys(kwargs)
+    ks = [:x for i = 1:length(kwargs)]
+    for i = 1:length(ks)
+        ks[i] = kwargs[i].args[1]
+    end
+    return ks
+end
 
+function __check_args(args, kwargs, config)
+    correct_args = (:y, :x, :z, :frame, :fi_buffer, :color)
+
+    input_kwargs = __find_kwarg_keys(kwargs)
     # checking the kwargs
-    for kwarg in kwargs
-        if in(kwarg.args[1], correct_args)
+    for i = 1:length(kwargs)
+        if in(input_kwargs[i], correct_args)
             error("Fable User Method key word arguments cannot be:\n"*
               string(correct_args)*"\n"*
               "These are defined for all fums. Please redefine "*
               string(kwarg.args[1])*"!")
+        end
+        if i > 1 && in(input_kwargs[i], input_kwargs[1:i-1])
+            error(string(input_kwargs[i])*" key word already defined!")
         end
     end
 
@@ -156,6 +168,13 @@ end
 # Configuration
 #------------------------------------------------------------------------------#
 
+function __extract_keys(v)
+    final_v = [:x for i = 1:length(v)]
+    for i = 1:length(v)
+        final_v[i] = v[i].args[1]
+    end
+    return final_v
+end
 """
     @fum f(; q = 5) = q
     f(q=2)
@@ -178,28 +197,26 @@ function (a::FableUserFragment)(args...; kwargs...)
     # checking to make sure the symbols are assignable in the first place
     error_flag = false
 
-    # Note: grabs all keywords from the a.fx. If multiple definitions exist,
-    # it takes the first one. It might mistakenly grab the wrong function.
-    # If this happens, we need to reason about how to pick the right function
-    # when two exist with the same name, but different kwargs...
-    known_kwargs = Base.kwarg_decl.(methods(a.fx))[1]
-
-    final_kwarg_idxs = Int[]
-    final_fi_idxs = Int[]
+    final_kwargs = copy(a.kwargs)
 
     ks = keys(kwargs)
     vals = values(NamedTuple(kwargs))
-    for i = 1:length(ks)
-        if !in(ks[i], known_kwargs)
-            @warn(string(key)*" not found in set of fum key-word args!")
-            error_flag = true
-        end
+    known_kwargs = __extract_keys(final_kwargs)
+    fi_num = 0
 
-        if isa(vals[i], FableInput)
-            push!(final_fi_idxs, i)
-        else
-            push!(final_kwarg_idxs, i)
+    for i = 1:length(final_kwargs)
+        for j = 1:length(ks)
+            if known_kwargs[i] == ks[j]
+                s = known_kwargs[i]
+                if isa(vals[j], FableInput)
+                    final_kwargs[i] = :($s = fi_buffer[$(vals[j].index)])
+                    fi_num += 1
+                else
+                    final_kwargs[i] = :($s = $(vals[j]))
+                end
+            end
         end
+        final_kwargs[i].head = :(=)
     end
 
     if error_flag
@@ -208,11 +225,6 @@ function (a::FableUserFragment)(args...; kwargs...)
               "key-word arguments?")
     end
 
-    fis = [FableInput(ks[i], vals[i].x) for i in final_fi_idxs]
-
-    ks = Tuple(ks[final_kwarg_idxs])
-    vals = Tuple(remove_vectors.(vals[final_kwarg_idxs]))
-
-    final_kwargs = NamedTuple{ks}(vals)
-    return FableUserMethod(final_kwargs, fis, a.fx)
+    # combining it all together
+    return FableUserMethod(Expr(:block, final_kwargs..., a.body), fi_num)
 end
