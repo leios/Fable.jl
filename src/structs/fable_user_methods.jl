@@ -40,6 +40,18 @@ end
 # Macro @fum
 #------------------------------------------------------------------------------#
 
+# Check whether there are `return` statements
+function contains_return(expr)
+    result = false
+    MacroTools.postwalk(expr) do ex
+        if @capture(ex, return x_)
+            result = true
+        end
+        expr
+    end
+    result
+end
+
 function __find_kind(s)
     if s == :color
         return FUMColor()
@@ -98,6 +110,9 @@ function __create_fum_stuff(expr, config, force_inbounds)
         end
     end
 
+    if contains_return(body_qt)
+        error("Fable User Methods must not return values!")
+    end
     return (body_qt, def[:kwargs])
 end
 
