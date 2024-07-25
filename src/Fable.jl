@@ -19,6 +19,7 @@ set_output(tf) = (global OUTPUT = tf)
 # Interfaces
 include("structs/time.jl")
 include("structs/point.jl")
+include("structs/colors.jl")
 
 # Utilities
 include("utils/extras.jl")

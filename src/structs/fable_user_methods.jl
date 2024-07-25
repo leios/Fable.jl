@@ -34,7 +34,6 @@ keyword arguments
 """
 struct FableUserMethod
     body::Expr
-    fi_num::Int
 end
 
 #------------------------------------------------------------------------------#
@@ -132,8 +131,7 @@ macro fum(ex...)
     config = :transform
     force_inbounds = false
 
-    if length(ex) == 1
-    else
+    if length(ex) > 1
         for i = 1:length(ex)-1
             if ex[i] == :color || ex[i] == :shader ||
                ex[i] == :(:shader) || ex[i] == :(:color)
@@ -202,7 +200,6 @@ function (a::FableUserFragment)(args...; kwargs...)
     ks = keys(kwargs)
     vals = values(NamedTuple(kwargs))
     known_kwargs = __extract_keys(final_kwargs)
-    fi_num = 0
 
     for i = 1:length(final_kwargs)
         for j = 1:length(ks)
@@ -210,7 +207,6 @@ function (a::FableUserFragment)(args...; kwargs...)
                 s = known_kwargs[i]
                 if isa(vals[j], FableInput)
                     final_kwargs[i] = :($s = fi_buffer[$(vals[j].index)])
-                    fi_num += 1
                 else
                     final_kwargs[i] = :($s = $(vals[j]))
                 end
@@ -226,5 +222,5 @@ function (a::FableUserFragment)(args...; kwargs...)
     end
 
     # combining it all together
-    return FableUserMethod(Expr(:block, final_kwargs..., a.body), fi_num)
+    return FableUserMethod(Expr(:block, final_kwargs..., a.body))
 end

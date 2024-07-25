@@ -9,6 +9,15 @@ export AbstractGenerator, ChaosGenerator, StandardGenerator
 
 abstract type AbstractGenerator end;
 
+struct RandomGenerator{A, ND} <: AbstractGenerator
+    args::A
+    ndrange::ND
+end
+
+#------------------------------------------------------------------------------#
+# Planned generators
+#------------------------------------------------------------------------------#
+#=
 struct ChaosGenerator{A, I <: Integer,
                       P <: Tuple, F <: Tuple} <: AbstractGenerator
     args::A
@@ -27,8 +36,4 @@ struct SequentialGenerator{A, ND} <: AbstractGenerator
     args::A
     ndrange::ND
 end
-
-struct RandomGenerator{A, ND} <: AbstractGenerator
-    args::A
-    ndrange::ND
-end
+=#
