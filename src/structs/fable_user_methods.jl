@@ -8,7 +8,7 @@
 #              the FableOperator and FableExecutable level.
 #
 #------------------------------------------------------------------------------#
-export FableUserMethod, @fum
+export FableUserMethod, @fum, fuse_fums
 
 abstract type AbstractFUMKind end;
 
@@ -239,3 +239,29 @@ function (a::FableUserFragment)(args...; kwargs...)
     # combining it all together
     return FableUserMethod(Expr(:block, final_kwargs..., a.body))
 end
+
+#------------------------------------------------------------------------------#
+# Fusion / Aux utils
+#------------------------------------------------------------------------------#
+
+function fuse_fum_expr(a::FableUserMethod, b::FableUserMethod)
+    return Expr(:block, a.body, b.body)
+end
+
+function fuse_fum_expr(a::FableUserMethod)
+    return a.body
+end
+
+function fuse_fum_expr(t::T) where T <: Tuple
+    Expr(:block, fuse_fum_expr.(t)...)
+end
+
+function fuse_fum_expr(a::Any)
+    error("Fable can only fuse objects of type FableUserMethod, not "*
+          string(typeof(a)) *"!")
+end
+
+function fuse_fums(args...)
+    FableUserMethod(Expr(:block, fuse_fum_expr.(args)...))
+end
+
