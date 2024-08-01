@@ -2,6 +2,8 @@
 
 Fable is an animation engine that attempts to create a general-purpose rendering engine via Iterated Function Systems (IFSs).
 
+This package is no longer maintained. Please read more [here](death.md).
+
 The current Fable.jl API is still in active development, but for those wanting to learn about how to use it, there are several [examples available to learn from](https://github.com/leios/Fable.jl/tree/main/examples).
 Though Fable.jl focuses on creating general-purpose animations with *fractals*, other rendering modes are either supported or planned to be implemented in the future.
 For now, the only available rendering modes are:
