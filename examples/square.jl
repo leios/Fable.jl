@@ -25,7 +25,7 @@ function square_example(num_particles, num_iterations;
               [1.0, 0.25, 1.0, 1]]
 
     rot_fi = fi("rotation", pi/4)
-    square = define_square(; position = [0.0, 0.0], rotation = rot_fi,
+    square = create_square(; position = [0.0, 0.0], rotation = rot_fi,
                            color = colors)
     swirl_operator = fo(Flames.swirl)
     H_post = nothing

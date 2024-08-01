@@ -1,4 +1,4 @@
-export define_circle
+export create_circle
 
 # Code examples modified from: https://www.math.uwaterloo.ca/~wgilbert/FableGallery/IFS/IFS.html
 
@@ -49,18 +49,18 @@ constant_disk = @fum function constant_disk(x, y; radius = 1,
 end
 
 # Returns back H, colors, and probs for a circle
-function define_circle(; position::Union{Tuple, Vector, FableInput} = (0, 0),
+function create_circle(; position::Union{Tuple, Vector, FableInput} = (0, 0),
                          radius::Union{Number, FableInput} = 1.0,
                          color = Shaders.gray,
                          chosen_fx = :constant_disk)
 
-    fums = define_circle_operators(position, radius; chosen_fx = chosen_fx)
-    color_set = define_color_operators(color; fnum = 2)
+    fums = create_circle_operators(position, radius; chosen_fx = chosen_fx)
+    color_set = create_color_operators(color; fnum = 2)
     return fo(fums, color_set, (0.5, 0.5))
 end
 
 # This specifically returns the fums for a circle
-function define_circle_operators(position::Union{Vector, Tuple, FableInput},
+function create_circle_operators(position::Union{Vector, Tuple, FableInput},
                                  radius::Union{Number, FableInput};
                                  chosen_fx = :constant_disk)
 

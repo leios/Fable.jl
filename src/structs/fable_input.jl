@@ -1,53 +1,59 @@
-export FableInput, fi, @fi, set!, combine, to_args, find_fi_index, value
+#-------------fable_input.jl---------------------------------------------------#
+#
+# Purpose: Recompilation is a costly process in Julia (and for GPU programming
+#          in general). FableInputs are meant to allow users to store specific
+#          variables that are meant to be modified dynamically without
+#          triggering recompilation.
+#
+#   Notes: Improvements:
+#          1. Make the buffer object less noticeable when creating fis (for 
+#             example, it might be nice not to specify index)
+#
+#------------------------------------------------------------------------------#
 
-struct FableInput
-    s::Union{Symbol, String}
-    x::Ref{Union{Number, Tuple, Vector}}
+export FableInput, fi, set!, value
+
+"""
+    x = FableInput(buffer, 5)
+
+Will create a FableInput at index 5 of the FableBuffer.
+FableInputs (fis) are variables meant to be dynamically modified by the user.
+This way we do not unnecessarily triger a costly recompilation
+"""
+struct FableInput{FB <: FableBuffer, I <: Integer}
+    buffer::FB
+    index::I
 end
 
+"""
+    x = fi(buffer, 5)
+
+This is a shorthand for FableInput construction
+"""
 fi(args...) = FableInput(args...)
 
+"""
+    x = fi(buffer, index, value)
+
+Will create a FableInput that points to `index` in `buffer`
+ and then sets it to `value`
+"""
+function fi(fb::FableBuffer, idx::Integer, val::N) where N <: Number
+    x = FableInput(buffer, idx)
+    set!(x, val)
+    return x
+end
+
+"""
+    set!(fi, 5)
+
+Will set the associated CPU buffer element for your FableInput to 5
+"""
 function set!(fi::FableInput, val)
-    fi.x.x = val
+    fi.buffer.cpu[fi.index] = val
 end
 
-function combine(nt::Tuple, fis::Tuple)
-    return Tuple(combine(nt[i], fis[i]) for i = 1:length(fis))
-end
-
-combine(fis::Vector{FableInput}, nt::NamedTuple) = combine(nt, fis)
-
-function combine(nt::NamedTuple, fis::Vector{FableInput})
-    if length(fis) == 0
-        return nt
-    end
-
-    fi_vals = (remove_vectors(fis[i].x.x) for i = 1:length(fis))
-    fi_keys = (Symbol(fis[i].s) for i = 1:length(fis))
-
-    return NamedTuple{(keys(nt)..., fi_keys...)}((values(nt)..., fi_vals...))
-end
-
-function to_args(nt::Tuple, fis::Tuple)
-    return Tuple(combine(fis[i], nt[i]) for i = 1:length(fis))
-end
-
-function to_args(nt::NamedTuple, fis::Vector{FableInput})
-    if length(fis) == 0
-        return values(nt)
-    end
-    fi_vals = (remove_vectors(fis[i].x.x) for i = 1:length(fis))
-    return (values(nt)..., fi_vals...)
-end
-
-function find_fi_index(s, fis::FT) where FT <: Union{Vector{FableInput},
-                                                     Tuple}
-    for i = 1:length(fis)
-        if Symbol(fis[i].s) == Symbol(s)
-            return i
-        end
-    end
-end
-
-value(fi::FableInput) = fi.x.x
-value(a) = a
+"""
+This just returns the stored value of your FablInput
+"""
+value(fi::FableInput) = fi.buffer.cpu[fi.index]

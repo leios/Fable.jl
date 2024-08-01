@@ -37,7 +37,7 @@ In this case, each row of the array will define the color of a different quadran
 Now we can define our fractal executable...
 
 ```
-H = define_square(; position = [0.0, 0.0], rotation = pi/4, color = colors)
+H = create_square(; position = [0.0, 0.0], rotation = pi/4, color = colors)
 ```
 
 Here, `ArrayType` can be either an `Array` or `CuArray` depending whether you would like to run the code on the CPU or (CUDA / AMD) GPU.
@@ -159,7 +159,7 @@ function square_example(num_particles, num_iterations;
               [0.25, 0.25, 1.0, 1],
               [1.0, 0.25, 1.0, 1]]
 
-    H = define_square(; position = [0.0, 0.0], rotation = pi/4,  color = colors)
+    H = create_square(; position = [0.0, 0.0], rotation = pi/4,  color = colors)
     swirl_operator = fo(Flames.swirl)
     H_post = nothing
     if transform_type == :outer_swirl

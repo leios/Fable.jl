@@ -22,7 +22,7 @@ function layering_tests(ArrayType::Type{AT}) where AT <: AbstractArray
                     ArrayType = ArrayType)
     sl = ShaderLayer(test_fum;  world_size = (4, 4), ppu = 11/4,
                      ArrayType = ArrayType)
-    circle = Fable.define_circle(; position = [0.0,0.0], radius = 2.0, 
+    circle = Fable.create_circle(; position = [0.0,0.0], radius = 2.0, 
                                  color = [0.0, 0.0, 1.0, 1.0])
     fl = FableLayer(; world_size = (4,4), ppu = 11/4, H = circle,
                       ArrayType = ArrayType)
@@ -102,9 +102,9 @@ function layer_mixing_tests(ArrayType::Type{AT}) where AT <: AbstractArray
     @test img[2] == RGBA(1,1,1,1)
 
     clayer = ColorLayer(RGB(0.5, 0.5, 0.5); world_size = (1, 2), ppu = 1)
-    square_1 = define_square(; color = Shaders.black,
+    square_1 = create_square(; color = Shaders.black,
                                position = (0, -0.5), scale = 1)
-    square_2 = define_square(; color = Shaders.white,
+    square_2 = create_square(; color = Shaders.white,
                                position = (0, 0.5), scale = 1)
 
     flayer_1 = FableLayer(; H = square_1, world_size = (1, 2), ppu = 1,

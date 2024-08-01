@@ -83,7 +83,7 @@ Now we define the ball:
 ```
     # define ball parameters
     position = [-2.0, -2.0]
-    ball = define_circle(; position = position,
+    ball = create_circle(; position = position,
                            radius = 1.0,
                            color = (1,1,1))
 ```
@@ -212,7 +212,7 @@ function smear_example(num_particles, num_iterations, total_frames;
 
     # define ball parameters
     object_position = fi("object_position", [-2.0, -2.0])
-    ball = define_circle(; position = object_position,
+    ball = create_circle(; position = object_position,
                            radius = 1.0,
                            color = (1,1,1))
 

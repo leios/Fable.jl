@@ -18,12 +18,12 @@ function sierpinski_example(num_particles, num_iterations, num_frames;
     B_2 = fi(:B_2, [r*cos(-theta + 2*pi/3), r*sin(-theta + 2*pi/3)])
     C_2 = fi(:C_2, [r*cos(-theta + 4*pi/3), r*sin(-theta + 4*pi/3)])
 
-    H = define_triangle(; A = A_1, B = B_1, C = C_1,
+    H = create_triangle(; A = A_1, B = B_1, C = C_1,
                           color = [[1.0, 0.0, 0.0, 1.0],
                                    [0.0, 1.0, 0.0, 1.0],
                                    [0.0, 0.0, 1.0, 1.0]],
                           chosen_fx = :sierpinski)
-    H_2 = define_triangle(A = A_2, B = B_2, C = C_2,
+    H_2 = create_triangle(A = A_2, B = B_2, C = C_2,
                             color = [[0.0, 1.0, 1.0, 1.0],
                                      [1.0, 0.0, 1.0, 1.0],
                                      [1.0, 1.0, 0.0, 1.0]],

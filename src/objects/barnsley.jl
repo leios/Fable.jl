@@ -1,13 +1,13 @@
-export define_barnsley
-function define_barnsley(; color = Shaders.grey, tilt = 0)
-    fums = define_barnsley_operators(tilt = tilt)
-    color_set = define_color_operators(color; fnum = 4)
+export create_barnsley
+function create_barnsley(; color = Shaders.grey, tilt = 0)
+    fums = create_barnsley_operators(tilt = tilt)
+    color_set = create_color_operators(color; fnum = 4)
     prob_set = (0.01, 0.85, 0.07, 0.07)
     return fo(fums, color_set, prob_set)
 end
 
 # This specifically returns the fums for a barnsley fern
-function define_barnsley_operators(; tilt::Union{Number, FableInput} = 0)
+function create_barnsley_operators(; tilt::Union{Number, FableInput} = 0)
 
     s_1 = @fum function s_1()
         return point(0.16*y, 0.0)
