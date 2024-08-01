@@ -1,25 +1,19 @@
+#-------------fable_operators.jl-----------------------------------------------#
+#
+# Purpose: This file defines the FableOperator, a method to combine 
+#          Fable User Methods
+#
+#------------------------------------------------------------------------------#
 export FableOperator, fo
 
-struct FableOperator{G, F, KW} where {G <: AbstractGenerator,
-                                      F <: Function, KW <: Tuple,
-    gen::G
-    fx::F
-    kwargs::KW
-end
+abstract type FableOperator end;
 
 """
-    @fo generator fxs = (fum_1, fum_2, fum_3) colors = (clr_1, clr_2, clr_3)
+    fo(operator_type, args..., kwargs...)
 
-Will create a Fable Operator with a function that combines all the Fable User
-Methods and associated colors.
+Will create a FableOperator of `operator_type` with necessary args and kwargs
 """
-macro fo(gen, args...)
-    if gen == :RandomGenerator
-        expr = generate_random_fo(args...)
-    else
-        error("Unknown generator: ", gen, "!")
-    end
+function fo(fo_t::Type{FO}, args; kwargs) where FO <: FableOperator
+    fo_t(args...; kwargs...)
 end
 
-@generated function fo(generator::G, fums, colors) where G <: AbstractGenerator
-end

@@ -261,6 +261,13 @@ function fuse_fum_expr(a::Any)
           string(typeof(a)) *"!")
 end
 
+function fuse_fum_expr(a::FableUserFragment)
+    error("FableUserMethod not congifured!\n"*
+          "Please configure the fum first by calling it "*
+          "with key word arguments like:\n"*
+          "    fum = f(q = 7)")
+end
+
 function fuse_fums(args...)
     FableUserMethod(Expr(:block, fuse_fum_expr.(args)...))
 end
