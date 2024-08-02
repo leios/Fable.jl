@@ -1,6 +1,6 @@
 # The Future of Fable(.jl)
 
-Alright. I'm going to lay it all on the line here. Fable(.jl) will no longer be developed by me at this point in time.
+Long story short: Fable(.jl) will no longer be developed by me at this point in time.
 I have moved on to a new project, [quibble](https://github.com/leios/quibble).
 
 Let's talk about that in detail.
@@ -14,15 +14,19 @@ This rendering engine has taken many forms:
 A few weeks ago, I took an afternoon to rewrite the heart of the code in OpenCL C.
 I got it working and it was lightning fast.
 To reiterate: I got it to work in an *afternoon in C.*
-That was "the final nail in the coffin" for me.
-It made me realize I was in a bit of a bubble and flushed two years of full time effort down the drain.
+I have been struggling to get this engine to work in Julia for *years*.
+In a sense, that was "the final nail in the coffin" for me.
+Now, I'm old and bitter and can't help but feel I flushed two years of full time effort down the drain.
 
 That said, I do wholeheartedly believe that Julia has the best GPGPU ecosystem in the business.
 It's just that for this specific project, I cannot use Julia.
 Rather, I *can*.
-There's a possibility that SPIRV(.jl) and Vulkan(.jl) can save me here, but I really need a break for now. 
+There's a possibility that SPIRV(.jl) and Vulkan(.jl) can save me here.
+Or maybe the GPUCompiler gets a speed up like what just happened in Julia 1.10.
+Or maybe I'm just an idiot and there's a clever way around my problems that I just haven't thought of yet.
+For now, I really need a break from the language. 
 
-## So What's the Problem?
+## So what's the problem?
 
 Fable is a general-purpose rendering engine that does away with the traditional mesh machinery from OpenGL and Vulkan.
 It's all function systems.
@@ -30,9 +34,9 @@ You can read more about it here in the docs if you are interested.
 
 To be honest, it works.
 The runtime is super fast.
-Like 5000 frames per second fast.
+Like 5000+ frames per second fast (and that's for a relatively unoptimized approach).
 The problem is that the user-generated functions need to be *compiled* somewhere and compilation (in Julia) can take minutes of time.
-The reason I switched to C is that the same process can be done in OpenCL in milliseconds.
+The reason I recently switched to C is that the same compilation process can be done in OpenCL in milliseconds.
 
 So why?
 Why is Julia uniquely bad here?
@@ -48,15 +52,22 @@ Memory is limited.
 Threads are weak.
 Function call graphs, though not incredibly hefty, are hefty enough to be avoided for thread-wise execution.
 
-That said, GPU programming is hard, and most people are not working alone.
+On the other hand, GPU programming is hard, and most people are not working alone.
 If there's only one GPU programmer and several other lab mates all wanting to use their GPU code, then it makes sense to allow for some flexibility.
-For that reason, even though function pointers are not straightforward, it's incredibly common for GPU programmers to simulate this functionality in other ways.
+For that reason, even though function pointers are not straightforward, it's incredibly common for GPU programmers to simulate them in other ways.
 Let's discuss how:
 
 1. *The CUDA Approach*: As mentioned earlier, CUDA actually *does* allow for function pointers on the GPU. The problem is that they are limited only to functions compiled in the same CuModule. This effectively means there are two options for simulating general function pointers on CUDA-capable devices:
-    1. Mess around with the compilation of the code, itself, to make sure that the appropriate functions are in the same CuModule. There are actually CMake commands to do this.
-    2. Send the functions in to your kernel as an Abstract Syntax Tree (or Expression Tree) and parse that on the GPU. To do this, you just need to make sure that all the functions necessary for parsing the AST are in the same module.
-2. *The OpenCL Approach*: This approach is way, way easier. Because OpenCL (and OpenGL / Vulkan) separate out the compilation of kernels (shaders), all you need to do to simulate function pointers is throw user code directly into the string that eventually turns into a kernel. For this reason, I often say that "OpenCL has the best metaprogramming of any language I've ever used." It's just so easy to work with.
+    1. Mess around with the compilation of the code, itself, to make sure that the appropriate functions are in the same CuModule. This is common enough that there are actually CMake commands to do this.
+    2. Send the functions in to your kernel as an Abstract Syntax Tree (or expression tree if you are lucky) and parse that on the GPU. To do this, you just need to make sure that all the functions necessary for parsing the user-provided code are in the same module.
+2. *The OpenCL Approach*: This approach is way, way easier. Because OpenCL (and OpenGL / Vulkan) separate out the compilation of kernels (or shaders), all you need to do to simulate function pointers is throw user code directly into the string that eventually turns into a kernel. For this reason, I often say that "OpenCL has the best metaprogramming of any language I've ever used." It's just so easy to work with.
+
+I have personally implemented all of these approaches (CUDA 1 & 2, OpenCL, and GLSL / OpenGL) before during my PhD.
+It took maybe a month to do everything in CUDA and a few days to do it in OpenCL.
+Since then, I have had to solve this problem time and time again in a variety of different ways.
+It always comes up.
+It's so common that I have often made the claim that "In 202X, languages are defined by their ability to metaprogram GPU code. That is literally the *only* problem that matters."
+It was also the core reason I began exploring non-CUDA options for GPU programming.
 
 So now let's talk Julia.
 I've been using the language for some time.
@@ -86,7 +97,7 @@ Up until this point, I had been doing most of my development in the REPL, so I h
 Now, there is a solution: `Base.@invokelatest`.
 This function will force a function written at an older time to accept a newer function, but it comes at a small cost.
 At the time, I thought that my compile times were already too long and I was not willing to spend another half-second at this step, so I looked for other options.
-Also, due to a bug in AMDGPU,jl (which has since been fixed), my entire system was crashing quite regularly and at random due to this codebase.
+Also, due to a bug in AMDGPU,jl (which has since been fixed), my entire system was crashing quite regularly and at random due to this codebase, so I needed to change up the tooling.
 
 So let's talk about the "Julia way."
 
@@ -95,7 +106,7 @@ So let's talk about the "Julia way."
 In Julia, macros are powerful. 
 They can do just about anything you want to do with `Expr`s
 So I thought this would be the perfect solution to my problem.
-But let's define the problem in more detail.
+But let's define that problem in more detail.
 
 There are essentially 4 levels of metaprogramming:
 
@@ -130,8 +141,8 @@ But, macros are probably much more safe than whatever I was doing before, so it'
 
 This approach involved passing all the functions in as a Tuple (of mixed type because functions are all designated to have their own type in Julia).
 I will say that the final code was very, very unique and the closest thing to "real" function pointers I've seen on the GPU.
-The only issue was that I could not iterate through the Tuple of functions.
-Considering I was literally trying to solve *iterated* function systems, this was a huge problem.
+The only issue was that I could not iterate through the Tuple of functions due to an issue that I still don't know whether it counts as a "bug" or "oversight".
+No matter the case, considering I was literally trying to solve *iterated* function systems, this was a huge problem.
 So I needed to `@generate` a function that would call my specific function from the Tuple with a fixed index (`1` instead of `i`).
 This meant that if I passed in 100 functions, I would `@generate` a 100 `if` statement block and would call that function any time I wanted to call `fxs[i]`.
 
@@ -150,7 +161,7 @@ Sure, there's sometimes the odd bit of boilerplate that I yoink and twist from S
 When I was done with this version of the code, it didn't feel like mine.
 The macros were all basically designed by a friend.
 It was prone to breaking at any point in time without me understanding why.
-There was one, specific bug that would send me straight into a panic because it always took a full month to solve and I had hit it almost 10 times ad that point.
+There was one, specific bug that would send me straight into a panic because it always took a full month to solve and I had hit it almost 10 times before (literally 10 months wasted).
 
 Regardless, the code worked.
 Just like before.
@@ -165,13 +176,13 @@ This meant that I was spending literal hours out of my day just waiting for Juli
 So I reached out to the GPU channel on slack (instead of the Julia Lab folks) and asked for help, only to receive a relatively unhelpful set of answers.
 I understand that that was entirely my fault.
 I had asked so many people for help with this project, that I had failed to adequately document my issues on github because I thought they were "well known."
-More than that, I had solved this exact problem so many times in my career, I was genuinely surprised that others were not stumbling into them as well.
+More than that, I had solved this exact problem so many times in my career, I really don't think it is possible to find someone who is more specialized at solving it.
 
 So I (finally) created the issues and kept at it.
 
 ### Attempt 3 and performance tests.
 
-At this point, I was frazzled beyond belief and felt like I had just been majorly gaslighted.
+At this point, I was frazzled beyond belief and felt like I had just been majorly gaslighted on slack.
 I had solved this very problem multiple times before.
 In CUDA.
 In OpenCL.
@@ -187,7 +198,7 @@ By a lot.
 But I decided to take it one step further and actually implement the same functionality in OpenCL.
 I did it in an afternoon after years of leaving my C skills to collect dust.
 The fact that I could do it in an afternoon already speaks volumes:
-1. I am not insane. This is actually a fairly trivial thing to do.
+1. I am not insane. This is actually a fairly trivial thing to do (as long as you know what to do).
 2. OpenCL's actually great. I'm a big fan.
 
 So let's put some rough numbers down.
@@ -215,6 +226,9 @@ All I need to do is find clever ways to mask the compile time.
 That's easy enough if the compile time is less than a second, but 10 seconds is a little too long.
 26 seconds is completely unreasonable.
 
+At the end of the day, it will almost certainly be faster to compile old-school C with OpenCL than it will be to compile Julia.
+Also, even if the OpenCL JIT compiler is too slow, I can just compile my own SPIRV and pass that in directly.
+
 So...
 
 ## Let's talk Julia
@@ -224,8 +238,9 @@ Now for the elephant in the room.
 Am I quitting Julia?
 
 Kinda.
+I am intending to finish up my MIT projects and then take a break from the language.
 
-There is a future where compile times get way better, even sub 1 second in Julia, but I don't see them ever catching up to OpenCL.
+There is a possibility that Julia compile times get way better in the future -- even sub 1 second -- but I don't see them ever catching up to OpenCL.
 Even if they did catch up, I am really burnt out from Julia programming right now.
 Like I said before, the more I embrace Julia tooling, the less I feel like I actually understand the code that I'm writing and I don't like that feeling.
 For this reason, even if compile times go down, I don't know if I'll ever feel comfortable returning to the language for this project.
@@ -237,8 +252,10 @@ I just don't know what it will take to bump me over to that timeline.
 I don't want to make this a "hit piece" against the language or anything.
 I do genuinely feel it is great and has the best GPGPU ecosystem in the business.
 But (for me) it's really bogged down by Julia, itself.
+I have a lot of small (and large) issues with the language, but most of those can actually be seen in the Julia developer survey as well, so I hope they will be ironed out soon enough.
+Rather than discussing any of this in detail, I think it's best to keep this section light and talk about my personal *feelings* in using the language for so long (since 0.3).
 
-Higher level languages have always been difficult for me to understand.
+I will start by saying that higher level languages have always been difficult for me to understand.
 I know loops.
 I know functions.
 I know conditionals.
@@ -265,14 +282,13 @@ So when you write C++ code, there will always be someone, somewhere critiquing i
 
 That's what happens when you give programmers too many tools.
 All of a sudden, the right approach is unclear.
-In fact there is probably no objectively "correct" answer.
-If you ask anyone for advice, though, your solution was "objectively wrong."
+In fact, there is probably no objectively "correct" answer, but if you ask anyone for advice, your solution was "objectively wrong."
 
-And that's how I have felt writing Julia code.
+That's how I have felt writing Julia code.
 It just always feels like I'm looking over my shoulder and doing something wrong.
 It's really taken away my love of programming.
 
-The problem is that even in this case, my gut was right!
+The problem is that in this case, my gut was right!
 `eval`ing `Expr`s ended up being faster *and* more flexible.
 But I know there will be a Julia user somewhere saying, "Ah, but you did your `@generated` functions wrong."
 And I think you might be right.
@@ -282,6 +298,7 @@ But that's the core problem.
 Going back to C was a huge breath of fresh air.
 I recognize I am in my "honeymoon phase" right now and that feeling will die off soon, but for now, I am happy enough.
 I prefer simplicity to ease of use.
+At least for now.
 
 I don't really have a way to wrap this up, so...
 
