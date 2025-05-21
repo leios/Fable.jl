@@ -12,7 +12,7 @@
 #------------------------------------------------------------------------------#
 
 export FableInput, fi, set!, value
-export FableBuffer, create_falbe_buffer, to_cpu!, to_gpu!
+export FableBuffer, create_fable_buffer, to_cpu!, to_gpu!
 
 """
 A FableBuffer is an Array / GPUArray pair for storing FableInputs.
@@ -24,13 +24,13 @@ struct FableBuffer{AT <: AbstractArray, GPUAT <: AbstractArray}
 end
 
 """
-    create_falbe_buffer(zeros(10); ArrayType = Array)
+    create_fable_buffer(zeros(10); ArrayType = Array)
 
 Will create a FableBuffer of zeros of size 10 for storing FableInputs.
 This will create a buffer on the CPU and an additional buffer stored as an
 ArrayType (meant for passing variables to the GPU)
 """
-function create_falbe_buffer(A::AT; ArrayType = Array) where AT <: AbstractArray
+function create_fable_buffer(A::AT; ArrayType = Array) where AT <: AbstractArray
     return FableBuffer(A, ArrayType(A))
 end
 
