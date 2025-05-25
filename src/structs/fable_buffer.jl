@@ -39,9 +39,9 @@ end
 
 Will create a FableBuffer of zeros (Float64) of size 10 for storing FableInputs.
 """
-function create_falbe_buffer(i::N; ArrayType = Array,
+function create_fable_buffer(i::N; ArrayType = Array,
                           ElementType = Float64) where N <: Number
-    create_falbe_buffer(zeros(ElementType, 10); ArrayType)
+    create_fable_buffer(zeros(ElementType, i); ArrayType)
 end
 
 """
