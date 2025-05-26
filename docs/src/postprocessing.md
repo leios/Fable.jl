@@ -28,7 +28,7 @@ For the following examples, we will be performing post processing on a simple ci
 ```
 function quick_circle(num_particles, num_iterations; ArrayType = Array,
                       filename = "out.png")
-    circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
+    circle = create_circle(; radius = 0.1, color = [1, 0, 1, 1])
 
     fl = FableLayer(; H1 = circle, ArrayType = ArrayType)
 
@@ -75,7 +75,7 @@ Here is a quick example:
 function clip_example(num_particles, num_iterations; ArrayType = Array,
                       filename = "clip_out.png")
 
-    circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
+    circle = create_circle(; radius = 0.1, color = [1, 0, 1, 1])
 
     clip = Clip(; threshold = 0.5, color = RGBA(1, 1, 0, 1))
 
@@ -165,7 +165,7 @@ Finally, here is a quick example using the Gaussian `Blur` post process (note yo
 ```
 function blur_example(num_particles, num_iterations; ArrayType = Array,
                       filter_size = 3, filename = "blur_out.png")
-    circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
+    circle = create_circle(; radius = 0.1, color = [1, 0, 1, 1])
 
     blur = Blur(; filter_size = filter_size)
 
@@ -197,7 +197,7 @@ Here is a quick example using the Sobel operator:
 ```
 function sobel_example(num_particles, num_iterations; ArrayType = Array,
                        filename = "sobel_out.png")
-    circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
+    circle = create_circle(; radius = 0.1, color = [1, 0, 1, 1])
 
     sobel = Sobel()
 
@@ -244,7 +244,7 @@ Here is a quick example using the Outline post process:
 function outline_example(num_particles, num_iterations; ArrayType = Array,
                          filename = "outline_out.png", linewidth = 1,
                          object_outline = false)
-    circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
+    circle = create_circle(; radius = 0.1, color = [1, 0, 1, 1])
 
     outline = Outline(; linewidth = linewidth, object_outline = object_outline)
 

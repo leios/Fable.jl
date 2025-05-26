@@ -24,7 +24,7 @@ function barnsley_example(num_particles, num_iterations;
     color_3 = [0.,1,0,1]
     color_4 = [0.,0,1,1]
 
-    H = define_barnsley(; color = [color_1, color_2, color_3, color_4])
+    H = create_barnsley(; color = [color_1, color_2, color_3, color_4])
 
     fo_1 = fo(Flames.identity, Shaders.previous, 1)
     fo_2 = fo(scale_and_translate(translation = (0.5, 0.5), scale = 0.5),

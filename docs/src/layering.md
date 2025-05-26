@@ -114,7 +114,7 @@ function layering_example(num_particles, num_iterations; ArrayType = Array)
     world_size = (9*0.15, 16*0.15)
     ppu = 1920/world_size[2]
 
-    square = define_rectangle(position = [0.0,0.0],
+    square = create_rectangle(position = [0.0,0.0],
                               rotation = pi/4,
                               color = RGBA(1,0,1))
     flayer = FableLayer(; ArrayType = ArrayType, H1 = square,

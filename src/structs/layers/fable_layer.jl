@@ -5,7 +5,6 @@ export FableLayer, default_params, params, CopyToCanvas, to_canvas!
 mutable struct FableLayer <: AbstractLayer
     H::Union{Nothing, Hutchinson}
     H_post::Union{Nothing, Hutchinson}
-    particles::APT where APT <: AbstractArray{AP} where AP <: AbstractPoint
     values::AIT where AIT <: AbstractArray{Int}
     reds::AFT where AFT <: AbstractArray{FT} where FT <: AbstractFloat
     greens::AFT where AFT <: AbstractArray{FT} where FT <: AbstractFloat
@@ -14,6 +13,7 @@ mutable struct FableLayer <: AbstractLayer
     priorities::AFT where AFT <: Union{AbstractArray{UI},
                                        Nothing} where UI <: Unsigned
     canvas::ACT where ACT <: AbstractArray{CT} where CT <: RGBA
+    generator::AbstractGenerator
     position::Tuple
     world_size::Tuple
     ppu::Number
@@ -64,10 +64,10 @@ end
 
 
 # Creating a default call
-function FableLayer(p, v, r, g, b, a, pr, c, position, world_size, ppu;
-                      postprocessing_steps = AbstractPostProcess[],
-                      config = standard,
-                      H = Hutchinson(), H_post = nothing)
+function FableLayer(v, r, g, b, a, pr, c, gen, position, world_size, ppu;
+                    postprocessing_steps = AbstractPostProcess[],
+                    config = standard,
+                    H = Hutchinson(), H_post = nothing)
     if isa(H, FableOperator)
         H = Hutchinson(H)
     end
@@ -87,13 +87,13 @@ function FableLayer(p, v, r, g, b, a, pr, c, position, world_size, ppu;
     end
 
     postprocessing_steps = vcat([CopyToCanvas()], postprocessing_steps)
-    return FableLayer(H, H_post, p, v, r, g, b, a, pr, c,
-                        position, world_size, ppu,
-                        default_params(FableLayer,
-                                       config = config,
-                                       ArrayType = typeof(v),
-                                       FloatType = eltype(v)),
-                        postprocessing_steps)
+    return FableLayer(H, H_post, p, v, r, g, b, a, pr, c, gen,
+                      position, world_size, ppu,
+                      default_params(FableLayer,
+                                     config = config,
+                                     ArrayType = typeof(v),
+                                     FloatType = eltype(v)),
+                      postprocessing_steps)
 end
 
 # Create a blank, black image of size s
@@ -105,7 +105,8 @@ function FableLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
                       numthreads = 256,
                       num_particles = 1000, num_iterations = 1000, dims = 2,
                       H = Hutchinson(), H_post = nothing,
-                      solver_type = :semi_random, overlay = false)
+                      solver_type = :semi_random, overlay = false,
+                      generator = RandGenerator())
     if isa(H, FableOperator)
         H = Hutchinson(H)
     end
@@ -123,8 +124,6 @@ function FableLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
     num_objects = length(H)
 
     res = (ceil(Int, world_size[1]*ppu), ceil(Int, world_size[2]*ppu))
-    p = generate_points(num_particles; dims = dims, ArrayType = ArrayType,
-                        num_objects = num_objects)
     v = ArrayType(zeros(Int,res))
     r = ArrayType(zeros(FloatType,res))
     g = ArrayType(zeros(FloatType,res))
@@ -137,33 +136,33 @@ function FableLayer(; config = :meh, ArrayType=Array, FloatType = Float32,
     end
     c = ArrayType(fill(RGBA(FloatType(0),0,0,0), res))
     if config == :standard || config == :fractal_flame
-        return FableLayer(H, H_post, p, v, r, g, b, a, pr, c,
-                            position, world_size, ppu,
-                            default_params(FableLayer;
-                                           ArrayType = ArrayType,
-                                           FloatType = FloatType,
-                                           config = config,
-                                           num_particles = num_particles,
-                                           num_iterations = num_iterations,
-                                           dims = dims),
-                            postprocessing_steps)
+        return FableLayer(H, H_post, v, r, g, b, a, pr, c, generator, 
+                          position, world_size, ppu,
+                          default_params(FableLayer;
+                                         ArrayType = ArrayType,
+                                         FloatType = FloatType,
+                                         config = config,
+                                         num_particles = num_particles,
+                                         num_iterations = num_iterations,
+                                         dims = dims),
+                          postprocessing_steps)
     else
-        return FableLayer(H, H_post, p, v, r, g, b, a, pr, c,
-                            position, world_size, ppu,
-                            params(FableLayer;
-                                   ArrayType=ArrayType,
-                                   FloatType = FloatType,
-                                   gamma = gamma,
-                                   logscale = logscale,
-                                   calc_max_value = calc_max_value,
-                                   max_value = max_value,
-                                   numthreads = numthreads,
-                                   num_particles = num_particles,
-                                   num_iterations = num_iterations,
-                                   dims = dims,
-                                   solver_type = solver_type,
-                                   overlay = overlay),
-                            postprocessing_steps)
+        return FableLayer(H, H_post, v, r, g, b, a, pr, c, generator, 
+                          position, world_size, ppu,
+                          params(FableLayer;
+                                 ArrayType=ArrayType,
+                                 FloatType = FloatType,
+                                 gamma = gamma,
+                                 logscale = logscale,
+                                 calc_max_value = calc_max_value,
+                                 max_value = max_value,
+                                 numthreads = numthreads,
+                                 num_particles = num_particles,
+                                 num_iterations = num_iterations,
+                                 dims = dims,
+                                 solver_type = solver_type,
+                                 overlay = overlay),
+                          postprocessing_steps)
     end
 end
 

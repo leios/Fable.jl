@@ -5,7 +5,7 @@ function logscale_example(num_particles, num_iterations; ArrayType = Array)
     world_size = (9*0.15, 16*0.15)
     ppu = 1920/world_size[2]
 
-    circle = define_circle(chosen_fx = :naive_disk, color = Shaders.white)
+    circle = create_circle(chosen_fx = :naive_disk, color = Shaders.white)
 
     flayer = FableLayer(; ArrayType = ArrayType, H = circle,
                           world_size = world_size, ppu = ppu,

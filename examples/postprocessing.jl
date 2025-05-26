@@ -2,7 +2,7 @@ using Fable, Colors
 
 function quick_circle(num_particles, num_iterations; ArrayType = Array,
                       filename = "out.png")
-    circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
+    circle = create_circle(; radius = 0.1, color = [1, 0, 1, 1])
 
     fl = FableLayer(; H = circle, ArrayType = ArrayType)
 
@@ -13,7 +13,7 @@ end
 function clip_example(num_particles, num_iterations; ArrayType = Array,
                       filename = "clip_out.png")
 
-    circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
+    circle = create_circle(; radius = 0.1, color = [1, 0, 1, 1])
 
     clip = Clip(; threshold = 0.5, color = RGBA(1, 1, 0, 1))
 
@@ -26,7 +26,7 @@ end
 
 function identity_example(num_particles, num_iterations; ArrayType = Array,
                           filename = "identity_out.png")
-    circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
+    circle = create_circle(; radius = 0.1, color = [1, 0, 1, 1])
 
     identity = Identity()
 
@@ -39,7 +39,7 @@ end
 
 function blur_example(num_particles, num_iterations; ArrayType = Array,
                       filter_size = 3, filename = "blur_out.png")
-    circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
+    circle = create_circle(; radius = 0.1, color = [1, 0, 1, 1])
 
     blur = Blur(; filter_size = filter_size)
 
@@ -52,7 +52,7 @@ end
 
 function sobel_example(num_particles, num_iterations; ArrayType = Array,
                        filename = "sobel_out.png")
-    circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
+    circle = create_circle(; radius = 0.1, color = [1, 0, 1, 1])
 
     sobel = Sobel()
 
@@ -66,7 +66,7 @@ end
 function outline_example(num_particles, num_iterations; ArrayType = Array,
                          filename = "outline_out.png", linewidth = 1,
                          object_outline = false)
-    circle = define_circle(; radius = 0.1, color = [1, 0, 1, 1])
+    circle = create_circle(; radius = 0.1, color = [1, 0, 1, 1])
 
     outline = Outline(; linewidth = linewidth, object_outline = object_outline)
 

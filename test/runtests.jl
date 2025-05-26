@@ -25,6 +25,9 @@ include("object_tests.jl")
 # Example testsuite is flaky, but can be run locally.
 #include("example_tests.jl")
 
+# Non Array-based tests
+include("extra_tests.jl")
+
 function run_tests(ArrayTypes)
     for ArrayType in ArrayTypes
         histogram_testsuite(ArrayType)
