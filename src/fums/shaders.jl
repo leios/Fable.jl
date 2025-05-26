@@ -16,6 +16,7 @@ blue = @fum color blue() = RGBA{Float32}(0,0,1,1)
 magenta = @fum color magenta() = RGBA{Float32}(1,0,1,1)
 white = @fum color white() = RGBA{Float32}(1,1,1,1)
 black = @fum color black() = RGBA{Float32}(0,0,0,1)
+transparent = @fum color transparent() = RGBA{Float32}(0, 0, 0, 0)
 gray = @fum color gray() = RGBA{Float32}(0.5, 0.5, 0.5, 1)
 grey = gray
 
