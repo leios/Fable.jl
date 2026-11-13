@@ -16,7 +16,7 @@ VideoIO = "d6d074c3-1acf-5d4c-9a43-ef38773959a2"
 
 [compat]
 ImageIO = "0.6"
-KernelAbstractions = "0.9"
+KernelAbstractions = "0.10"
 MacroTools = "0.5"
 Revise = "3.7.6"
 Unitful = "1.13"
