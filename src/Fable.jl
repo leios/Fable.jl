@@ -1,22 +1,24 @@
 module Fable
 
 using KernelAbstractions
-using KernelAbstractions: @atomic
+using KernelAbstractions: @atomic, @kernel, synchronize, get_backend
 
-using Unitful
+# re-exporting
+export @kernel, synchronize, get_backend
 
 using ImageIO
 using FileIO
+using FileIO: save
+export save
+
 using VideoIO
-using Colors
 using FixedPointNumbers # for N0f8 output for VideoIO
 
-# Constants
-global OUTPUT = true
-set_output(tf) = (global OUTPUT = tf)
+using Colors
+using Colors: RGBA, RGB
+export RGBA, RGB
 
 # Interfaces
-include("structs/time.jl")
 include("structs/point.jl")
 include("structs/camera.jl")
 

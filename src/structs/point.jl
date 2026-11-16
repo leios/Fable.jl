@@ -1,11 +1,4 @@
-export point, absum, dims
-
-# Might need the following interface for GPU compatability:
-# Can otherwise use NamedTuples:
-# point(x) = (x=x,)
-# point(x, y) = (x=x, y=y)
-# point(x, y, z) = (x=x, y=y, z=z)
-# point(x, y, z, w) = (x=x, y=y, z=z, w=w)
+export Point1D, Point2D, Point3D, Point3D, absum, dims
 
 abstract type AbstractPoint end
 
