@@ -24,7 +24,6 @@ include("structs/camera.jl")
 
 # Utilities
 include("utils/geometries.jl")
-include("utils/histogram.jl")
 
 # Objects
 include("objects.jl")
